@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System.Collections.Generic;
 
 namespace tainicom.Aether.Physics2D.Common.Decomposition.Seidel
@@ -98,9 +99,9 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.Seidel
             return verts;
         }
 
-        private Point LineIntersect(Edge edge, float x)
+        private Point LineIntersect(Edge edge, Fix64 x)
         {
-            float y = edge.Slope * x + edge.B;
+            Fix64 y = edge.Slope * x + edge.B;
             return new Point(x, y);
         }
 

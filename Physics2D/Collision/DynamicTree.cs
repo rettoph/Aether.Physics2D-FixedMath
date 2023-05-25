@@ -27,6 +27,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -135,19 +136,19 @@ namespace tainicom.Aether.Physics2D.Collision
         /// <summary>
         /// Get the ratio of the sum of the node areas to the root area.
         /// </summary>
-        public float AreaRatio
+        public Fix64 AreaRatio
         {
             get
             {
                 if (_root == NullNode)
                 {
-                    return 0.0f;
+                    return Fix64.Zero;
                 }
 
                 //TreeNode<T>* root = &_nodes[_root];
-                float rootArea = _nodes[_root].AABB.Perimeter;
+                Fix64 rootArea = _nodes[_root].AABB.Perimeter;
 
-                float totalArea = 0.0f;
+                Fix64 totalArea = Fix64.Zero;
                 for (int i = 0; i < _nodeCapacity; ++i)
                 {
                     //TreeNode<T>* node = &_nodes[i];
@@ -185,7 +186,7 @@ namespace tainicom.Aether.Physics2D.Collision
 
                     int child1 = _nodes[i].Child1;
                     int child2 = _nodes[i].Child2;
-                    int balance = Math.Abs(_nodes[child2].Height - _nodes[child1].Height);
+                    int balance =  Math.Abs(_nodes[child2].Height - _nodes[child1].Height);
                     maxBalance = Math.Max(maxBalance, balance);
                 }
 
@@ -206,7 +207,7 @@ namespace tainicom.Aether.Physics2D.Collision
             int proxyId = AllocateNode();
 
             // Fatten the aabb.
-            Vector2 r = new Vector2(Settings.AABBExtension, Settings.AABBExtension);
+            AetherVector2 r = new AetherVector2(Settings.AABBExtension, Settings.AABBExtension);
             _nodes[proxyId].AABB.LowerBound = aabb.LowerBound - r;
             _nodes[proxyId].AABB.UpperBound = aabb.UpperBound + r;
             _nodes[proxyId].Height = 0;
@@ -238,7 +239,7 @@ namespace tainicom.Aether.Physics2D.Collision
         /// <param name="aabb">The aabb.</param>
         /// <param name="displacement">The displacement.</param>
         /// <returns>true if the proxy was re-inserted.</returns>
-        public bool MoveProxy(int proxyId, ref AABB aabb, Vector2 displacement)
+        public bool MoveProxy(int proxyId, ref AABB aabb, AetherVector2 displacement)
         {
             Debug.Assert(0 <= proxyId && proxyId < _nodeCapacity);
 
@@ -253,14 +254,14 @@ namespace tainicom.Aether.Physics2D.Collision
 
             // Extend AABB.
             AABB b = aabb;
-            Vector2 r = new Vector2(Settings.AABBExtension, Settings.AABBExtension);
+            AetherVector2 r = new AetherVector2(Settings.AABBExtension, Settings.AABBExtension);
             b.LowerBound = b.LowerBound - r;
             b.UpperBound = b.UpperBound + r;
 
             // Predict AABB displacement.
-            Vector2 d = Settings.AABBMultiplier * displacement;
+            AetherVector2 d = Settings.AABBMultiplier * displacement;
 
-            if (d.X < 0.0f)
+            if (d.X < Fix64.Zero)
             {
                 b.LowerBound.X += d.X;
             }
@@ -269,7 +270,7 @@ namespace tainicom.Aether.Physics2D.Collision
                 b.UpperBound.X += d.X;
             }
 
-            if (d.Y < 0.0f)
+            if (d.Y < Fix64.Zero)
             {
                 b.LowerBound.Y += d.Y;
             }
@@ -392,26 +393,26 @@ namespace tainicom.Aether.Physics2D.Collision
         /// <param name="input">The ray-cast input data. The ray extends from p1 to p1 + maxFraction * (p2 - p1).</param>
         public void RayCast(BroadPhaseRayCastCallback callback, ref RayCastInput input)
         {
-            Vector2 p1 = input.Point1;
-            Vector2 p2 = input.Point2;
-            Vector2 r = p2 - p1;
-            Debug.Assert(r.LengthSquared() > 0.0f);
+            AetherVector2 p1 = input.Point1;
+            AetherVector2 p2 = input.Point2;
+            AetherVector2 r = p2 - p1;
+            Debug.Assert(r.LengthSquared() > Fix64.Zero);
             r.Normalize();
 
             // v is perpendicular to the segment.
-            Vector2 absV = MathUtils.Abs(new Vector2(-r.Y, r.X)); //FPE: Inlined the 'v' variable
+            AetherVector2 absV = MathUtils.Abs(new AetherVector2(-r.Y, r.X)); //FPE: Inlined the 'v' variable
 
             // Separating axis for segment (Gino, p80).
             // |dot(v, p1 - c)| > dot(|v|, h)
 
-            float maxFraction = input.MaxFraction;
+            Fix64 maxFraction = input.MaxFraction;
 
             // Build a bounding box for the segment.
             AABB segmentAABB = new AABB();
             {
-                Vector2 t = p1 + maxFraction * (p2 - p1);
-                Vector2.Min(ref p1, ref t, out segmentAABB.LowerBound);
-                Vector2.Max(ref p1, ref t, out segmentAABB.UpperBound);
+                AetherVector2 t = p1 + maxFraction * (p2 - p1);
+                AetherVector2.Min(ref p1, ref t, out segmentAABB.LowerBound);
+                AetherVector2.Max(ref p1, ref t, out segmentAABB.UpperBound);
             }
 
             _raycastStack.Clear();
@@ -434,10 +435,10 @@ namespace tainicom.Aether.Physics2D.Collision
 
                 // Separating axis for segment (Gino, p80).
                 // |dot(v, p1 - c)| > dot(|v|, h)
-                Vector2 c = _nodes[nodeId].AABB.Center;
-                Vector2 h = _nodes[nodeId].AABB.Extents;
-                float separation = Math.Abs(Vector2.Dot(new Vector2(-r.Y, r.X), p1 - c)) - Vector2.Dot(absV, h);
-                if (separation > 0.0f)
+                AetherVector2 c = _nodes[nodeId].AABB.Center;
+                AetherVector2 h = _nodes[nodeId].AABB.Extents;
+                Fix64 separation =  Fix64.Abs(AetherVector2.Dot(new AetherVector2(-r.Y, r.X), p1 - c)) - AetherVector2.Dot(absV, h);
+                if (separation > Fix64.Zero)
                 {
                     continue;
                 }
@@ -449,21 +450,21 @@ namespace tainicom.Aether.Physics2D.Collision
                     subInput.Point2 = input.Point2;
                     subInput.MaxFraction = maxFraction;
 
-                    float value = callback(ref subInput, nodeId);
+                    Fix64 value = callback(ref subInput, nodeId);
 
-                    if (value == 0.0f)
+                    if (value == Fix64.Zero)
                     {
                         // the client has terminated the raycast.
                         return;
                     }
 
-                    if (value > 0.0f)
+                    if (value > Fix64.Zero)
                     {
                         // Update segment bounding box.
                         maxFraction = value;
-                        Vector2 t = p1 + maxFraction * (p2 - p1);
-                        Vector2.Min(ref p1, ref t, out segmentAABB.LowerBound);
-                        Vector2.Max(ref p1, ref t, out segmentAABB.UpperBound);
+                        AetherVector2 t = p1 + maxFraction * (p2 - p1);
+                        AetherVector2.Min(ref p1, ref t, out segmentAABB.LowerBound);
+                        AetherVector2.Max(ref p1, ref t, out segmentAABB.UpperBound);
                     }
                 }
                 else
@@ -539,20 +540,20 @@ namespace tainicom.Aether.Physics2D.Collision
                 int child1 = _nodes[index].Child1;
                 int child2 = _nodes[index].Child2;
 
-                float area = _nodes[index].AABB.Perimeter;
+                Fix64 area = _nodes[index].AABB.Perimeter;
 
                 AABB combinedAABB = new AABB();
                 combinedAABB.Combine(ref _nodes[index].AABB, ref leafAABB);
-                float combinedArea = combinedAABB.Perimeter;
+                Fix64 combinedArea = combinedAABB.Perimeter;
 
                 // Cost of creating a new parent for this node and the new leaf
-                float cost = 2.0f * combinedArea;
+                Fix64 cost = Fix64Constants.Two * combinedArea;
 
                 // Minimum cost of pushing the leaf further down the tree
-                float inheritanceCost = 2.0f * (combinedArea - area);
+                Fix64 inheritanceCost = Fix64Constants.Two * (combinedArea - area);
 
                 // Cost of descending into child1
-                float cost1;
+                Fix64 cost1;
                 if (_nodes[child1].IsLeaf())
                 {
                     AABB aabb = new AABB();
@@ -563,13 +564,13 @@ namespace tainicom.Aether.Physics2D.Collision
                 {
                     AABB aabb = new AABB();
                     aabb.Combine(ref leafAABB, ref _nodes[child1].AABB);
-                    float oldArea = _nodes[child1].AABB.Perimeter;
-                    float newArea = aabb.Perimeter;
+                    Fix64 oldArea = _nodes[child1].AABB.Perimeter;
+                    Fix64 newArea = aabb.Perimeter;
                     cost1 = (newArea - oldArea) + inheritanceCost;
                 }
 
                 // Cost of descending into child2
-                float cost2;
+                Fix64 cost2;
                 if (_nodes[child2].IsLeaf())
                 {
                     AABB aabb = new AABB();
@@ -580,8 +581,8 @@ namespace tainicom.Aether.Physics2D.Collision
                 {
                     AABB aabb = new AABB();
                     aabb.Combine(ref leafAABB, ref _nodes[child2].AABB);
-                    float oldArea = _nodes[child2].AABB.Perimeter;
-                    float newArea = aabb.Perimeter;
+                    Fix64 oldArea = _nodes[child2].AABB.Perimeter;
+                    Fix64 newArea = aabb.Perimeter;
                     cost2 = newArea - oldArea + inheritanceCost;
                 }
 
@@ -1027,7 +1028,7 @@ namespace tainicom.Aether.Physics2D.Collision
 
             while (count > 1)
             {
-                float minCost = Settings.MaxFloat;
+                Fix64 minCost = Settings.MaxFloat;
                 int iMin = -1, jMin = -1;
                 for (int i = 0; i < count; ++i)
                 {
@@ -1038,7 +1039,7 @@ namespace tainicom.Aether.Physics2D.Collision
                         AABB AABBj = _nodes[nodes[j]].AABB;
                         AABB b = new AABB();
                         b.Combine(ref AABBi, ref AABBj);
-                        float cost = b.Perimeter;
+                        Fix64 cost = b.Perimeter;
                         if (cost < minCost)
                         {
                             iMin = i;
@@ -1078,7 +1079,7 @@ namespace tainicom.Aether.Physics2D.Collision
         /// Shift the origin of the nodes
         /// </summary>
         /// <param name="newOrigin">The displacement to use.</param>
-        public void ShiftOrigin(Vector2 newOrigin)
+        public void ShiftOrigin(AetherVector2 newOrigin)
         {
             // Build array of leaves. Free the rest.
             for (int i = 0; i < _nodeCapacity; ++i)

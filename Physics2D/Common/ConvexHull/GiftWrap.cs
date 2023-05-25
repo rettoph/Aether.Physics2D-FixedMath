@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using tainicom.Aether.Physics2D.Common;
 #if XNAAPI
 using Vector2 = Microsoft.Xna.Framework.Vector2;
@@ -31,10 +32,10 @@ namespace tainicom.Aether.Physics2D.Common.ConvexHull
 
             // Find the right most point on the hull
             int i0 = 0;
-            float x0 = vertices[0].X;
+            Fix64 x0 = vertices[0].X;
             for (int i = 1; i < vertices.Count; ++i)
             {
-                float x = vertices[i].X;
+                Fix64 x = vertices[i].X;
                 if (x > x0 || (x == x0 && vertices[i].Y < vertices[i0].Y))
                 {
                     i0 = i;
@@ -59,16 +60,16 @@ namespace tainicom.Aether.Physics2D.Common.ConvexHull
                         continue;
                     }
 
-                    Vector2 r = vertices[ie] - vertices[hull[m]];
-                    Vector2 v = vertices[j] - vertices[hull[m]];
-                    float c = MathUtils.Cross(ref r, ref v);
-                    if (c < 0.0f)
+                    AetherVector2 r = vertices[ie] - vertices[hull[m]];
+                    AetherVector2 v = vertices[j] - vertices[hull[m]];
+                    Fix64 c = MathUtils.Cross(ref r, ref v);
+                    if (c < Fix64.Zero)
                     {
                         ie = j;
                     }
 
                     // Collinearity check
-                    if (c == 0.0f && v.LengthSquared() > r.LengthSquared())
+                    if (c == Fix64.Zero && v.LengthSquared() > r.LengthSquared())
                     {
                         ie = j;
                     }

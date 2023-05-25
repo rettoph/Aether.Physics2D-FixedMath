@@ -25,6 +25,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using System.Diagnostics;
 using tainicom.Aether.Physics2D.Common;
 #if XNAAPI
@@ -53,24 +54,24 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
     /// </summary>
     public class FixedMouseJoint : Joint
     {
-        private Vector2 _worldAnchor;
-        private float _frequency;
-        private float _dampingRatio;
-        private float _beta;
+        private AetherVector2 _worldAnchor;
+        private Fix64 _frequency;
+        private Fix64 _dampingRatio;
+        private Fix64 _beta;
 
         // Solver shared
-        private Vector2 _impulse;
-        private float _maxForce;
-        private float _gamma;
+        private AetherVector2 _impulse;
+        private Fix64 _maxForce;
+        private Fix64 _gamma;
 
         // Solver temp
         private int _indexA;
-        private Vector2 _rA;
-        private Vector2 _localCenterA;
-        private float _invMassA;
-        private float _invIA;
+        private AetherVector2 _rA;
+        private AetherVector2 _localCenterA;
+        private Fix64 _invMassA;
+        private Fix64 _invIA;
         private Mat22 _mass;
-        private Vector2 _C;
+        private AetherVector2 _C;
 
         /// <summary>
         /// This requires a world target point,
@@ -78,15 +79,13 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// </summary>
         /// <param name="body">The body.</param>
         /// <param name="worldAnchor">The target.</param>
-        public FixedMouseJoint(Body body, Vector2 worldAnchor)
+        public FixedMouseJoint(Body body, AetherVector2 worldAnchor)
             : base(body)
         {
             JointType = JointType.FixedMouse;
-            Frequency = 5.0f;
-            DampingRatio = 0.7f;
-            MaxForce = 1000 * body.Mass;
-
-            Debug.Assert(worldAnchor.IsValid());
+            Frequency = Fix64Constants.Five;
+            DampingRatio = Fix64Constants.Seven;
+            MaxForce = Fix64Constants.OneThousand * body.Mass;
 
             _worldAnchor = worldAnchor;
             LocalAnchorA = Transform.Divide(ref worldAnchor, ref BodyA._xf);
@@ -95,15 +94,15 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <summary>
         /// The local anchor point on BodyA
         /// </summary>
-        public Vector2 LocalAnchorA { get; set; }
+        public AetherVector2 LocalAnchorA { get; set; }
 
-        public override Vector2 WorldAnchorA
+        public override AetherVector2 WorldAnchorA
         {
             get { return BodyA.GetWorldPoint(LocalAnchorA); }
             set { LocalAnchorA = BodyA.GetLocalPoint(value); }
         }
 
-        public override Vector2 WorldAnchorB
+        public override AetherVector2 WorldAnchorB
         {
             get { return _worldAnchor; }
             set
@@ -118,12 +117,12 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// to move the candidate body. Usually you will express
         /// as some multiple of the weight (multiplier * mass * gravity).
         /// </summary>
-        public float MaxForce
+        public Fix64 MaxForce
         {
             get { return _maxForce; }
             set
             {
-                Debug.Assert(MathUtils.IsValid(value) && value >= 0.0f);
+                Debug.Assert(value >= Fix64.Zero);
                 _maxForce = value;
             }
         }
@@ -131,12 +130,12 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <summary>
         /// The response speed.
         /// </summary>
-        public float Frequency
+        public Fix64 Frequency
         {
             get { return _frequency; }
             set
             {
-                Debug.Assert(MathUtils.IsValid(value) && value >= 0.0f);
+                Debug.Assert(value >= Fix64.Zero);
                 _frequency = value;
             }
         }
@@ -144,24 +143,24 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <summary>
         /// The damping ratio. 0 = no damping, 1 = critical damping.
         /// </summary>
-        public float DampingRatio
+        public Fix64 DampingRatio
         {
             get { return _dampingRatio; }
             set
             {
-                Debug.Assert(MathUtils.IsValid(value) && value >= 0.0f);
+                Debug.Assert(value >= Fix64.Zero);
                 _dampingRatio = value;
             }
         }
 
-        public override Vector2 GetReactionForce(float invDt)
+        public override AetherVector2 GetReactionForce(Fix64 invDt)
         {
             return invDt * _impulse;
         }
 
-        public override float GetReactionTorque(float invDt)
+        public override Fix64 GetReactionTorque(Fix64 invDt)
         {
-            return invDt * 0.0f;
+            return invDt * Fix64.Zero;
         }
 
         internal override void InitVelocityConstraints(ref SolverData data)
@@ -171,33 +170,33 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             _invMassA = BodyA._invMass;
             _invIA = BodyA._invI;
 
-            Vector2 cA = data.positions[_indexA].c;
-            float aA = data.positions[_indexA].a;
-            Vector2 vA = data.velocities[_indexA].v;
-            float wA = data.velocities[_indexA].w;
+            AetherVector2 cA = data.positions[_indexA].c;
+            Fix64 aA = data.positions[_indexA].a;
+            AetherVector2 vA = data.velocities[_indexA].v;
+            Fix64 wA = data.velocities[_indexA].w;
 
             Complex qA = Complex.FromAngle(aA);
 
-            float mass = BodyA.Mass;
+            Fix64 mass = BodyA.Mass;
 
             // Frequency
-            float omega = Constant.Tau * Frequency;
+            Fix64 omega = Constant.Tau * Frequency;
 
             // Damping coefficient
-            float d = 2.0f * mass * DampingRatio * omega;
+            Fix64 d = Fix64Constants.Two * mass * DampingRatio * omega;
 
             // Spring stiffness
-            float k = mass * (omega * omega);
+            Fix64 k = mass * (omega * omega);
 
             // magic formulas
             // gamma has units of inverse mass.
             // beta has units of inverse time.
-            float h = data.step.dt;
+            Fix64 h = data.step.dt;
             Debug.Assert(d + h * k > Settings.Epsilon);
             _gamma = h * (d + h * k);
-            if (_gamma != 0.0f)
+            if (_gamma != Fix64.Zero)
             {
-                _gamma = 1.0f / _gamma;
+                _gamma = Fix64.One / _gamma;
             }
 
             _beta = h * k * _gamma;
@@ -219,7 +218,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             _C *= _beta;
 
             // Cheat with some damping
-            wA *= 0.98f;
+            wA *= Fix64Constants.PointNineEight;
 
             if (data.step.warmStarting)
             {
@@ -229,7 +228,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             }
             else
             {
-                _impulse = Vector2.Zero;
+                _impulse = AetherVector2.Zero;
             }
 
             data.velocities[_indexA].v = vA;
@@ -238,16 +237,16 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
 
         internal override void SolveVelocityConstraints(ref SolverData data)
         {
-            Vector2 vA = data.velocities[_indexA].v;
-            float wA = data.velocities[_indexA].w;
+            AetherVector2 vA = data.velocities[_indexA].v;
+            Fix64 wA = data.velocities[_indexA].w;
 
             // Cdot = v + cross(w, r)
-            Vector2 Cdot = vA + MathUtils.Cross(wA, ref _rA);
-            Vector2 impulse = MathUtils.Mul(ref _mass, -(Cdot + _C + _gamma * _impulse));
+            AetherVector2 Cdot = vA + MathUtils.Cross(wA, ref _rA);
+            AetherVector2 impulse = MathUtils.Mul(ref _mass, -(Cdot + _C + _gamma * _impulse));
 
-            Vector2 oldImpulse = _impulse;
+            AetherVector2 oldImpulse = _impulse;
             _impulse += impulse;
-            float maxImpulse = data.step.dt * MaxForce;
+            Fix64 maxImpulse = data.step.dt * MaxForce;
             if (_impulse.LengthSquared() > maxImpulse * maxImpulse)
             {
                 _impulse *= maxImpulse / _impulse.Length();

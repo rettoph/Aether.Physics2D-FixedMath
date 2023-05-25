@@ -22,6 +22,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using tainicom.Aether.Physics2D.Common;
 #if XNAAPI
 using Vector2 = Microsoft.Xna.Framework.Vector2;
@@ -37,17 +38,17 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// <summary>
         /// Time step (Delta time)
         /// </summary>
-        public float dt;
+        public Fix64 dt;
 
         /// <summary>
         /// dt * inv_dt0
         /// </summary>
-        public float dtRatio;
+        public Fix64 dtRatio;
 
         /// <summary>
-        /// Inverse time step (0 if dt == 0).
+        /// Inverse time step (0 if dt == Fix64.Zero).
         /// </summary>
-        public float inv_dt;
+        public Fix64 inv_dt;
 
         public int positionIterations;
         public int velocityIterations;
@@ -58,15 +59,15 @@ namespace tainicom.Aether.Physics2D.Dynamics
     /// This is an internal structure.
     internal struct SolverPosition
     {
-        public Vector2 c;
-        public float a;
+        public AetherVector2 c;
+        public Fix64 a;
     }
 
     /// This is an internal structure.
     internal struct SolverVelocity
     {
-        public Vector2 v;
-        public float w;
+        public AetherVector2 v;
+        public Fix64 w;
     }
 
     /// Solver Data

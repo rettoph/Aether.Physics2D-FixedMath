@@ -34,6 +34,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using FixedMath.NET;
 using System;
 using tainicom.Aether.Physics2D.Common.Decomposition.CDT.Polygon;
 
@@ -43,13 +44,13 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT.Util
     {
         private static readonly Random RNG = new Random();
 
-        private static double PI_2 = 2.0*Math.PI;
+        private static Fix64 PI_2 = Fix64Constants.Two * Fix64.Pi;
 
-        public static Polygon.Polygon RandomCircleSweep(double scale, int vertexCount)
+        public static Polygon.Polygon RandomCircleSweep(Fix64 scale, int vertexCount)
         {
             PolygonPoint point;
             PolygonPoint[] points;
-            double radius = scale/4;
+            Fix64 radius = scale/Fix64Constants.Four;
 
             points = new PolygonPoint[vertexCount];
             for (int i = 0; i < vertexCount; i++)
@@ -58,43 +59,43 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT.Util
                 {
                     if (i%250 == 0)
                     {
-                        radius += scale/2*(0.5 - RNG.NextDouble());
+                        radius += scale/Fix64Constants.Two * (Fix64Constants.PointFive - Fix64.FromRaw(BitConverter.DoubleToInt64Bits(RNG.NextDouble())));
                     }
                     else if (i%50 == 0)
                     {
-                        radius += scale/5*(0.5 - RNG.NextDouble());
+                        radius += scale/Fix64Constants.Five*(Fix64Constants.PointFive - Fix64.FromRaw(BitConverter.DoubleToInt64Bits(RNG.NextDouble())));
                     }
                     else
                     {
-                        radius += 25*scale/vertexCount*(0.5 - RNG.NextDouble());
+                        radius += Fix64Constants.TwentyFive*scale/(Fix64)vertexCount*(Fix64Constants.PointFive - Fix64.FromRaw(BitConverter.DoubleToInt64Bits(RNG.NextDouble())));
                     }
-                    radius = radius > scale/2 ? scale/2 : radius;
-                    radius = radius < scale/10 ? scale/10 : radius;
-                } while (radius < scale/10 || radius > scale/2);
-                point = new PolygonPoint(radius*Math.Cos((PI_2*i)/vertexCount),
-                                         radius*Math.Sin((PI_2*i)/vertexCount));
+                    radius = radius > scale/Fix64Constants.Two ? scale/Fix64Constants.Two : radius;
+                    radius = radius < scale/Fix64Constants.Ten ? scale/Fix64Constants.Ten : radius;
+                } while (radius < scale/Fix64Constants.Ten || radius > scale/Fix64Constants.Two);
+                point = new PolygonPoint(radius* Fix64.Cos((PI_2*(Fix64)i)/(Fix64)vertexCount),
+                                         radius* Fix64.Sin((PI_2*(Fix64)i)/(Fix64)vertexCount));
                 points[i] = point;
             }
             return new Polygon.Polygon(points);
         }
 
-        public static Polygon.Polygon RandomCircleSweep2(double scale, int vertexCount)
+        public static Polygon.Polygon RandomCircleSweep2(Fix64 scale, int vertexCount)
         {
             PolygonPoint point;
             PolygonPoint[] points;
-            double radius = scale/4;
+            Fix64 radius = scale/Fix64Constants.Four;
 
             points = new PolygonPoint[vertexCount];
             for (int i = 0; i < vertexCount; i++)
             {
                 do
                 {
-                    radius += scale/5*(0.5 - RNG.NextDouble());
-                    radius = radius > scale/2 ? scale/2 : radius;
-                    radius = radius < scale/10 ? scale/10 : radius;
-                } while (radius < scale/10 || radius > scale/2);
-                point = new PolygonPoint(radius*Math.Cos((PI_2*i)/vertexCount),
-                                         radius*Math.Sin((PI_2*i)/vertexCount));
+                    radius += scale/Fix64Constants.Five*(Fix64Constants.PointFive - Fix64.FromRaw(BitConverter.DoubleToInt64Bits(RNG.NextDouble())));
+                    radius = radius > scale/Fix64Constants.Two ? scale/Fix64Constants.Two : radius;
+                    radius = radius < scale/Fix64Constants.Ten ? scale/Fix64Constants.Ten : radius;
+                } while (radius < scale/Fix64Constants.Ten || radius > scale/Fix64Constants.Two);
+                point = new PolygonPoint(radius* Fix64.Cos((PI_2*(Fix64)i)/(Fix64)vertexCount),
+                                         radius* Fix64.Sin((PI_2*(Fix64)i)/(Fix64)vertexCount));
                 points[i] = point;
             }
             return new Polygon.Polygon(points);

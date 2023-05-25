@@ -35,6 +35,7 @@
 // USE_ISLAND_SET
 // OPTIMIZE_TOI
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -63,16 +64,16 @@ namespace tainicom.Aether.Physics2D.Dynamics
         private const bool _subStepping = false;
         #endregion
 
-        Vector2 _gravity;
+        AetherVector2 _gravity;
 
         private bool _stepComplete = true;
 
-        private float _invDt0;
+        private Fix64 _invDt0;
         private Body[] _stack = new Body[64];
         private QueryReportFixtureDelegate _queryDelegateTmp;
         private BroadPhaseQueryCallback _queryCallbackCache;
         private TOIInput _input = new TOIInput();
-        private Vector2 _testPointPointTmp;
+        private AetherVector2 _testPointPointTmp;
         private Fixture _testPointFixtureTmp;
         private QueryReportFixtureDelegate _testPointDelegateCache;
         private Stopwatch _watch = new Stopwatch();
@@ -164,14 +165,14 @@ namespace tainicom.Aether.Physics2D.Dynamics
 
 
             ContactManager = new ContactManager(new DynamicTreeBroadPhase());
-            Gravity = new Vector2(0f, -9.80665f);
+            Gravity = new AetherVector2(Fix64.Zero, Fix64Constants.gravity);
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="World"/> class.
         /// </summary>
         /// <param name="gravity">The gravity.</param>
-        public World(Vector2 gravity) : this()
+        public World(AetherVector2 gravity) : this()
         {
             Gravity = gravity;
         }
@@ -194,7 +195,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
 
             // Clear all the island flags.
 #if USE_ISLAND_SET
-            Debug.Assert(IslandSet.Count == 0);
+            Debug.Assert(IslandSet.Count == Fix64.Zero);
 #else
             foreach (Body b in BodyList)
             {
@@ -230,7 +231,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
             // to update the diagnostics timer so reset the timer here. 
             Island.JointUpdateTime = 0;
       
-            Debug.Assert(AwakeBodyList.Count == 0);
+            Debug.Assert(AwakeBodyList.Count == Fix64.Zero);
             AwakeBodyList.AddRange(AwakeBodySet);
 
             foreach (var seed in AwakeBodyList)
@@ -453,13 +454,13 @@ namespace tainicom.Aether.Physics2D.Dynamics
                 foreach (var b in TOISet)
                 {
                     b.Flags &= ~BodyFlags.Island;
-                    b.Sweep.Alpha0 = 0.0f;
+                    b.Sweep.Alpha0 = Fix64.Zero;
                 }
 #else
                 for (int i = 0; i < BodyList._list.Count; i++)
                 {
                     BodyList._list[i]._island = false;
-                    BodyList._list[i]._sweep.Alpha0 = 0.0f;
+                    BodyList._list[i]._sweep.Alpha0 = Fix64.Zero;
                 }
 #endif
 #if USE_ACTIVE_CONTACT_SET
@@ -473,7 +474,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
                     c.IslandFlag = false;
                     c.TOIFlag = false;
                     c._toiCount = 0;
-                    c._toi = 1.0f;
+                    c._toi = Fix64.One;
                 }
             }
 
@@ -482,7 +483,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
             {
                 // Find the first TOI.
                 Contact minContact = null;
-                float minAlpha = 1.0f;
+                Fix64 minAlpha = Fix64.One;
 
 #if USE_ACTIVE_CONTACT_SET
                 foreach (var c in ContactManager.ActiveContacts)
@@ -504,7 +505,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
                         continue;
                     }
 
-                    float alpha;
+                    Fix64 alpha;
                     if (c.TOIFlag)
                     {
                         // This contact has a valid cached TOI.
@@ -553,19 +554,19 @@ namespace tainicom.Aether.Physics2D.Dynamics
                             {
                                 TOISet.Add(bA);
                                 bA.Flags &= ~BodyFlags.Island;
-                                bA.Sweep.Alpha0 = 0.0f;
+                                bA.Sweep.Alpha0 = Fix64.Zero;
                             }
                             if (!TOISet.Contains(bB))
                             {
                                 TOISet.Add(bB);
                                 bB.Flags &= ~BodyFlags.Island;
-                                bB.Sweep.Alpha0 = 0.0f;
+                                bB.Sweep.Alpha0 = Fix64.Zero;
                             }
                         }
 #endif
                         // Compute the TOI for this contact.
                         // Put the sweeps onto the same time interval.
-                        float alpha0 = bA._sweep.Alpha0;
+                        Fix64 alpha0 = bA._sweep.Alpha0;
 
                         if (bA._sweep.Alpha0 < bB._sweep.Alpha0)
                         {
@@ -578,27 +579,27 @@ namespace tainicom.Aether.Physics2D.Dynamics
                             bB._sweep.Advance(alpha0);
                         }
 
-                        Debug.Assert(alpha0 < 1.0f);
+                        Debug.Assert(alpha0 < Fix64.One);
 
                         // Compute the time of impact in interval [0, minTOI]
                         _input.ProxyA = new DistanceProxy(fA.Shape, c.ChildIndexA);
                         _input.ProxyB = new DistanceProxy(fB.Shape, c.ChildIndexB);
                         _input.SweepA = bA._sweep;
                         _input.SweepB = bB._sweep;
-                        _input.TMax = 1.0f;
+                        _input.TMax = Fix64.One;
 
                         TOIOutput output;
                         TimeOfImpact.CalculateTimeOfImpact(out output, ref _input);
 
                         // Beta is the fraction of the remaining portion of the .
-                        float beta = output.T;
+                        Fix64 beta = output.T;
                         if (output.State == TOIOutputState.Touching)
                         {
-                            alpha = Math.Min(alpha0 + (1.0f - alpha0) * beta, 1.0f);
+                            alpha = MathUtils.Min(alpha0 + (Fix64.One - alpha0) * beta, Fix64.One);
                         }
                         else
                         {
-                            alpha = 1.0f;
+                            alpha = Fix64.One;
                         }
 
                         c._toi = alpha;
@@ -613,7 +614,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
                     }
                 }
 
-                if (minContact == null || 1.0f - 10.0f * Settings.Epsilon < minAlpha)
+                if (minContact == null || Fix64.One - Fix64Constants.Ten * Settings.Epsilon < minAlpha)
                 {
                     // No more TOI events. Done!
                     _stepComplete = true;
@@ -752,7 +753,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
                                 if (!TOISet.Contains(other))
                                 {
                                     TOISet.Add(other);
-                                    other.Sweep.Alpha0 = 0.0f;
+                                    other.Sweep.Alpha0 = Fix64.Zero;
                                 }
                             }
 #endif
@@ -764,9 +765,9 @@ namespace tainicom.Aether.Physics2D.Dynamics
                 TimeStep subStep;
                 subStep.positionIterations = iterations.TOIPositionIterations;
                 subStep.velocityIterations = iterations.TOIVelocityIterations;
-                subStep.dt = (1.0f - minAlpha) * step.dt;
-                subStep.inv_dt = 1.0f / subStep.dt;
-                subStep.dtRatio = 1.0f;
+                subStep.dt = (Fix64.One - minAlpha) * step.dt;
+                subStep.inv_dt = Fix64.One / subStep.dt;
+                subStep.dtRatio = Fix64.One;
                 subStep.warmStarting = false;
                 Island.SolveTOI(ref subStep, bA0.IslandIndex, bB0.IslandIndex);
 
@@ -840,7 +841,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// Change the global gravity vector.
         /// </summary>
         /// <value>The gravity.</value>
-        public Vector2 Gravity
+        public AetherVector2 Gravity
         {
             get { return _gravity; }
             set 
@@ -1302,7 +1303,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         public void ProcessChanges()
         {
             // ProcessAddedBodies
-            if (_bodyAddList.Count > 0)
+            if (_bodyAddList.Count > Fix64.Zero)
             {
                 foreach (Body body in _bodyAddList)
                     Add(body);
@@ -1310,7 +1311,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
             }
             
             // ProcessAddedJoints
-            if (_jointAddList.Count > 0)
+            if (_jointAddList.Count > Fix64.Zero)
             {
                 foreach (Joint joint in _jointAddList)
                     Add(joint);
@@ -1318,7 +1319,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
             }
 
             // ProcessRemovedBodies
-            if (_bodyRemoveList.Count > 0)
+            if (_bodyRemoveList.Count > Fix64.Zero)
             {
                 foreach (Body body in _bodyRemoveList)
                     Remove(body);
@@ -1326,7 +1327,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
             }
 
             // ProcessRemovedJoints
-            if (_jointRemoveList.Count > 0)
+            if (_jointRemoveList.Count > Fix64.Zero)
             {
                 foreach (Joint joint in _jointRemoveList)
                     Remove(joint);
@@ -1349,7 +1350,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// <param name="dt">The amount of time to simulate, this should not vary.</param>
         public void Step(TimeSpan dt)
         {
-            Step((float)dt.TotalSeconds);
+            Step((Fix64)dt.TotalSeconds);
         }
 
         /// <summary>
@@ -1359,7 +1360,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// <param name="dt">The amount of time to simulate, this should not vary.</param>
         public void Step(TimeSpan dt, ref SolverIterations iterations)
         {
-            Step((float)dt.TotalSeconds, ref iterations);
+            Step((Fix64)dt.TotalSeconds, ref iterations);
         }
 
         /// <summary>
@@ -1369,7 +1370,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <param name="dt">The amount of time to simulate in seconds, this should not vary.</param>
         /// <exception cref="System.InvalidOperationException">Thrown when the world is Locked/Stepping.</exception>
-        public void Step(float dt)
+        public void Step(Fix64 dt)
         {
             SolverIterations iterations = new SolverIterations();
             iterations.PositionIterations = Settings.PositionIterations;
@@ -1386,7 +1387,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <param name="dt">The amount of time to simulate in seconds, this should not vary.</param>
         /// <exception cref="System.InvalidOperationException">Thrown when the world is Locked/Stepping.</exception>
-        public void Step(float dt, ref SolverIterations iterations)
+        public void Step(Fix64 dt, ref SolverIterations iterations)
         {
             if (IsLocked)
                 throw new InvalidOperationException("The World is locked.");
@@ -1417,7 +1418,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
             step.positionIterations = iterations.PositionIterations;
             step.velocityIterations = iterations.VelocityIterations;
             step.dt = dt;
-            step.inv_dt = (dt > 0.0f) ? (1.0f / dt) : 0.0f;
+            step.inv_dt = (dt > Fix64.Zero) ? (Fix64.One / dt) : Fix64.Zero;
             step.dtRatio = _invDt0 * dt;
             step.warmStarting = _warmStarting;
 
@@ -1438,7 +1439,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
                     ContactsUpdateTime = TimeSpan.FromTicks(_watch.ElapsedTicks) - (AddRemoveTime + NewContactsTime + ControllersUpdateTime);
 
                 // Integrate velocities, solve velocity constraints, and integrate positions.
-                if (_stepComplete && step.dt > 0.0f)
+                if (_stepComplete && step.dt > Fix64.Zero)
                 {
                     Solve(ref step);
                 }
@@ -1446,7 +1447,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
                     SolveUpdateTime = TimeSpan.FromTicks(_watch.ElapsedTicks) - (AddRemoveTime + NewContactsTime + ControllersUpdateTime + ContactsUpdateTime);
 
                 // Handle TOI events.
-                if (Settings.ContinuousPhysics && step.dt > 0.0f)
+                if (Settings.ContinuousPhysics && step.dt > Fix64.Zero)
                 {
                     SolveTOI(ref step, ref iterations);
                 }
@@ -1461,7 +1462,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
                 IsLocked = false;
             }
 
-            if (step.dt > 0.0f)
+            if (step.dt > Fix64.Zero)
                 _invDt0 = step.inv_dt;
 
             if (Settings.EnableDiagnostics)
@@ -1482,8 +1483,8 @@ namespace tainicom.Aether.Physics2D.Dynamics
             for (int i = 0; i < BodyList._list.Count; i++)
             {
                 Body body = BodyList._list[i];
-                body._force = Vector2.Zero;
-                body._torque = 0.0f;
+                body._force = AetherVector2.Zero;
+                body._torque = Fix64.Zero;
             }
         }
 
@@ -1537,10 +1538,10 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// <param name="callback">A user implemented callback class.</param>
         /// <param name="point1">The ray starting point.</param>
         /// <param name="point2">The ray ending point.</param>
-        public void RayCast(RayCastReportFixtureDelegate callback, Vector2 point1, Vector2 point2)
+        public void RayCast(RayCastReportFixtureDelegate callback, AetherVector2 point1, AetherVector2 point2)
         {
             RayCastInput input = new RayCastInput();
-            input.MaxFraction = 1.0f;
+            input.MaxFraction = Fix64.One;
             input.Point1 = point1;
             input.Point2 = point2;
 
@@ -1549,7 +1550,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
             _rayCastDelegateTmp = null;
         }
 
-        private float RayCastCallback(ref RayCastInput rayCastInput, int proxyId)
+        private Fix64 RayCastCallback(ref RayCastInput rayCastInput, int proxyId)
         {
             FixtureProxy proxy = ContactManager.BroadPhase.GetProxy(proxyId);
             Fixture fixture = proxy.Fixture;
@@ -1559,8 +1560,8 @@ namespace tainicom.Aether.Physics2D.Dynamics
 
             if (hit)
             {
-                float fraction = output.Fraction;
-                Vector2 point = (1.0f - fraction) * rayCastInput.Point1 + fraction * rayCastInput.Point2;
+                Fix64 fraction = output.Fraction;
+                AetherVector2 point = (Fix64.One - fraction) * rayCastInput.Point1 + fraction * rayCastInput.Point2;
                 return _rayCastDelegateTmp(fixture, point, output.Normal, fraction);
             }
 
@@ -1613,10 +1614,10 @@ namespace tainicom.Aether.Physics2D.Dynamics
                 controllerRemovedHandler(this, controller);
         }
 
-        public Fixture TestPoint(Vector2 point)
+        public Fixture TestPoint(AetherVector2 point)
         {
             AABB aabb;
-            Vector2 d = new Vector2(Settings.Epsilon, Settings.Epsilon);
+            AetherVector2 d = new AetherVector2(Settings.Epsilon, Settings.Epsilon);
             aabb.LowerBound = point - d;
             aabb.UpperBound = point + d;
 
@@ -1646,7 +1647,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// The body shift formula is: position -= newOrigin
         /// @param newOrigin the new origin with respect to the old origin
         /// Warning: Calling this method mid-update might cause a crash.
-        public void ShiftOrigin(Vector2 newOrigin)
+        public void ShiftOrigin(AetherVector2 newOrigin)
         {
             foreach (Body b in BodyList)
             {

@@ -34,6 +34,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using FixedMath.NET;
+
 namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT
 {
     /**
@@ -42,7 +44,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT
 
     internal class TriangulationUtil
     {
-        public static double EPSILON = 1e-12;
+        public static Fix64 EPSILON = Fix64Constants.Epsilon;
 
         /// <summary>
         ///   Requirements:
@@ -71,38 +73,38 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT
         public static bool SmartIncircle(TriangulationPoint pa, TriangulationPoint pb, TriangulationPoint pc,
                                          TriangulationPoint pd)
         {
-            double pdx = pd.X;
-            double pdy = pd.Y;
-            double adx = pa.X - pdx;
-            double ady = pa.Y - pdy;
-            double bdx = pb.X - pdx;
-            double bdy = pb.Y - pdy;
+            Fix64 pdx = pd.X;
+            Fix64 pdy = pd.Y;
+            Fix64 adx = pa.X - pdx;
+            Fix64 ady = pa.Y - pdy;
+            Fix64 bdx = pb.X - pdx;
+            Fix64 bdy = pb.Y - pdy;
 
-            double adxbdy = adx * bdy;
-            double bdxady = bdx * ady;
-            double oabd = adxbdy - bdxady;
+            Fix64 adxbdy = adx * bdy;
+            Fix64 bdxady = bdx * ady;
+            Fix64 oabd = adxbdy - bdxady;
             //        oabd = orient2d(pa,pb,pd);
-            if (oabd <= 0) return false;
+            if (oabd <= Fix64.Zero) return false;
 
-            double cdx = pc.X - pdx;
-            double cdy = pc.Y - pdy;
+            Fix64 cdx = pc.X - pdx;
+            Fix64 cdy = pc.Y - pdy;
 
-            double cdxady = cdx * ady;
-            double adxcdy = adx * cdy;
-            double ocad = cdxady - adxcdy;
+            Fix64 cdxady = cdx * ady;
+            Fix64 adxcdy = adx * cdy;
+            Fix64 ocad = cdxady - adxcdy;
             //      ocad = orient2d(pc,pa,pd);
-            if (ocad <= 0) return false;
+            if (ocad <= Fix64.Zero) return false;
 
-            double bdxcdy = bdx * cdy;
-            double cdxbdy = cdx * bdy;
+            Fix64 bdxcdy = bdx * cdy;
+            Fix64 cdxbdy = cdx * bdy;
 
-            double alift = adx * adx + ady * ady;
-            double blift = bdx * bdx + bdy * bdy;
-            double clift = cdx * cdx + cdy * cdy;
+            Fix64 alift = adx * adx + ady * ady;
+            Fix64 blift = bdx * bdx + bdy * bdy;
+            Fix64 clift = cdx * cdx + cdy * cdy;
 
-            double det = alift * (bdxcdy - cdxbdy) + blift * ocad + clift * oabd;
+            Fix64 det = alift * (bdxcdy - cdxbdy) + blift * ocad + clift * oabd;
 
-            return det > 0;
+            return det > Fix64.Zero;
         }
         /*
         public static bool InScanArea(TriangulationPoint pa, TriangulationPoint pb, TriangulationPoint pc,
@@ -119,7 +121,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT
             double bdxady = bdx*ady;
             double oabd = adxbdy - bdxady;
             //        oabd = orient2d(pa,pb,pd);
-            if (oabd <= 0)
+            if (oabd <= Fix64.Zero)
             {
                 return false;
             }
@@ -131,7 +133,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT
             double adxcdy = adx*cdy;
             double ocad = cdxady - adxcdy;
             //      ocad = orient2d(pc,pa,pd);
-            if (ocad <= 0)
+            if (ocad <= Fix64.Zero)
             {
                 return false;
             }
@@ -141,13 +143,13 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT
 
         public static bool InScanArea(TriangulationPoint pa, TriangulationPoint pb, TriangulationPoint pc, TriangulationPoint pd)
         {
-            double oadb = (pa.X - pb.X) * (pd.Y - pb.Y) - (pd.X - pb.X) * (pa.Y - pb.Y);
+            Fix64 oadb = (pa.X - pb.X) * (pd.Y - pb.Y) - (pd.X - pb.X) * (pa.Y - pb.Y);
             if (oadb >= -EPSILON)
             {
                 return false;
             }
 
-            double oadc = (pa.X - pc.X) * (pd.Y - pc.Y) - (pd.X - pc.X) * (pa.Y - pc.Y);
+            Fix64 oadc = (pa.X - pc.X) * (pd.Y - pc.Y) - (pd.X - pc.X) * (pa.Y - pc.Y);
             if (oadc <= EPSILON)
             {
                 return false;
@@ -163,14 +165,14 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT
         ///              =  (x1-x3)*(y2-y3) - (y1-y3)*(x2-x3)
         public static Orientation Orient2d(TriangulationPoint pa, TriangulationPoint pb, TriangulationPoint pc)
         {
-            double detleft = (pa.X - pc.X) * (pb.Y - pc.Y);
-            double detright = (pa.Y - pc.Y) * (pb.X - pc.X);
-            double val = detleft - detright;
+            Fix64 detleft = (pa.X - pc.X) * (pb.Y - pc.Y);
+            Fix64 detright = (pa.Y - pc.Y) * (pb.X - pc.X);
+            Fix64 val = detleft - detright;
             if (val > -EPSILON && val < EPSILON)
             {
                 return Orientation.Collinear;
             }
-            else if (val > 0)
+            else if (val > Fix64.Zero)
             {
                 return Orientation.CCW;
             }

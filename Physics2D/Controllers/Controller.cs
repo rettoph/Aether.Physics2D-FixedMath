@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System;
 using tainicom.Aether.Physics2D.Common.PhysicsLogic;
 using tainicom.Aether.Physics2D.Dynamics;
@@ -28,6 +29,6 @@ namespace tainicom.Aether.Physics2D.Controllers
             return base.IsActiveOn(body);
         }
 
-        public abstract void Update(float dt);
+        public abstract void Update(Fix64 dt);
     }
 }

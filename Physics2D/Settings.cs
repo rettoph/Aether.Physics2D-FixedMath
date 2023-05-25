@@ -25,6 +25,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using System;
 using tainicom.Aether.Physics2D.Common;
 
@@ -32,8 +33,8 @@ namespace tainicom.Aether.Physics2D
 {
     public static class Settings
     {
-        public const float MaxFloat = 3.402823466e+38f;
-        public const float Epsilon = 1.192092896e-07f;
+        public static readonly Fix64 MaxFloat = Fix64.MaxValue;
+        public static readonly Fix64 Epsilon = Fix64.FromRaw(1);
 
         // Common
 
@@ -105,33 +106,33 @@ namespace tainicom.Aether.Physics2D
         /// to move by a small amount without triggering a tree adjustment.
         /// This is in meters.
         /// </summary>
-        public const float AABBExtension = 0.1f;
+        public static readonly Fix64 AABBExtension = Fix64Constants.PointOne;
 
         /// <summary>
         /// This is used to fatten AABBs in the dynamic tree. This is used to predict
         /// the future position based on the current displacement.
         /// This is a dimensionless multiplier.
         /// </summary>
-        public const float AABBMultiplier = 2.0f;
+        public static readonly Fix64 AABBMultiplier = Fix64Constants.Two;
 
         /// <summary>
         /// A small length used as a collision and constraint tolerance. Usually it is
         /// chosen to be numerically significant, but visually insignificant.
         /// </summary>
-        public const float LinearSlop = 0.005f;
+        public static readonly Fix64 LinearSlop = Fix64Constants.PointZeroZeroFive;
 
         /// <summary>
         /// A small angle used as a collision and constraint tolerance. Usually it is
         /// chosen to be numerically significant, but visually insignificant.
         /// </summary>
-        public const float AngularSlop = (2.0f / 180.0f * Constant.Pi);
+        public static readonly Fix64 AngularSlop = (Fix64Constants.Two / Fix64Constants.OneEighty * Constant.Pi);
 
         /// <summary>
         /// The radius of the polygon/edge shape skin. This should not be modified. Making
         /// this smaller means polygons will have an insufficient buffer for continuous collision.
         /// Making it larger may create artifacts for vertex collision.
         /// </summary>
-        public const float PolygonRadius = (2.0f * LinearSlop);
+        public static readonly Fix64 PolygonRadius = (Fix64Constants.Two * LinearSlop);
 
         // Dynamics
 
@@ -144,58 +145,58 @@ namespace tainicom.Aether.Physics2D
         /// A velocity threshold for elastic collisions. Any collision with a relative linear
         /// velocity below this threshold will be treated as inelastic.
         /// </summary>
-        public const float VelocityThreshold = 1.0f;
+        public static readonly Fix64 VelocityThreshold = Fix64.One;
         
         /// <summary>
         /// The maximum linear position correction used when solving constraints. This helps to
         /// prevent overshoot.
         /// </summary>
-        public const float MaxLinearCorrection = 0.2f;
+        public static readonly Fix64 MaxLinearCorrection = Fix64Constants.PointTwo;
 
         /// <summary>
         /// The maximum angular position correction used when solving constraints. This helps to
         /// prevent overshoot.
         /// </summary>
-        public const float MaxAngularCorrection = (8.0f / 180.0f * Constant.Pi);
+        public static readonly Fix64 MaxAngularCorrection = (Fix64Constants.Eight / Fix64Constants.OneEighty * Constant.Pi);
 
         /// <summary>
         /// This scale factor controls how fast overlap is resolved. Ideally this would be 1 so
         /// that overlap is removed in one time step. However using values close to 1 often lead
         /// to overshoot.
         /// </summary>
-        public const float Baumgarte = 0.2f;
+        public static readonly Fix64 Baumgarte = Fix64Constants.PointTwo;
 
         // Sleep
         /// <summary>
         /// The time that a body must be still before it will go to sleep.
         /// </summary>
-        public const float TimeToSleep = 0.5f;
+        public static readonly Fix64 TimeToSleep = Fix64Constants.PointFive;
 
         /// <summary>
         /// A body cannot sleep if its linear velocity is above this tolerance.
         /// </summary>
-        public const float LinearSleepTolerance = 0.01f;
+        public static readonly Fix64 LinearSleepTolerance = Fix64Constants.PointZeroOne;
 
         /// <summary>
         /// A body cannot sleep if its angular velocity is above this tolerance.
         /// </summary>
-        public const float AngularSleepTolerance = (2.0f / 180.0f * Constant.Pi);
+        public static readonly Fix64 AngularSleepTolerance = (Fix64Constants.Two / Fix64Constants.OneEighty * Constant.Pi);
 
         /// <summary>
         /// The maximum linear velocity of a body. This limit is very large and is used
         /// to prevent numerical problems. You shouldn't need to adjust this.
         /// </summary>
-        public const float MaxTranslation = 2.0f;
+        public static readonly Fix64 MaxTranslation = Fix64Constants.Two;
 
-        public const float MaxTranslationSquared = (MaxTranslation * MaxTranslation);
+        public static readonly Fix64 MaxTranslationSquared = (MaxTranslation * MaxTranslation);
 
         /// <summary>
         /// The maximum angular velocity of a body. This limit is very large and is used
         /// to prevent numerical problems. You shouldn't need to adjust this.
         /// </summary>
-        public const float MaxRotation = (0.5f * Constant.Pi);
+        public static readonly Fix64 MaxRotation = (Fix64Constants.PointFive * Constant.Pi);
 
-        public const float MaxRotationSquared = (MaxRotation * MaxRotation);
+        public static readonly Fix64 MaxRotationSquared = (MaxRotation * MaxRotation);
 
         /// <summary>
         /// Defines the maximum number of iterations made by the GJK algorithm.
@@ -218,9 +219,9 @@ namespace tainicom.Aether.Physics2D
         /// <param name="friction1">The friction1.</param>
         /// <param name="friction2">The friction2.</param>
         /// <returns></returns>
-        public static float MixFriction(float friction1, float friction2)
+        public static Fix64 MixFriction(Fix64 friction1, Fix64 friction2)
         {
-            return (float)Math.Sqrt(friction1 * friction2);
+            return Fix64.Sqrt(friction1 * friction2);
         }
 
         /// <summary>
@@ -229,7 +230,7 @@ namespace tainicom.Aether.Physics2D
         /// <param name="restitution1">The restitution1.</param>
         /// <param name="restitution2">The restitution2.</param>
         /// <returns></returns>
-        public static float MixRestitution(float restitution1, float restitution2)
+        public static Fix64 MixRestitution(Fix64 restitution1, Fix64 restitution2)
         {
             return restitution1 > restitution2 ? restitution1 : restitution2;
         }

@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -24,7 +25,7 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
         /// <param name="vertices">The polygon that needs simplification.</param>
         /// <param name="collinearityTolerance">The collinearity tolerance.</param>
         /// <returns>A simplified polygon.</returns>
-        public static Vertices CollinearSimplify(Vertices vertices, float collinearityTolerance = 0)
+        public static Vertices CollinearSimplify(Vertices vertices, Fix64 collinearityTolerance)
         {
             if (vertices.Count <= 3)
                 return vertices;
@@ -33,9 +34,9 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
 
             for (int i = 0; i < vertices.Count; i++)
             {
-                Vector2 prev = vertices.PreviousVertex(i);
-                Vector2 current = vertices[i];
-                Vector2 next = vertices.NextVertex(i);
+                AetherVector2 prev = vertices.PreviousVertex(i);
+                AetherVector2 current = vertices[i];
+                AetherVector2 next = vertices.NextVertex(i);
 
                 //If they collinear, continue
                 if (MathUtils.IsCollinear(ref prev, ref current, ref next, collinearityTolerance))
@@ -46,6 +47,15 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
 
             return simplified;
         }
+        /// <summary>
+        /// Removes all collinear points on the polygon.
+        /// </summary>
+        /// <param name="vertices">The polygon that needs simplification.</param>
+        /// <returns>A simplified polygon.</returns>
+        public static Vertices CollinearSimplify(Vertices vertices)
+        {
+            return CollinearSimplify(vertices, Fix64.Zero);
+        }
 
         /// <summary>
         /// Ramer-Douglas-Peucker polygon simplification algorithm. This is the general recursive version that does not use the
@@ -54,7 +64,7 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
         /// If you pass in 0, it will remove all collinear points.
         /// </summary>
         /// <returns>The simplified polygon</returns>
-        public static Vertices DouglasPeuckerSimplify(Vertices vertices, float distanceTolerance)
+        public static Vertices DouglasPeuckerSimplify(Vertices vertices, Fix64 distanceTolerance)
         {
             if (vertices.Count <= 3)
                 return vertices;
@@ -77,21 +87,21 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
             return simplified;
         }
 
-        private static void SimplifySection(Vertices vertices, int i, int j, bool[] usePoint, float distanceTolerance)
+        private static void SimplifySection(Vertices vertices, int i, int j, bool[] usePoint, Fix64 distanceTolerance)
         {
             if ((i + 1) == j)
                 return;
 
-            Vector2 a = vertices[i];
-            Vector2 b = vertices[j];
+            AetherVector2 a = vertices[i];
+            AetherVector2 b = vertices[j];
 
-            double maxDistance = -1.0;
+            Fix64 maxDistance = -Fix64.One;
             int maxIndex = i;
             for (int k = i + 1; k < j; k++)
             {
-                Vector2 point = vertices[k];
+                AetherVector2 point = vertices[k];
 
-                double distance = LineTools.DistanceBetweenPointAndLineSegment(ref point, ref a, ref b);
+                Fix64 distance = LineTools.DistanceBetweenPointAndLineSegment(ref point, ref a, ref b);
 
                 if (distance > maxDistance)
                 {
@@ -119,7 +129,7 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
         /// </summary>
         /// <param name="vertices">The vertices.</param>
         /// <param name="tolerance">The tolerance.</param>
-        public static Vertices MergeParallelEdges(Vertices vertices, float tolerance)
+        public static Vertices MergeParallelEdges(Vertices vertices, Fix64 tolerance)
         {
             //From Eric Jordan's convex decomposition library
 
@@ -136,14 +146,14 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
                 int middle = i;
                 int upper = (i == vertices.Count - 1) ? (0) : (i + 1);
 
-                float dx0 = vertices[middle].X - vertices[lower].X;
-                float dy0 = vertices[middle].Y - vertices[lower].Y;
-                float dx1 = vertices[upper].Y - vertices[middle].X;
-                float dy1 = vertices[upper].Y - vertices[middle].Y;
-                float norm0 = (float)Math.Sqrt(dx0 * dx0 + dy0 * dy0);
-                float norm1 = (float)Math.Sqrt(dx1 * dx1 + dy1 * dy1);
+                Fix64 dx0 = vertices[middle].X - vertices[lower].X;
+                Fix64 dy0 = vertices[middle].Y - vertices[lower].Y;
+                Fix64 dx1 = vertices[upper].Y - vertices[middle].X;
+                Fix64 dy1 = vertices[upper].Y - vertices[middle].Y;
+                Fix64 norm0 = Fix64.Sqrt(dx0 * dx0 + dy0 * dy0);
+                Fix64 norm1 = Fix64.Sqrt(dx1 * dx1 + dy1 * dy1);
 
-                if (!(norm0 > 0.0f && norm1 > 0.0f) && newNVertices > 3)
+                if (!(norm0 > Fix64.Zero && norm1 > Fix64.Zero) && newNVertices > 3)
                 {
                     //Merge identical points
                     mergeMe[i] = true;
@@ -154,10 +164,10 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
                 dy0 /= norm0;
                 dx1 /= norm1;
                 dy1 /= norm1;
-                float cross = dx0 * dy1 - dx1 * dy0;
-                float dot = dx0 * dx1 + dy0 * dy1;
+                Fix64 cross = dx0 * dy1 - dx1 * dy0;
+                Fix64 dot = dx0 * dx1 + dy0 * dy1;
 
-                if (Math.Abs(cross) < tolerance && dot > 0 && newNVertices > 3)
+                if ( Fix64.Abs(cross) < tolerance && dot > Fix64.Zero && newNVertices > 3)
                 {
                     mergeMe[i] = true;
                     --newNVertices;
@@ -194,9 +204,9 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
         /// <param name="vertices">The vertices.</param>
         public static Vertices MergeIdenticalPoints(Vertices vertices)
         {
-            HashSet<Vector2> unique = new HashSet<Vector2>();
+            HashSet<AetherVector2> unique = new HashSet<AetherVector2>();
 
-            foreach (Vector2 vertex in vertices)
+            foreach (AetherVector2 vertex in vertices)
             {
                 unique.Add(vertex);
             }
@@ -209,19 +219,19 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
         /// </summary>
         /// <param name="vertices">The vertices.</param>
         /// <param name="distance">The distance between points. Points closer than this will be removed.</param>
-        public static Vertices ReduceByDistance(Vertices vertices, float distance)
+        public static Vertices ReduceByDistance(Vertices vertices, Fix64 distance)
         {
             if (vertices.Count <= 3)
                 return vertices;
 
-            float distance2 = distance * distance;
+            Fix64 distance2 = distance * distance;
 
             Vertices simplified = new Vertices(vertices.Count);
 
             for (int i = 0; i < vertices.Count; i++)
             {
-                Vector2 current = vertices[i];
-                Vector2 next = vertices.NextVertex(i);
+                AetherVector2 current = vertices[i];
+                AetherVector2 next = vertices.NextVertex(i);
 
                 //If they are closer than the distance, continue
                 if ((next - current).LengthSquared() <= distance2)
@@ -268,36 +278,36 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
         /// <param name="vertices"></param>
         /// <param name="areaTolerance"></param>
         /// <returns></returns>
-        public static Vertices ReduceByArea(Vertices vertices, float areaTolerance)
+        public static Vertices ReduceByArea(Vertices vertices, Fix64 areaTolerance)
         {
             //From physics2d.net
 
             if (vertices.Count <= 3)
                 return vertices;
 
-            if (areaTolerance < 0)
+            if (areaTolerance < Fix64.Zero)
                 throw new ArgumentOutOfRangeException("areaTolerance", "must be equal to or greater than zero.");
 
             Vertices simplified = new Vertices(vertices.Count);
-            Vector2 v3;
-            Vector2 v1 = vertices[vertices.Count - 2];
-            Vector2 v2 = vertices[vertices.Count - 1];
-            areaTolerance *= 2;
+            AetherVector2 v3;
+            AetherVector2 v1 = vertices[vertices.Count - 2];
+            AetherVector2 v2 = vertices[vertices.Count - 1];
+            areaTolerance *= Fix64Constants.Two;
 
             for (int i = 0; i < vertices.Count; ++i, v2 = v3)
             {
                 v3 = i == vertices.Count - 1 ? simplified[0] : vertices[i];
 
-                float old1;
+                Fix64 old1;
                 MathUtils.Cross(ref v1, ref v2, out old1);
 
-                float old2;
+                Fix64 old2;
                 MathUtils.Cross(ref v2, ref v3, out old2);
 
-                float new1;
+                Fix64 new1;
                 MathUtils.Cross(ref v1, ref v3, out new1);
 
-                if (Math.Abs(new1 - (old1 + old2)) > areaTolerance)
+                if ( Fix64.Abs(new1 - (old1 + old2)) > areaTolerance)
                 {
                     simplified.Add(v2);
                     v1 = v2;

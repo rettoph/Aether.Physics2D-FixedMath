@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -20,13 +21,13 @@ namespace tainicom.Aether.Physics2D.Common
         /// </summary>
         /// <param name="hx">the half-width.</param>
         /// <param name="hy">the half-height.</param>
-        public static Vertices CreateRectangle(float hx, float hy)
+        public static Vertices CreateRectangle(Fix64 hx, Fix64 hy)
         {
             Vertices vertices = new Vertices(4);
-            vertices.Add(new Vector2(-hx, -hy));
-            vertices.Add(new Vector2(hx, -hy));
-            vertices.Add(new Vector2(hx, hy));
-            vertices.Add(new Vector2(-hx, hy));
+            vertices.Add(new AetherVector2(-hx, -hy));
+            vertices.Add(new AetherVector2(hx, -hy));
+            vertices.Add(new AetherVector2(hx, hy));
+            vertices.Add(new AetherVector2(-hx, hy));
 
             return vertices;
         }
@@ -38,7 +39,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="hy">the half-height.</param>
         /// <param name="center">the center of the box in local coordinates.</param>
         /// <param name="angle">the rotation of the box in local coordinates.</param>
-        public static Vertices CreateRectangle(float hx, float hy, Vector2 center, float angle)
+        public static Vertices CreateRectangle(Fix64 hx, Fix64 hy, AetherVector2 center, Fix64 angle)
         {
             Vertices vertices = CreateRectangle(hx, hy);
 
@@ -64,10 +65,10 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="yRadius">The rounding Y radius.</param>
         /// <param name="segments">The number of segments to subdivide the edges.</param>
         /// <returns></returns>
-        public static Vertices CreateRoundedRectangle(float width, float height, float xRadius, float yRadius,
+        public static Vertices CreateRoundedRectangle(Fix64 width, Fix64 height, Fix64 xRadius, Fix64 yRadius,
                                                       int segments)
         {
-            if (yRadius > height / 2 || xRadius > width / 2)
+            if (yRadius > height / Fix64Constants.Two || xRadius > width / Fix64Constants.Two)
                 throw new Exception("Rounding amount can't be more than half the height and width respectively.");
             if (segments < 0)
                 throw new Exception("Segments must be zero or more.");
@@ -78,43 +79,43 @@ namespace tainicom.Aether.Physics2D.Common
             Vertices vertices = new Vertices();
             if (segments == 0)
             {
-                vertices.Add(new Vector2(width * .5f - xRadius, -height * .5f));
-                vertices.Add(new Vector2(width * .5f, -height * .5f + yRadius));
+                vertices.Add(new AetherVector2(width * Fix64Constants.PointFive - xRadius, -height * Fix64Constants.PointFive));
+                vertices.Add(new AetherVector2(width * Fix64Constants.PointFive, -height * Fix64Constants.PointFive + yRadius));
 
-                vertices.Add(new Vector2(width * .5f, height * .5f - yRadius));
-                vertices.Add(new Vector2(width * .5f - xRadius, height * .5f));
+                vertices.Add(new AetherVector2(width * Fix64Constants.PointFive, height * Fix64Constants.PointFive - yRadius));
+                vertices.Add(new AetherVector2(width * Fix64Constants.PointFive - xRadius, height * Fix64Constants.PointFive));
 
-                vertices.Add(new Vector2(-width * .5f + xRadius, height * .5f));
-                vertices.Add(new Vector2(-width * .5f, height * .5f - yRadius));
+                vertices.Add(new AetherVector2(-width * Fix64Constants.PointFive + xRadius, height * Fix64Constants.PointFive));
+                vertices.Add(new AetherVector2(-width * Fix64Constants.PointFive, height * Fix64Constants.PointFive - yRadius));
 
-                vertices.Add(new Vector2(-width * .5f, -height * .5f + yRadius));
-                vertices.Add(new Vector2(-width * .5f + xRadius, -height * .5f));
+                vertices.Add(new AetherVector2(-width * Fix64Constants.PointFive, -height * Fix64Constants.PointFive + yRadius));
+                vertices.Add(new AetherVector2(-width * Fix64Constants.PointFive + xRadius, -height * Fix64Constants.PointFive));
             }
             else
             {
                 int numberOfEdges = (segments * 4 + 8);
 
-                float stepSize = Constant.Tau / (numberOfEdges - 4);
+                Fix64 stepSize = Constant.Tau / (Fix64)(numberOfEdges - 4);
                 int perPhase = numberOfEdges / 4;
 
-                Vector2 posOffset = new Vector2(width / 2 - xRadius, height / 2 - yRadius);
-                vertices.Add(posOffset + new Vector2(xRadius, -yRadius + yRadius));
+                AetherVector2 posOffset = new AetherVector2(width / Fix64Constants.Two - xRadius, height / Fix64Constants.Two - yRadius);
+                vertices.Add(posOffset + new AetherVector2(xRadius, -yRadius + yRadius));
                 short phase = 0;
                 for (int i = 1; i < numberOfEdges; i++)
                 {
                     if (i - perPhase == 0 || i - perPhase * 3 == 0)
                     {
-                        posOffset.X *= -1;
+                        posOffset.X *= -Fix64.One;
                         phase--;
                     }
                     else if (i - perPhase * 2 == 0)
                     {
-                        posOffset.Y *= -1;
+                        posOffset.Y *= -Fix64.One;
                         phase--;
                     }
 
-                    vertices.Add(posOffset + new Vector2(xRadius * (float)Math.Cos(stepSize * -(i + phase)),
-                                                         -yRadius * (float)Math.Sin(stepSize * -(i + phase))));
+                    vertices.Add(posOffset + new AetherVector2(xRadius * Fix64.Cos(stepSize * -(Fix64)(i + phase)),
+                                                         -yRadius * Fix64.Sin(stepSize * -(Fix64)(i + phase))));
                 }
             }
 
@@ -126,7 +127,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// </summary>
         /// <param name="start">The first point.</param>
         /// <param name="end">The second point.</param>
-        public static Vertices CreateLine(Vector2 start, Vector2 end)
+        public static Vertices CreateLine(AetherVector2 start, AetherVector2 end)
         {
             Vertices vertices = new Vertices(2);
             vertices.Add(start);
@@ -141,7 +142,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="radius">The radius.</param>
         /// <param name="numberOfEdges">The number of edges. The more edges, the more it resembles a circle</param>
         /// <returns></returns>
-        public static Vertices CreateCircle(float radius, int numberOfEdges)
+        public static Vertices CreateCircle(Fix64 radius, int numberOfEdges)
         {
             return CreateEllipse(radius, radius, numberOfEdges);
         }
@@ -153,33 +154,33 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="yRadius">Height of the ellipse.</param>
         /// <param name="numberOfEdges">The number of edges. The more edges, the more it resembles an ellipse</param>
         /// <returns></returns>
-        public static Vertices CreateEllipse(float xRadius, float yRadius, int numberOfEdges)
+        public static Vertices CreateEllipse(Fix64 xRadius, Fix64 yRadius, int numberOfEdges)
         {
             Vertices vertices = new Vertices();
 
-            float stepSize = Constant.Tau / numberOfEdges;
+            Fix64 stepSize = Constant.Tau / (Fix64)numberOfEdges;
 
-            vertices.Add(new Vector2(xRadius, 0));
+            vertices.Add(new AetherVector2(xRadius, Fix64.Zero));
             for (int i = numberOfEdges - 1; i > 0; --i)
-                vertices.Add(new Vector2(xRadius * (float)Math.Cos(stepSize * i),
-                                         -yRadius * (float)Math.Sin(stepSize * i)));
+                vertices.Add(new AetherVector2(xRadius * Fix64.Cos(stepSize * (Fix64)i),
+                                         -yRadius * Fix64.Sin(stepSize * (Fix64)i)));
 
             return vertices;
         }
 
-        public static Vertices CreateArc(float radians, int sides, float radius)
+        public static Vertices CreateArc(Fix64 radians, int sides, Fix64 radius)
         {
-            Debug.Assert(radians > 0, "The arc needs to be larger than 0");
+            Debug.Assert(radians > Fix64.Zero, "The arc needs to be larger than 0");
             Debug.Assert(sides > 1, "The arc needs to have more than 1 sides");
-            Debug.Assert(radius > 0, "The arc needs to have a radius larger than 0");
+            Debug.Assert(radius > Fix64.Zero, "The arc needs to have a radius larger than 0");
 
             Vertices vertices = new Vertices();
 
-            float stepSize = radians / sides;
+            Fix64 stepSize = radians / (Fix64)sides;
             for (int i = sides - 1; i > 0; i--)
             {
-                vertices.Add(new Vector2(radius * (float)Math.Cos(stepSize * i),
-                                         radius * (float)Math.Sin(stepSize * i)));
+                vertices.Add(new AetherVector2(radius * Fix64.Cos(stepSize * (Fix64)i),
+                                         radius * Fix64.Sin(stepSize * (Fix64)i)));
             }
 
             return vertices;
@@ -195,9 +196,9 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="endRadius">Radius of the capsule ends.</param>
         /// <param name="edges">The number of edges of the capsule ends. The more edges, the more it resembles an capsule</param>
         /// <returns></returns>
-        public static Vertices CreateCapsule(float height, float endRadius, int edges)
+        public static Vertices CreateCapsule(Fix64 height, Fix64 endRadius, int edges)
         {
-            if (endRadius >= height / 2)
+            if (endRadius >= height / Fix64Constants.Two)
                 throw new ArgumentException(
                     "The radius must be lower than height / 2. Higher values of radius would create a circle, and not a half circle.",
                     "endRadius");
@@ -215,61 +216,61 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="bottomRadius">Radius of bottom.</param>
         /// <param name="bottomEdges">The number of edges of the bottom. The more edges, the more it resembles an capsule</param>
         /// <returns></returns>
-        public static Vertices CreateCapsule(float height, float topRadius, int topEdges, float bottomRadius,
+        public static Vertices CreateCapsule(Fix64 height, Fix64 topRadius, int topEdges, Fix64 bottomRadius,
                                              int bottomEdges)
         {
-            if (height <= 0)
+            if (height <= Fix64.Zero)
                 throw new ArgumentException("Height must be longer than 0", "height");
 
-            if (topRadius <= 0)
+            if (topRadius <= Fix64.Zero)
                 throw new ArgumentException("The top radius must be more than 0", "topRadius");
 
             if (topEdges <= 0)
                 throw new ArgumentException("Top edges must be more than 0", "topEdges");
 
-            if (bottomRadius <= 0)
+            if (bottomRadius <= Fix64.Zero)
                 throw new ArgumentException("The bottom radius must be more than 0", "bottomRadius");
 
             if (bottomEdges <= 0)
                 throw new ArgumentException("Bottom edges must be more than 0", "bottomEdges");
 
-            if (topRadius >= height / 2)
+            if (topRadius >= height / Fix64Constants.Two)
                 throw new ArgumentException(
                     "The top radius must be lower than height / 2. Higher values of top radius would create a circle, and not a half circle.",
                     "topRadius");
 
-            if (bottomRadius >= height / 2)
+            if (bottomRadius >= height / Fix64Constants.Two)
                 throw new ArgumentException(
                     "The bottom radius must be lower than height / 2. Higher values of bottom radius would create a circle, and not a half circle.",
                     "bottomRadius");
 
             Vertices vertices = new Vertices();
 
-            float newHeight = (height - topRadius - bottomRadius) * 0.5f;
+            Fix64 newHeight = (height - topRadius - bottomRadius) * Fix64Constants.PointFive;
 
             // top
-            vertices.Add(new Vector2(topRadius, newHeight));
+            vertices.Add(new AetherVector2(topRadius, newHeight));
 
-            float stepSize = Constant.Pi / topEdges;
+            Fix64 stepSize = Constant.Pi / (Fix64)topEdges;
             for (int i = 1; i < topEdges; i++)
             {
-                vertices.Add(new Vector2(topRadius * (float)Math.Cos(stepSize * i),
-                                         topRadius * (float)Math.Sin(stepSize * i) + newHeight));
+                vertices.Add(new AetherVector2(topRadius * Fix64.Cos(stepSize * (Fix64)i),
+                                         topRadius * Fix64.Sin(stepSize * (Fix64)i) + newHeight));
             }
 
-            vertices.Add(new Vector2(-topRadius, newHeight));
+            vertices.Add(new AetherVector2(-topRadius, newHeight));
 
             // bottom
-            vertices.Add(new Vector2(-bottomRadius, -newHeight));
+            vertices.Add(new AetherVector2(-bottomRadius, -newHeight));
 
-            stepSize = Constant.Pi / bottomEdges;
+            stepSize = Constant.Pi / (Fix64)bottomEdges;
             for (int i = 1; i < bottomEdges; i++)
             {
-                vertices.Add(new Vector2(-bottomRadius * (float)Math.Cos(stepSize * i),
-                                         -bottomRadius * (float)Math.Sin(stepSize * i) - newHeight));
+                vertices.Add(new AetherVector2(-bottomRadius * (Fix64) Fix64.Cos(stepSize * (Fix64)i),
+                                         -bottomRadius * (Fix64) Fix64.Sin(stepSize * (Fix64)i) - newHeight));
             }
 
-            vertices.Add(new Vector2(bottomRadius, -newHeight));
+            vertices.Add(new AetherVector2(bottomRadius, -newHeight));
 
             return vertices;
         }
@@ -282,41 +283,41 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="tipPercentage">The tip percentage.</param>
         /// <param name="toothHeight">Height of the tooth.</param>
         /// <returns></returns>
-        public static Vertices CreateGear(float radius, int numberOfTeeth, float tipPercentage, float toothHeight)
+        public static Vertices CreateGear(Fix64 radius, int numberOfTeeth, Fix64 tipPercentage, Fix64 toothHeight)
         {
             Vertices vertices = new Vertices();
 
-            float stepSize = Constant.Tau / numberOfTeeth;
-            tipPercentage /= 100f;
-            MathUtils.Clamp(tipPercentage, 0f, 1f);
-            float toothTipStepSize = (stepSize / 2f) * tipPercentage;
+            Fix64 stepSize = Constant.Tau / (Fix64)numberOfTeeth;
+            tipPercentage /= Fix64Constants.OneHundred;
+            MathUtils.Clamp(tipPercentage, Fix64.Zero, Fix64.One);
+            Fix64 toothTipStepSize = (stepSize / Fix64Constants.Two) * tipPercentage;
 
-            float toothAngleStepSize = (stepSize - (toothTipStepSize * 2f)) / 2f;
+            Fix64 toothAngleStepSize = (stepSize - (toothTipStepSize * Fix64Constants.Two)) / Fix64Constants.Two;
 
             for (int i = numberOfTeeth - 1; i >= 0; --i)
             {
-                if (toothTipStepSize > 0f)
+                if (toothTipStepSize > Fix64.Zero)
                 {
                     vertices.Add(
-                        new Vector2(radius *
-                                    (float)Math.Cos(stepSize * i + toothAngleStepSize * 2f + toothTipStepSize),
+                        new AetherVector2(radius *
+                                    Fix64.Cos(stepSize * (Fix64)i + toothAngleStepSize * Fix64Constants.Two + toothTipStepSize),
                                     -radius *
-                                    (float)Math.Sin(stepSize * i + toothAngleStepSize * 2f + toothTipStepSize)));
+                                    Fix64.Sin(stepSize * (Fix64)i + toothAngleStepSize * Fix64Constants.Two + toothTipStepSize)));
 
                     vertices.Add(
-                        new Vector2((radius + toothHeight) *
-                                    (float)Math.Cos(stepSize * i + toothAngleStepSize + toothTipStepSize),
+                        new AetherVector2((radius + toothHeight) *
+                                    Fix64.Cos(stepSize * (Fix64)i + toothAngleStepSize + toothTipStepSize),
                                     -(radius + toothHeight) *
-                                    (float)Math.Sin(stepSize * i + toothAngleStepSize + toothTipStepSize)));
+                                    Fix64.Sin(stepSize * (Fix64)i + toothAngleStepSize + toothTipStepSize)));
                 }
 
-                vertices.Add(new Vector2((radius + toothHeight) *
-                                         (float)Math.Cos(stepSize * i + toothAngleStepSize),
+                vertices.Add(new AetherVector2((radius + toothHeight) *
+                                         Fix64.Cos(stepSize * (Fix64)i + toothAngleStepSize),
                                          -(radius + toothHeight) *
-                                         (float)Math.Sin(stepSize * i + toothAngleStepSize)));
+                                         Fix64.Sin(stepSize * (Fix64)i + toothAngleStepSize)));
 
-                vertices.Add(new Vector2(radius * (float)Math.Cos(stepSize * i),
-                                         -radius * (float)Math.Sin(stepSize * i)));
+                vertices.Add(new AetherVector2(radius * Fix64.Cos(stepSize * (Fix64)i),
+                                         -radius * Fix64.Sin(stepSize * (Fix64)i)));
             }
 
             return vertices;
@@ -356,7 +357,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="multiPartDetection">if set to <c>true</c> it will perform multi part detection.</param>
         /// <param name="holeDetection">if set to <c>true</c> it will perform hole detection.</param>
         /// <returns></returns>
-        public static List<Vertices> CreatePolygon(uint[] data, int width, float hullTolerance,
+        public static List<Vertices> CreatePolygon(uint[] data, int width, Fix64 hullTolerance,
                                                    byte alphaTolerance, bool multiPartDetection, bool holeDetection)
         {
             return TextureConverter.DetectVertices(data, width, hullTolerance, alphaTolerance,

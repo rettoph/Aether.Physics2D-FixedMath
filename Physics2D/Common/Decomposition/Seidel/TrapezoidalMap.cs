@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System.Collections.Generic;
 
 namespace tainicom.Aether.Physics2D.Common.Decomposition.Seidel
@@ -19,12 +20,12 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.Seidel
         private Edge _cross;
 
         // AABB margin
-        private float _margin;
+        private Fix64 _margin;
 
         public TrapezoidalMap()
         {
             Map = new HashSet<Trapezoid>();
-            _margin = 50.0f;
+            _margin = Fix64Constants.Fifty;
             _bCross = null;
             _cross = null;
         }

@@ -25,6 +25,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using System.Diagnostics;
 using tainicom.Aether.Physics2D.Common;
 #if XNAAPI
@@ -46,7 +47,7 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         /// The vertices. These are not owned/freed by the chain Shape.
         /// </summary>
         public Vertices Vertices;
-        private Vector2 _prevVertex, _nextVertex;
+        private AetherVector2 _prevVertex, _nextVertex;
         private bool _hasPrevVertex, _hasNextVertex;
         private static EdgeShape _edgeShape = new EdgeShape();
 
@@ -54,7 +55,7 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         /// Constructor for ChainShape. By default have 0 in density.
         /// </summary>
         public ChainShape()
-            : base(0)
+            : base(Fix64.Zero)
         {
             ShapeType = ShapeType.Chain;
             _radius = Settings.PolygonRadius;
@@ -66,7 +67,7 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         /// <param name="vertices">The vertices to use. Must contain 2 or more vertices.</param>
         /// <param name="createLoop">Set to true to create a closed loop. It connects the first vertice to the last, and automatically adjusts connectivity to create smooth collisions along the chain.</param>
         public ChainShape(Vertices vertices, bool createLoop = false)
-            : base(0)
+            : base(Fix64.Zero)
         {
             ShapeType = ShapeType.Chain;
             _radius = Settings.PolygonRadius;
@@ -76,11 +77,11 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
 
             for (int i = 1; i < vertices.Count; ++i)
             {
-                Vector2 v1 = vertices[i - 1];
-                Vector2 v2 = vertices[i];
+                AetherVector2 v1 = vertices[i - 1];
+                AetherVector2 v2 = vertices[i];
 
                 // If the code crashes here, it means your vertices are too close together.
-                Debug.Assert(Vector2.DistanceSquared(v1, v2) > Settings.LinearSlop * Settings.LinearSlop);
+                Debug.Assert(AetherVector2.DistanceSquared(v1, v2) > Settings.LinearSlop * Settings.LinearSlop);
             }
 
             Vertices = new Vertices(vertices);
@@ -103,7 +104,7 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         /// Establish connectivity to a vertex that precedes the first vertex.
         /// Don't call this for loops.
         /// </summary>
-        public Vector2 PrevVertex
+        public AetherVector2 PrevVertex
         {
             get { return _prevVertex; }
             set
@@ -119,7 +120,7 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         /// Establish connectivity to a vertex that follows the last vertex.
         /// Don't call this for loops.
         /// </summary>
-        public Vector2 NextVertex
+        public AetherVector2 NextVertex
         {
             get { return _nextVertex; }
             set
@@ -181,7 +182,7 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
             return edgeShape;
         }
 
-        public override bool TestPoint(ref Transform transform, ref Vector2 point)
+        public override bool TestPoint(ref Transform transform, ref AetherVector2 point)
         {
             return false;
         }
@@ -214,11 +215,11 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
                 i2 = 0;
             }
 
-            Vector2 v1 = Transform.Multiply(Vertices[i1], ref transform);
-            Vector2 v2 = Transform.Multiply(Vertices[i2], ref transform);
+            AetherVector2 v1 = Transform.Multiply(Vertices[i1], ref transform);
+            AetherVector2 v2 = Transform.Multiply(Vertices[i2], ref transform);
 
-            Vector2.Min(ref v1, ref v2, out aabb.LowerBound);
-            Vector2.Max(ref v1, ref v2, out aabb.UpperBound);
+            AetherVector2.Min(ref v1, ref v2, out aabb.LowerBound);
+            AetherVector2.Max(ref v1, ref v2, out aabb.UpperBound);
         }
 
         protected override void ComputeProperties()
@@ -226,10 +227,10 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
             //Does nothing. Chain shapes don't have properties.
         }
 
-        public override float ComputeSubmergedArea(ref Vector2 normal, float offset, ref Transform xf, out Vector2 sc)
+        public override Fix64 ComputeSubmergedArea(ref AetherVector2 normal, Fix64 offset, ref Transform xf, out AetherVector2 sc)
         {
-            sc = Vector2.Zero;
-            return 0;
+            sc = AetherVector2.Zero;
+            return Fix64.Zero;
         }
 
         /// <summary>

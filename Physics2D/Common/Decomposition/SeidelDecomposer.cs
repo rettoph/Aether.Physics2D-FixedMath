@@ -13,6 +13,7 @@ using System.Diagnostics;
 using tainicom.Aether.Physics2D.Common.Decomposition.Seidel;
 using tainicom.Aether.Physics2D.Common;
 using Point = tainicom.Aether.Physics2D.Common.Decomposition.Seidel.Point;
+using FixedMath.NET;
 #if XNAAPI
 using Vector2 = Microsoft.Xna.Framework.Vector2;
 #endif
@@ -49,13 +50,13 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
         /// <param name="vertices">The polygon to decompose.</param>
         /// <param name="sheer">The sheer to use if you get bad results, try using a higher value.</param>
         /// <returns>A list of triangles</returns>
-        public static List<Vertices> ConvexPartition(Vertices vertices, float sheer = 0.001f)
+        public static List<Vertices> ConvexPartition(Vertices vertices, Fix64 sheer)
         {
             Debug.Assert(vertices.Count > 3);
 
             List<Point> compatList = new List<Point>(vertices.Count);
 
-            foreach (Vector2 vertex in vertices)
+            foreach (AetherVector2 vertex in vertices)
             {
                 compatList.Add(new Point(vertex.X, vertex.Y));
             }
@@ -70,7 +71,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
 
                 foreach (Point outTriangle in triangle)
                 {
-                    outTriangles.Add(new Vector2(outTriangle.X, outTriangle.Y));
+                    outTriangles.Add(new AetherVector2(outTriangle.X, outTriangle.Y));
                 }
 
                 list.Add(outTriangles);
@@ -83,13 +84,23 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
         /// Decompose the polygon into several smaller non-concave polygons.
         /// </summary>
         /// <param name="vertices">The polygon to decompose.</param>
+        /// <returns>A list of triangles</returns>
+        public static List<Vertices> ConvexPartition(Vertices vertices)
+        {
+            return ConvexPartition(vertices, Fix64Constants.PointZeroZeroOne);
+        }
+
+        /// <summary>
+        /// Decompose the polygon into several smaller non-concave polygons.
+        /// </summary>
+        /// <param name="vertices">The polygon to decompose.</param>
         /// <param name="sheer">The sheer to use if you get bad results, try using a higher value.</param>
         /// <returns>A list of trapezoids</returns>
-        public static List<Vertices> ConvexPartitionTrapezoid(Vertices vertices, float sheer = 0.001f)
+        public static List<Vertices> ConvexPartitionTrapezoid(Vertices vertices, Fix64 sheer)
         {
             List<Point> compatList = new List<Point>(vertices.Count);
 
-            foreach (Vector2 vertex in vertices)
+            foreach (AetherVector2 vertex in vertices)
             {
                 compatList.Add(new Point(vertex.X, vertex.Y));
             }
@@ -105,13 +116,22 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
                 List<Point> points = trapezoid.GetVertices();
                 foreach (Point point in points)
                 {
-                    verts.Add(new Vector2(point.X, point.Y));
+                    verts.Add(new AetherVector2(point.X, point.Y));
                 }
 
                 list.Add(verts);
             }
 
             return list;
+        }
+        /// <summary>
+        /// Decompose the polygon into several smaller non-concave polygons.
+        /// </summary>
+        /// <param name="vertices">The polygon to decompose.</param>
+        /// <returns>A list of trapezoids</returns>
+        public static List<Vertices> ConvexPartitionTrapezoid(Vertices vertices)
+        {
+            return ConvexPartitionTrapezoid(vertices, Fix64Constants.PointZeroZeroOne);
         }
     }
 }

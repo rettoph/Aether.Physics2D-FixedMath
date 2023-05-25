@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using tainicom.Aether.Physics2D.Collision.Shapes;
@@ -66,12 +67,12 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="body">The body.</param>
         /// <param name="density">The density.</param>
         /// <param name="subdivisions">The subdivisions.</param>
-        public static void ConvertPathToPolygon(Path path, Body body, float density, int subdivisions)
+        public static void ConvertPathToPolygon(Path path, Body body, Fix64 density, int subdivisions)
         {
             if (!path.Closed)
                 throw new Exception("The path must be closed to convert to a polygon.");
 
-            List<Vector2> verts = path.GetVertices(subdivisions);
+            List<AetherVector2> verts = path.GetVertices(subdivisions);
 
             List<Vertices> decomposedVerts = Triangulate.ConvexPartition(new Vertices(verts), TriangulationAlgorithm.Bayazit);
 
@@ -93,7 +94,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// <returns></returns>
         public static List<Body> EvenlyDistributeShapesAlongPath(World world, Path path, IEnumerable<Shape> shapes, BodyType type, int copies, object userData = null)
         {
-            List<Vector3> centers = path.SubdivideEvenly(copies);
+            List<AetherVector3> centers = path.SubdivideEvenly(copies);
             List<Body> bodyList = new List<Body>();
 
             for (int i = 0; i < centers.Count; i++)
@@ -102,7 +103,7 @@ namespace tainicom.Aether.Physics2D.Common
 
                 // copy the type from original body
                 b.BodyType = type;
-                b.Position = new Vector2(centers[i].X, centers[i].Y);
+                b.Position = new AetherVector2(centers[i].X, centers[i].Y);
                 b.Rotation = centers[i].Z;
                 b.Tag = userData;
 
@@ -144,11 +145,11 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="time">The time.</param>
         /// <param name="strength">The strength.</param>
         /// <param name="timeStep">The time step.</param>
-        public static void MoveBodyOnPath(Path path, Body body, float time, float strength, float timeStep)
+        public static void MoveBodyOnPath(Path path, Body body, Fix64 time, Fix64 strength, Fix64 timeStep)
         {
-            Vector2 destination = path.GetPosition(time);
-            Vector2 positionDelta = body.Position - destination;
-            Vector2 velocity = (positionDelta / timeStep) * strength;
+            AetherVector2 destination = path.GetPosition(time);
+            AetherVector2 positionDelta = body.Position - destination;
+            AetherVector2 velocity = (positionDelta / timeStep) * strength;
 
             body.LinearVelocity = -velocity;
         }
@@ -162,7 +163,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="localAnchorB">The local anchor B.</param>
         /// <param name="connectFirstAndLast">if set to <c>true</c> [connect first and last].</param>
         /// <param name="collideConnected">if set to <c>true</c> [collide connected].</param>
-        public static List<RevoluteJoint> AttachBodiesWithRevoluteJoint(World world, List<Body> bodies, Vector2 localAnchorA, Vector2 localAnchorB, bool connectFirstAndLast, bool collideConnected)
+        public static List<RevoluteJoint> AttachBodiesWithRevoluteJoint(World world, List<Body> bodies, AetherVector2 localAnchorA, AetherVector2 localAnchorB, bool connectFirstAndLast, bool collideConnected)
         {
             List<RevoluteJoint> joints = new List<RevoluteJoint>(bodies.Count + 1);
 

@@ -27,6 +27,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using System;
 using System.Diagnostics;
 using tainicom.Aether.Physics2D.Common;
@@ -103,8 +104,8 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
     public abstract class Joint
     {
         internal World _world;
-        private float _breakpoint;
-        private double _breakpointSquared;
+        private Fix64 _breakpoint;
+        private Fix64 _breakpointSquared;
 
         /// <summary>
         /// Indicate if this join is enabled or not. Disabling a joint
@@ -118,7 +119,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
 
         protected Joint()
         {
-            Breakpoint = float.MaxValue;
+            Breakpoint = Fix64.MaxValue;
 
             //Connected bodies should not collide by default
             CollideConnected = false;
@@ -166,13 +167,13 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// Get the anchor point on bodyA in world coordinates.
         /// On some joints, this value indicate the anchor point within the world.
         /// </summary>
-        public abstract Vector2 WorldAnchorA { get; set; }
+        public abstract AetherVector2 WorldAnchorA { get; set; }
 
         /// <summary>
         /// Get the anchor point on bodyB in world coordinates.
         /// On some joints, this value indicate the anchor point within the world.
         /// </summary>
-        public abstract Vector2 WorldAnchorB { get; set; }
+        public abstract AetherVector2 WorldAnchorB { get; set; }
 
         /// <summary>
         /// Set the user data pointer.
@@ -187,9 +188,9 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
 
         /// <summary>
         /// The Breakpoint simply indicates the maximum Value the JointError can be before it breaks.
-        /// The default value is float.MaxValue, which means it never breaks.
+        /// The default value is Fix64.MaxValue, which means it never breaks.
         /// </summary>
-        public float Breakpoint
+        public Fix64 Breakpoint
         {
             get { return _breakpoint; }
             set
@@ -202,19 +203,19 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <summary>
         /// Fires when the joint is broken.
         /// </summary>
-        public event Action<Joint, float> Broke;
+        public event Action<Joint, Fix64> Broke;
 
         /// <summary>
         /// Get the reaction force on body at the joint anchor in Newtons.
         /// </summary>
         /// <param name="invDt">The inverse delta time.</param>
-        public abstract Vector2 GetReactionForce(float invDt);
+        public abstract AetherVector2 GetReactionForce(Fix64 invDt);
 
         /// <summary>
         /// Get the reaction torque on the body at the joint anchor in N*m.
         /// </summary>
         /// <param name="invDt">The inverse delta time.</param>
-        public abstract float GetReactionTorque(float invDt);
+        public abstract Fix64 GetReactionTorque(Fix64 invDt);
 
         protected void WakeBodies()
         {
@@ -241,20 +242,20 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
 
         internal abstract void InitVelocityConstraints(ref SolverData data);
 
-        internal void Validate(float invDt)
+        internal void Validate(Fix64 invDt)
         {
             if (!Enabled)
                 return;
 
-            float jointErrorSquared = GetReactionForce(invDt).LengthSquared();
+            Fix64 jointErrorSquared = GetReactionForce(invDt).LengthSquared();
 
-            if (Math.Abs(jointErrorSquared) <= _breakpointSquared)
+            if ( Fix64.Abs(jointErrorSquared) <= _breakpointSquared)
                 return;
 
             Enabled = false;
 
             if (Broke != null)
-                Broke(this, (float)Math.Sqrt(jointErrorSquared));
+                Broke(this, Fix64.Sqrt(jointErrorSquared));
         }
 
         internal abstract void SolveVelocityConstraints(ref SolverData data);

@@ -25,6 +25,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using tainicom.Aether.Physics2D.Common;
 #if XNAAPI
 using Complex = tainicom.Aether.Physics2D.Common.Complex;
@@ -43,15 +44,15 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         /// <summary>
         /// Edge start vertex
         /// </summary>
-        internal Vector2 _vertex1;
+        internal AetherVector2 _vertex1;
 
         /// <summary>
         /// Edge end vertex
         /// </summary>
-        internal Vector2 _vertex2;
+        internal AetherVector2 _vertex2;
 
         internal EdgeShape()
-            : base(0)
+            : base(Fix64.Zero)
         {
             ShapeType = ShapeType.Edge;
             _radius = Settings.PolygonRadius;
@@ -62,8 +63,8 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         /// </summary>
         /// <param name="start">The start of the edge.</param>
         /// <param name="end">The end of the edge.</param>
-        public EdgeShape(Vector2 start, Vector2 end)
-            : base(0)
+        public EdgeShape(AetherVector2 start, AetherVector2 end)
+            : base(Fix64.Zero)
         {
             ShapeType = ShapeType.Edge;
             _radius = Settings.PolygonRadius;
@@ -88,17 +89,17 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         /// <summary>
         /// Optional adjacent vertices. These are used for smooth collision.
         /// </summary>
-        public Vector2 Vertex0 { get; set; }
+        public AetherVector2 Vertex0 { get; set; }
 
         /// <summary>
         /// Optional adjacent vertices. These are used for smooth collision.
         /// </summary>
-        public Vector2 Vertex3 { get; set; }
+        public AetherVector2 Vertex3 { get; set; }
 
         /// <summary>
         /// These are the edge vertices
         /// </summary>
-        public Vector2 Vertex1
+        public AetherVector2 Vertex1
         {
             get { return _vertex1; }
             set
@@ -111,7 +112,7 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         /// <summary>
         /// These are the edge vertices
         /// </summary>
-        public Vector2 Vertex2
+        public AetherVector2 Vertex2
         {
             get { return _vertex2; }
             set
@@ -126,7 +127,7 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         /// </summary>
         /// <param name="start">The start.</param>
         /// <param name="end">The end.</param>
-        public void Set(Vector2 start, Vector2 end)
+        public void Set(AetherVector2 start, AetherVector2 end)
         {
             _vertex1 = start;
             _vertex2 = end;
@@ -136,7 +137,7 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
             ComputeProperties();
         }
 
-        public override bool TestPoint(ref Transform transform, ref Vector2 point)
+        public override bool TestPoint(ref Transform transform, ref AetherVector2 point)
         {
             return false;
         }
@@ -151,52 +152,52 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
             output = new RayCastOutput();
 
             // Put the ray into the edge's frame of reference.
-            Vector2 p1 = Complex.Divide(input.Point1 - transform.p, ref transform.q);
-            Vector2 p2 = Complex.Divide(input.Point2 - transform.p, ref transform.q);
-            Vector2 d = p2 - p1;
+            AetherVector2 p1 = Complex.Divide(input.Point1 - transform.p, ref transform.q);
+            AetherVector2 p2 = Complex.Divide(input.Point2 - transform.p, ref transform.q);
+            AetherVector2 d = p2 - p1;
 
-            Vector2 v1 = _vertex1;
-            Vector2 v2 = _vertex2;
-            Vector2 e = v2 - v1;
-            Vector2 normal = new Vector2(e.Y, -e.X); //TODO: Could possibly cache the normal.
+            AetherVector2 v1 = _vertex1;
+            AetherVector2 v2 = _vertex2;
+            AetherVector2 e = v2 - v1;
+            AetherVector2 normal = new AetherVector2(e.Y, -e.X); //TODO: Could possibly cache the normal.
             normal.Normalize();
 
             // q = p1 + t * d
             // dot(normal, q - v1) = 0
             // dot(normal, p1 - v1) + t * dot(normal, d) = 0
-            float numerator = Vector2.Dot(normal, v1 - p1);
-            float denominator = Vector2.Dot(normal, d);
+            Fix64 numerator = AetherVector2.Dot(normal, v1 - p1);
+            Fix64 denominator = AetherVector2.Dot(normal, d);
 
-            if (denominator == 0.0f)
+            if (denominator == Fix64.Zero)
             {
                 return false;
             }
 
-            float t = numerator / denominator;
-            if (t < 0.0f || input.MaxFraction < t)
+            Fix64 t = numerator / denominator;
+            if (t < Fix64.Zero || input.MaxFraction < t)
             {
                 return false;
             }
 
-            Vector2 q = p1 + t * d;
+            AetherVector2 q = p1 + t * d;
 
             // q = v1 + s * r
             // s = dot(q - v1, r) / dot(r, r)
-            Vector2 r = v2 - v1;
-            float rr = Vector2.Dot(r, r);
-            if (rr == 0.0f)
+            AetherVector2 r = v2 - v1;
+            Fix64 rr = AetherVector2.Dot(r, r);
+            if (rr == Fix64.Zero)
             {
                 return false;
             }
 
-            float s = Vector2.Dot(q - v1, r) / rr;
-            if (s < 0.0f || 1.0f < s)
+            Fix64 s = AetherVector2.Dot(q - v1, r) / rr;
+            if (s < Fix64.Zero || Fix64.One < s)
             {
                 return false;
             }
 
             output.Fraction = t;
-            if (numerator > 0.0f)
+            if (numerator > Fix64.Zero)
             {
                 output.Normal = -normal;
             }
@@ -210,11 +211,11 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         public override void ComputeAABB(out AABB aabb, ref Transform transform, int childIndex)
         {
             // OPT: Vector2 v1 = Transform.Multiply(ref _vertex1, ref transform);            
-            float v1X = (_vertex1.X * transform.q.R - _vertex1.Y * transform.q.i) + transform.p.X;
-            float v1Y = (_vertex1.Y * transform.q.R + _vertex1.X * transform.q.i) + transform.p.Y;
+            Fix64 v1X = (_vertex1.X * transform.q.R - _vertex1.Y * transform.q.i) + transform.p.X;
+            Fix64 v1Y = (_vertex1.Y * transform.q.R + _vertex1.X * transform.q.i) + transform.p.Y;
             // OPT: Vector2 v2 = Transform.Multiply(ref _vertex2, ref transform);
-            float v2X = (_vertex2.X * transform.q.R - _vertex2.Y * transform.q.i) + transform.p.X;
-            float v2Y = (_vertex2.Y * transform.q.R + _vertex2.X * transform.q.i) + transform.p.Y;
+            Fix64 v2X = (_vertex2.X * transform.q.R - _vertex2.Y * transform.q.i) + transform.p.X;
+            Fix64 v2Y = (_vertex2.Y * transform.q.R + _vertex2.X * transform.q.i) + transform.p.Y;
 
             // OPT: aabb.LowerBound = Vector2.Min(v1, v2);
             // OPT: aabb.UpperBound = Vector2.Max(v1, v2);
@@ -250,13 +251,13 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
 
         protected override void ComputeProperties()
         {
-            MassData.Centroid = 0.5f * (_vertex1 + _vertex2);
+            MassData.Centroid = Fix64Constants.PointFive * (_vertex1 + _vertex2);
         }
 
-        public override float ComputeSubmergedArea(ref Vector2 normal, float offset, ref Transform xf, out Vector2 sc)
+        public override Fix64 ComputeSubmergedArea(ref AetherVector2 normal, Fix64 offset, ref Transform xf, out AetherVector2 sc)
         {
-            sc = Vector2.Zero;
-            return 0;
+            sc = AetherVector2.Zero;
+            return Fix64.Zero;
         }
 
         public bool CompareTo(EdgeShape shape)

@@ -10,6 +10,7 @@ using tainicom.Aether.Physics2D.Dynamics;
 using tainicom.Aether.Physics2D.Dynamics.Contacts;
 using tainicom.Aether.Physics2D.Common.Decomposition;
 using tainicom.Aether.Physics2D.Common;
+using FixedMath.NET;
 #if XNAAPI
 using Vector2 = Microsoft.Xna.Framework.Vector2;
 #endif
@@ -28,8 +29,8 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
             Broken,
         }
 
-        private float[] _angularVelocitiesCache = new float[8];
-        private Vector2[] _velocitiesCache = new Vector2[8];
+        private Fix64[] _angularVelocitiesCache = new Fix64[8];
+        private AetherVector2[] _velocitiesCache = new AetherVector2[8];
         
         public List<Fixture> Parts = new List<Fixture>(8);
 
@@ -40,7 +41,7 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
         /// The force needed to break the body apart.
         /// Default: 500
         /// </summary>
-        public float Strength = 500.0f;
+        public Fix64 Strength = Fix64Constants.FiveHundred;
 
         public BreakableBodyState State { get; private set; }
                 
@@ -52,7 +53,7 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
             State = BreakableBodyState.Unbroken;
         }
 
-        public BreakableBody(World world, IEnumerable<Vertices> vertices, float density, Vector2 position = new Vector2(), float rotation = 0) : this(world)
+        public BreakableBody(World world, IEnumerable<Vertices> vertices, Fix64 density, AetherVector2 position, Fix64 rotation) : this(world)
         {
             MainBody = World.CreateBody(position, rotation, BodyType.Dynamic);
 
@@ -64,7 +65,7 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
             }
         }
 
-        public BreakableBody(World world, IEnumerable<Shape> shapes, Vector2 position = new Vector2(), float rotation = 0) : this(world)
+        public BreakableBody(World world, IEnumerable<Shape> shapes, AetherVector2 position, Fix64 rotation) : this(world)
         {
             MainBody = World.CreateBody(position, rotation, BodyType.Dynamic);
 
@@ -75,7 +76,7 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
             }
         }
         
-        public BreakableBody(World world, Vertices vertices, float density, Vector2 position = new Vector2(), float rotation = 0) : this(world)
+        public BreakableBody(World world, Vertices vertices, Fix64 density, AetherVector2 position, Fix64 rotation) : this(world)
         {
             MainBody = World.CreateBody(position, rotation, BodyType.Dynamic);
             
@@ -96,12 +97,12 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
             {
                 if (Parts.Contains(contact.FixtureA) || Parts.Contains(contact.FixtureB))
                 {
-                    float maxImpulse = 0.0f;
+                    Fix64 maxImpulse = Fix64.Zero;
                     int count = contact.Manifold.PointCount;
 
                     for (int i = 0; i < count; ++i)
                     {
-                        maxImpulse = Math.Max(maxImpulse, impulse.points[i].normalImpulse);
+                        maxImpulse = MathUtils.Max(maxImpulse, impulse.points[i].normalImpulse);
                     }
 
                     if (maxImpulse > Strength)
@@ -132,8 +133,8 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
             //Enlarge the cache if needed
             if (Parts.Count > _angularVelocitiesCache.Length)
             {
-                _velocitiesCache = new Vector2[Parts.Count];
-                _angularVelocitiesCache = new float[Parts.Count];
+                _velocitiesCache = new AetherVector2[Parts.Count];
+                _angularVelocitiesCache = new Fix64[Parts.Count];
             }
 
             //Cache the linear and angular velocities.

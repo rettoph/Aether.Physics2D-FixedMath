@@ -23,6 +23,7 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
+using FixedMath.NET;
 using System.Collections.Generic;
 using System.Diagnostics;
 using tainicom.Aether.Physics2D.Common;
@@ -46,7 +47,7 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
         ///<param name="triangles">The triangles.</param>
         ///<param name="maxPolys">The maximun number of polygons to return.</param>
         ///<param name="tolerance">The tolerance</param>
-        public static List<Vertices> PolygonizeTriangles(List<Vertices> triangles, int maxPolys = int.MaxValue, float tolerance = 0.001f)
+        public static List<Vertices> PolygonizeTriangles(List<Vertices> triangles, int maxPolys, Fix64 tolerance)
         {
             if (triangles.Count <= 0)
                 return triangles;
@@ -60,9 +61,9 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
 
                 //Check here for degenerate triangles
                 Vertices triangle = triangles[i];
-                Vector2 a = triangle[0];
-                Vector2 b = triangle[1];
-                Vector2 c = triangle[2];
+                AetherVector2 a = triangle[0];
+                AetherVector2 b = triangle[1];
+                AetherVector2 c = triangle[2];
 
                 if ((a.X == b.X && a.Y == b.Y) || (b.X == c.X && b.Y == c.Y) || (a.X == c.X && a.Y == c.Y))
                     covered[i] = true;
@@ -148,6 +149,16 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
             }
 
             return polys;
+        }
+        /// <summary>
+        /// Combine a list of triangles into a list of convex polygons.
+        /// 
+        /// Note: This only works on triangles.
+        /// </summary>
+        ///<param name="triangles">The triangles.</param>
+        public static List<Vertices> PolygonizeTriangles(List<Vertices> triangles)
+        {
+            return PolygonizeTriangles(triangles, int.MaxValue, Fix64Constants.PointZeroZeroOne);
         }
 
         private static Vertices AddTriangle(Vertices t, Vertices vertices)

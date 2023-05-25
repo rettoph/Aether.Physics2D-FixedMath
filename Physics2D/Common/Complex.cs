@@ -1,5 +1,6 @@
 ﻿// Copyright (c) 2017 Kastellanos Nikolaos
 
+using FixedMath.NET;
 using System;
 #if XNAAPI
 using Complex = tainicom.Aether.Physics2D.Common.Complex;
@@ -10,50 +11,50 @@ namespace tainicom.Aether.Physics2D.Common
 {
     public struct Complex
     {
-        private static readonly Complex _one = new Complex(1, 0);
-        private static readonly Complex _imaginaryOne = new Complex(0, 1);
+        private static readonly Complex _one = new Complex(Fix64.One, Fix64.Zero);
+        private static readonly Complex _imaginaryOne = new Complex(Fix64.Zero, Fix64.One);
 
-        public float R;
-        public float i;
+        public Fix64 R;
+        public Fix64 i;
 
         public static Complex One { get { return _one; } }
         public static Complex ImaginaryOne { get { return _imaginaryOne; } }
 
-        public float Phase
+        public Fix64 Phase
         {
-            get { return (float)Math.Atan2(i, R); }
+            get { return Fix64.Atan2(i, R); }
             set 
             {
-                if (value == 0)
+                if (value == Fix64.Zero)
                 {
                     this = Complex.One;
                     return;
                 }
-                this.R = (float)Math.Cos(value);
-                this.i = (float)Math.Sin(value);
+                this.R = Fix64.Cos(value);
+                this.i = Fix64.Sin(value);
             }
         }
 
-        public float Magnitude
+        public Fix64 Magnitude
         {
-            get { return (float)Math.Sqrt(MagnitudeSquared()); }
+            get { return Fix64.Sqrt(MagnitudeSquared()); }
         }
 
 
-        public Complex(float real, float imaginary)
+        public Complex(Fix64 real, Fix64 imaginary)
         {
             R = real;
             i = imaginary;
         }
                 
-        public static Complex FromAngle(float angle)
+        public static Complex FromAngle(Fix64 angle)
         {
-            if (angle == 0)
+            if (angle == Fix64.Zero)
                 return Complex.One;
 
             return new Complex(
-                (float)Math.Cos(angle),
-                (float)Math.Sin(angle));
+                Fix64.Cos(angle),
+                Fix64.Sin(angle));
         }        
 
         public void Conjugate()
@@ -67,7 +68,7 @@ namespace tainicom.Aether.Physics2D.Common
             i = -i;
         }
 
-        public float MagnitudeSquared()
+        public Fix64 MagnitudeSquared()
         {
             return (R * R) + (i * i);
         }
@@ -79,9 +80,9 @@ namespace tainicom.Aether.Physics2D.Common
             i = i / mag;            
         }
 
-        public Vector2 ToVector2()
+        public AetherVector2 ToVector2()
         {
-            return new Vector2(R, i);
+            return new AetherVector2(R, i);
         }
         
         public static Complex Multiply(ref Complex left, ref Complex right)
@@ -101,36 +102,36 @@ namespace tainicom.Aether.Physics2D.Common
                                  right.R * left.i - right.i * left.R);
         }
 
-        public static Vector2 Multiply(ref Vector2 left, ref Complex right)
+        public static AetherVector2 Multiply(ref AetherVector2 left, ref Complex right)
         {
-            return new Vector2(left.X * right.R - left.Y * right.i,
+            return new AetherVector2(left.X * right.R - left.Y * right.i,
                                left.Y * right.R + left.X * right.i);
         }
-        public static void Multiply(ref Vector2 left, ref Complex right, out Vector2 result)
+        public static void Multiply(ref AetherVector2 left, ref Complex right, out AetherVector2 result)
         {
-            result = new Vector2(left.X * right.R - left.Y * right.i,
+            result = new AetherVector2(left.X * right.R - left.Y * right.i,
                                  left.Y * right.R + left.X * right.i);
         }
-        public static Vector2 Multiply(Vector2 left, ref Complex right)
+        public static AetherVector2 Multiply(AetherVector2 left, ref Complex right)
         {
-            return new Vector2(left.X * right.R - left.Y * right.i,
+            return new AetherVector2(left.X * right.R - left.Y * right.i,
                                left.Y * right.R + left.X * right.i);
         }
 
-        public static Vector2 Divide(ref Vector2 left, ref Complex right)
+        public static AetherVector2 Divide(ref AetherVector2 left, ref Complex right)
         {
-            return new Vector2(left.X * right.R + left.Y * right.i,
+            return new AetherVector2(left.X * right.R + left.Y * right.i,
                                left.Y * right.R - left.X * right.i);
         }
 
-        public static Vector2 Divide(Vector2 left, ref Complex right)
+        public static AetherVector2 Divide(AetherVector2 left, ref Complex right)
         {
-            return new Vector2(left.X * right.R + left.Y * right.i,
+            return new AetherVector2(left.X * right.R + left.Y * right.i,
                                left.Y * right.R - left.X * right.i);
         }
-        public static void Divide(Vector2 left, ref Complex right, out Vector2 result)
+        public static void Divide(AetherVector2 left, ref Complex right, out AetherVector2 result)
         {
-            result = new Vector2(left.X * right.R + left.Y * right.i,
+            result = new AetherVector2(left.X * right.R + left.Y * right.i,
                                  left.Y * right.R - left.X * right.i);
         }
         

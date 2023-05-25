@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using tainicom.Aether.Physics2D.Common;
@@ -22,35 +23,35 @@ namespace tainicom.Aether.Physics2D.Controllers
 
     public class GravityController : Controller
     {
-        public GravityController(float strength)
+        public GravityController(Fix64 strength)
         {
             Strength = strength;
-            MaxRadius = float.MaxValue;
+            MaxRadius = Fix64.MaxValue;
             GravityType = GravityType.DistanceSquared;
-            Points = new List<Vector2>();
+            Points = new List<AetherVector2>();
             Bodies = new List<Body>();
         }
 
-        public GravityController(float strength, float maxRadius, float minRadius)
+        public GravityController(Fix64 strength, Fix64 maxRadius, Fix64 minRadius)
         {
             MinRadius = minRadius;
             MaxRadius = maxRadius;
             Strength = strength;
             GravityType = GravityType.DistanceSquared;
-            Points = new List<Vector2>();
+            Points = new List<AetherVector2>();
             Bodies = new List<Body>();
         }
 
-        public float MinRadius { get; set; }
-        public float MaxRadius { get; set; }
-        public float Strength { get; set; }
+        public Fix64 MinRadius { get; set; }
+        public Fix64 MaxRadius { get; set; }
+        public Fix64 Strength { get; set; }
         public GravityType GravityType { get; set; }
         public List<Body> Bodies { get; set; }
-        public List<Vector2> Points { get; set; }
+        public List<AetherVector2> Points { get; set; }
 
-        public override void Update(float dt)
+        public override void Update(Fix64 dt)
         {
-            Vector2 f = Vector2.Zero;
+            AetherVector2 f = AetherVector2.Zero;
 
             foreach (Body worldBody in World.BodyList)
             {
@@ -62,8 +63,8 @@ namespace tainicom.Aether.Physics2D.Controllers
                     if (worldBody == controllerBody || (worldBody.BodyType == BodyType.Static && controllerBody.BodyType == BodyType.Static) || !controllerBody.Enabled)
                         continue;
 
-                    Vector2 d = controllerBody.Position - worldBody.Position;
-                    float r2 = d.LengthSquared();
+                    AetherVector2 d = controllerBody.Position - worldBody.Position;
+                    Fix64 r2 = d.LengthSquared();
 
                     if (r2 <= Settings.Epsilon || r2 > MaxRadius * MaxRadius || r2 < MinRadius * MinRadius)
                         continue;
@@ -74,17 +75,17 @@ namespace tainicom.Aether.Physics2D.Controllers
                             f = Strength / r2 * worldBody.Mass * controllerBody.Mass * d;
                             break;
                         case GravityType.Linear:
-                            f = Strength / (float)Math.Sqrt(r2) * worldBody.Mass * controllerBody.Mass * d;
+                            f = Strength / Fix64.Sqrt(r2) * worldBody.Mass * controllerBody.Mass * d;
                             break;
                     }
 
                     worldBody.ApplyForce(ref f);
                 }
 
-                foreach (Vector2 point in Points)
+                foreach (AetherVector2 point in Points)
                 {
-                    Vector2 d = point - worldBody.Position;
-                    float r2 = d.LengthSquared();
+                    AetherVector2 d = point - worldBody.Position;
+                    Fix64 r2 = d.LengthSquared();
 
                     if (r2 <= Settings.Epsilon || r2 > MaxRadius * MaxRadius || r2 < MinRadius * MinRadius)
                         continue;
@@ -95,7 +96,7 @@ namespace tainicom.Aether.Physics2D.Controllers
                             f = Strength / r2 * worldBody.Mass * d;
                             break;
                         case GravityType.Linear:
-                            f = Strength / (float)Math.Sqrt(r2) * worldBody.Mass * d;
+                            f = Strength / Fix64.Sqrt(r2) * worldBody.Mass * d;
                             break;
                     }
 
@@ -109,7 +110,7 @@ namespace tainicom.Aether.Physics2D.Controllers
             Bodies.Add(body);
         }
 
-        public void AddPoint(Vector2 point)
+        public void AddPoint(AetherVector2 point)
         {
             Points.Add(point);
         }

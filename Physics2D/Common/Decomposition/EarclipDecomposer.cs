@@ -23,6 +23,7 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -53,12 +54,22 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
         /// </summary>
         /// <param name="vertices">The vertices.</param>
         /// <param name="tolerance">The tolerance.</param>
-        public static List<Vertices> ConvexPartition(Vertices vertices, float tolerance = 0.001f)
+        public static List<Vertices> ConvexPartition(Vertices vertices, Fix64 tolerance)
         {
             Debug.Assert(vertices.Count > 3);
             Debug.Assert(!vertices.IsCounterClockWise());
 
             return TriangulatePolygon(vertices, tolerance);
+        }
+
+        /// <summary>
+        /// Decompose the polygon into several smaller non-concave polygon.
+        /// Each resulting polygon will have no more than Settings.MaxPolygonVertices vertices.
+        /// </summary>
+        /// <param name="vertices">The vertices.</param>
+        public static List<Vertices> ConvexPartition(Vertices vertices)
+        {
+            return ConvexPartition(vertices, Fix64Constants.PointZeroZeroOne);
         }
 
         /// <summary>
@@ -79,7 +90,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
         /// <remarks>
         /// Only works on simple polygons.
         /// </remarks>
-        private static List<Vertices> TriangulatePolygon(Vertices vertices, float tolerance)
+        private static List<Vertices> TriangulatePolygon(Vertices vertices, Fix64 tolerance)
         {
             //FPE note: Check is needed as invalid triangles can be returned in recursive calls.
             if (vertices.Count < 3)
@@ -112,8 +123,8 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
 
             Vertices[] buffer = new Vertices[vertices.Count - 2];
             int bufferSize = 0;
-            float[] xrem = new float[vertices.Count];
-            float[] yrem = new float[vertices.Count];
+            Fix64[] xrem = new Fix64[vertices.Count];
+            Fix64[] yrem = new Fix64[vertices.Count];
             for (int i = 0; i < vertices.Count; ++i)
             {
                 xrem[i] = vertices[i].X;
@@ -126,34 +137,34 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
             {
                 // Find an ear
                 int earIndex = -1;
-                float earMaxMinCross = -10.0f;
+                Fix64 earMaxMinCross = -Fix64Constants.Ten;
                 for (int i = 0; i < vNum; ++i)
                 {
                     if (IsEar(i, xrem, yrem, vNum))
                     {
                         int lower = Remainder(i - 1, vNum);
                         int upper = Remainder(i + 1, vNum);
-                        Vector2 d1 = new Vector2(xrem[upper] - xrem[i], yrem[upper] - yrem[i]);
-                        Vector2 d2 = new Vector2(xrem[i] - xrem[lower], yrem[i] - yrem[lower]);
-                        Vector2 d3 = new Vector2(xrem[lower] - xrem[upper], yrem[lower] - yrem[upper]);
+                        AetherVector2 d1 = new AetherVector2(xrem[upper] - xrem[i], yrem[upper] - yrem[i]);
+                        AetherVector2 d2 = new AetherVector2(xrem[i] - xrem[lower], yrem[i] - yrem[lower]);
+                        AetherVector2 d3 = new AetherVector2(xrem[lower] - xrem[upper], yrem[lower] - yrem[upper]);
 
                         d1.Normalize();
                         d2.Normalize();
                         d3.Normalize();
-                        float cross12;
+                        Fix64 cross12;
                         MathUtils.Cross(ref d1, ref d2, out cross12);
-                        cross12 = Math.Abs(cross12);
+                        cross12 =  Fix64.Abs(cross12);
 
-                        float cross23;
+                        Fix64 cross23;
                         MathUtils.Cross(ref d2, ref d3, out cross23);
-                        cross23 = Math.Abs(cross23);
+                        cross23 =  Fix64.Abs(cross23);
 
-                        float cross31;
+                        Fix64 cross31;
                         MathUtils.Cross(ref d3, ref d1, out cross31);
-                        cross31 = Math.Abs(cross31);
+                        cross31 =  Fix64.Abs(cross31);
 
                         //Find the maximum minimum angle
-                        float minCross = Math.Min(cross12, Math.Min(cross23, cross31));
+                        Fix64 minCross = MathUtils.Min(cross12, MathUtils.Min(cross23, cross31));
                         if (minCross > earMaxMinCross)
                         {
                             earIndex = i;
@@ -180,8 +191,8 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
                 // - remove the ear tip from the list
 
                 --vNum;
-                float[] newx = new float[vNum];
-                float[] newy = new float[vNum];
+                Fix64[] newx = new Fix64[vNum];
+                Fix64[] newy = new Fix64[vNum];
                 int currDest = 0;
                 for (int i = 0; i < vNum; ++i)
                 {
@@ -231,7 +242,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
         /// <param name="poutA">The pout A.</param>
         /// <param name="poutB">The pout B.</param>
         /// <param name="tolerance"></param>
-        private static bool ResolvePinchPoint(Vertices pin, out Vertices poutA, out Vertices poutB, float tolerance)
+        private static bool ResolvePinchPoint(Vertices pin, out Vertices poutA, out Vertices poutB, Fix64 tolerance)
         {
             poutA = new Vertices();
             poutB = new Vertices();
@@ -248,7 +259,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
                 {
                     //Don't worry about pinch points where the points
                     //are actually just dupe neighbors
-                    if (Math.Abs(pin[i].X - pin[j].X) < tolerance && Math.Abs(pin[i].Y - pin[j].Y) < tolerance && j != i + 1)
+                    if ( Fix64.Abs(pin[i].X - pin[j].X) < tolerance &&  Fix64.Abs(pin[i].Y - pin[j].Y) < tolerance && j != i + 1)
                     {
                         pinchIndexA = i;
                         pinchIndexB = j;
@@ -307,9 +318,9 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
         /// <returns>
         /// 	<c>true</c> if the specified i is ear; otherwise, <c>false</c>.
         /// </returns>
-        private static bool IsEar(int i, float[] xv, float[] yv, int xvLength)
+        private static bool IsEar(int i, Fix64[] xv, Fix64[] yv, int xvLength)
         {
-            float dx0, dy0, dx1, dy1;
+            Fix64 dx0, dy0, dx1, dy1;
             if (i >= xvLength || i < 0 || xvLength < 3)
             {
                 return false;
@@ -340,9 +351,9 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
                 dy1 = yv[i + 1] - yv[i];
             }
 
-            float cross = dx0 * dy1 - dx1 * dy0;
+            Fix64 cross = dx0 * dy1 - dx1 * dy0;
 
-            if (cross > 0)
+            if (cross > Fix64.Zero)
                 return false;
 
             Triangle myTri = new Triangle(xv[i], yv[i], xv[upper], yv[upper], xv[lower], yv[lower]);
@@ -360,51 +371,51 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
         private class Triangle : Vertices
         {
             //Constructor automatically fixes orientation to ccw
-            public Triangle(float x1, float y1, float x2, float y2, float x3, float y3)
+            public Triangle(Fix64 x1, Fix64 y1, Fix64 x2, Fix64 y2, Fix64 x3, Fix64 y3)
             {
-                float cross = (x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1);
-                if (cross > 0)
+                Fix64 cross = (x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1);
+                if (cross > Fix64.Zero)
                 {
-                    Add(new Vector2(x1, y1));
-                    Add(new Vector2(x2, y2));
-                    Add(new Vector2(x3, y3));
+                    Add(new AetherVector2(x1, y1));
+                    Add(new AetherVector2(x2, y2));
+                    Add(new AetherVector2(x3, y3));
                 }
                 else
                 {
-                    Add(new Vector2(x1, y1));
-                    Add(new Vector2(x3, y3));
-                    Add(new Vector2(x2, y2));
+                    Add(new AetherVector2(x1, y1));
+                    Add(new AetherVector2(x3, y3));
+                    Add(new AetherVector2(x2, y2));
                 }
             }
 
-            public bool IsInside(float x, float y)
+            public bool IsInside(Fix64 x, Fix64 y)
             {
-                Vector2 a = this[0];
-                Vector2 b = this[1];
-                Vector2 c = this[2];
+                AetherVector2 a = this[0];
+                AetherVector2 b = this[1];
+                AetherVector2 c = this[2];
 
                 if (x < a.X && x < b.X && x < c.X) return false;
                 if (x > a.X && x > b.X && x > c.X) return false;
                 if (y < a.Y && y < b.Y && y < c.Y) return false;
                 if (y > a.Y && y > b.Y && y > c.Y) return false;
 
-                float vx2 = x - a.X;
-                float vy2 = y - a.Y;
-                float vx1 = b.X - a.X;
-                float vy1 = b.Y - a.Y;
-                float vx0 = c.X - a.X;
-                float vy0 = c.Y - a.Y;
+                Fix64 vx2 = x - a.X;
+                Fix64 vy2 = y - a.Y;
+                Fix64 vx1 = b.X - a.X;
+                Fix64 vy1 = b.Y - a.Y;
+                Fix64 vx0 = c.X - a.X;
+                Fix64 vy0 = c.Y - a.Y;
 
-                float dot00 = vx0 * vx0 + vy0 * vy0;
-                float dot01 = vx0 * vx1 + vy0 * vy1;
-                float dot02 = vx0 * vx2 + vy0 * vy2;
-                float dot11 = vx1 * vx1 + vy1 * vy1;
-                float dot12 = vx1 * vx2 + vy1 * vy2;
-                float invDenom = 1.0f / (dot00 * dot11 - dot01 * dot01);
-                float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-                float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+                Fix64 dot00 = vx0 * vx0 + vy0 * vy0;
+                Fix64 dot01 = vx0 * vx1 + vy0 * vy1;
+                Fix64 dot02 = vx0 * vx2 + vy0 * vy2;
+                Fix64 dot11 = vx1 * vx1 + vy1 * vy1;
+                Fix64 dot12 = vx1 * vx2 + vy1 * vy2;
+                Fix64 invDenom = Fix64.One / (dot00 * dot11 - dot01 * dot01);
+                Fix64 u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+                Fix64 v = (dot00 * dot12 - dot01 * dot02) * invDenom;
 
-                return ((u > 0) && (v > 0) && (u + v < 1));
+                return ((u > Fix64.Zero) && (v > Fix64.Zero) && (u + v < Fix64.One));
             }
         }
     }

@@ -3,15 +3,17 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
+
 namespace tainicom.Aether.Physics2D.Common.Decomposition.Seidel
 {
     internal class Point
     {
         // Pointers to next and previous points in Monontone Mountain
         public Point Next, Prev;
-        public float X, Y;
+        public Fix64 X, Y;
 
-        public Point(float x, float y)
+        public Point(Fix64 x, Fix64 y)
         {
             X = x;
             Y = y;
@@ -29,22 +31,22 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.Seidel
             return new Point(p1.X + p2.X, p1.Y + p2.Y);
         }
 
-        public static Point operator -(Point p1, float f)
+        public static Point operator -(Point p1, Fix64 f)
         {
             return new Point(p1.X - f, p1.Y - f);
         }
 
-        public static Point operator +(Point p1, float f)
+        public static Point operator +(Point p1, Fix64 f)
         {
             return new Point(p1.X + f, p1.Y + f);
         }
 
-        public float Cross(Point p)
+        public Fix64 Cross(Point p)
         {
             return X * p.Y - Y * p.X;
         }
 
-        public float Dot(Point p)
+        public Fix64 Dot(Point p)
         {
             return X * p.X + Y * p.Y;
         }
@@ -54,12 +56,12 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.Seidel
             return p.X != X || p.Y != Y;
         }
 
-        public float Orient2D(Point pb, Point pc)
+        public Fix64 Orient2D(Point pb, Point pc)
         {
-            float acx = X - pc.X;
-            float bcx = pb.X - pc.X;
-            float acy = Y - pc.Y;
-            float bcy = pb.Y - pc.Y;
+            Fix64 acx = X - pc.X;
+            Fix64 bcx = pb.X - pc.X;
+            Fix64 acy = Y - pc.Y;
+            Fix64 bcy = pb.Y - pc.Y;
             return acx * bcy - acy * bcx;
         }
     }

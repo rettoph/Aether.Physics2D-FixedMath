@@ -25,6 +25,7 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
+using FixedMath.NET;
 using System;
 using System.Diagnostics;
 using tainicom.Aether.Physics2D.Common;
@@ -40,30 +41,30 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
     /// </summary>
     public class CircleShape : Shape
     {
-        internal Vector2 _position;
+        internal AetherVector2 _position;
 
         /// <summary>
         /// Create a new circle with the desired radius and density.
         /// </summary>
         /// <param name="radius">The radius of the circle.</param>
         /// <param name="density">The density of the circle.</param>
-        public CircleShape(float radius, float density)
+        public CircleShape(Fix64 radius, Fix64 density)
             : base(density)
         {
-            Debug.Assert(radius >= 0);
-            Debug.Assert(density >= 0);
+            Debug.Assert(radius >= Fix64.Zero);
+            Debug.Assert(density >= Fix64.Zero);
 
             ShapeType = ShapeType.Circle;
-            _position = Vector2.Zero;
+            _position = AetherVector2.Zero;
             Radius = radius; // The Radius property cache 2radius and calls ComputeProperties(). So no need to call ComputeProperties() here.
         }
 
         internal CircleShape()
-            : base(0)
+            : base(Fix64.Zero)
         {
             ShapeType = ShapeType.Circle;
-            _radius = 0.0f;
-            _position = Vector2.Zero;
+            _radius = Fix64.Zero;
+            _position = AetherVector2.Zero;
         }
 
         public override int ChildCount
@@ -74,7 +75,7 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         /// <summary>
         /// Get or set the position of the circle
         /// </summary>
-        public Vector2 Position
+        public AetherVector2 Position
         {
             get { return _position; }
             set
@@ -84,11 +85,11 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
             }
         }
 
-        public override bool TestPoint(ref Transform transform, ref Vector2 point)
+        public override bool TestPoint(ref Transform transform, ref AetherVector2 point)
         {
-            Vector2 center = transform.p + Complex.Multiply(ref _position, ref transform.q);
-            Vector2 d = point - center;
-            return Vector2.Dot(d, d) <= _2radius;
+            AetherVector2 center = transform.p + Complex.Multiply(ref _position, ref transform.q);
+            AetherVector2 d = point - center;
+            return AetherVector2.Dot(d, d) <= _2radius;
         }
 
         public override bool RayCast(out RayCastOutput output, ref RayCastInput input, ref Transform transform, int childIndex)
@@ -100,27 +101,27 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
 
             output = new RayCastOutput();
 
-            Vector2 position = transform.p + Complex.Multiply(ref _position, ref transform.q);
-            Vector2 s = input.Point1 - position;
-            float b = Vector2.Dot(s, s) - _2radius;
+            AetherVector2 position = transform.p + Complex.Multiply(ref _position, ref transform.q);
+            AetherVector2 s = input.Point1 - position;
+            Fix64 b = AetherVector2.Dot(s, s) - _2radius;
 
             // Solve quadratic equation.
-            Vector2 r = input.Point2 - input.Point1;
-            float c = Vector2.Dot(s, r);
-            float rr = Vector2.Dot(r, r);
-            float sigma = c * c - rr * b;
+            AetherVector2 r = input.Point2 - input.Point1;
+            Fix64 c = AetherVector2.Dot(s, r);
+            Fix64 rr = AetherVector2.Dot(r, r);
+            Fix64 sigma = c * c - rr * b;
 
             // Check for negative discriminant and short segment.
-            if (sigma < 0.0f || rr < Settings.Epsilon)
+            if (sigma < Fix64.Zero || rr < Settings.Epsilon)
             {
                 return false;
             }
 
             // Find the point of intersection of the line with the circle.
-            float a = -(c + (float)Math.Sqrt(sigma));
+            Fix64 a = -(c + Fix64.Sqrt(sigma));
 
             // Is the intersection point on the segment?
-            if (0.0f <= a && a <= input.MaxFraction * rr)
+            if (Fix64.Zero <= a && a <= input.MaxFraction * rr)
             {
                 a /= rr;
                 output.Fraction = a;
@@ -150,25 +151,25 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
 
         protected override sealed void ComputeProperties()
         {
-            float area = Constant.Pi * _2radius;
+            Fix64 area = Constant.Pi * _2radius;
             MassData.Area = area;
             MassData.Mass = Density * area;
             MassData.Centroid = Position;
 
             // inertia about the local origin
-            MassData.Inertia = MassData.Mass * (0.5f * _2radius + Vector2.Dot(Position, Position));
+            MassData.Inertia = MassData.Mass * (Fix64Constants.PointFive * _2radius + AetherVector2.Dot(Position, Position));
         }
 
-        public override float ComputeSubmergedArea(ref Vector2 normal, float offset, ref Transform xf, out Vector2 sc)
+        public override Fix64 ComputeSubmergedArea(ref AetherVector2 normal, Fix64 offset, ref Transform xf, out AetherVector2 sc)
         {
-            sc = Vector2.Zero;
+            sc = AetherVector2.Zero;
 
-            Vector2 p = Transform.Multiply(ref _position, ref xf);
-            float l = -(Vector2.Dot(normal, p) - offset);
+            AetherVector2 p = Transform.Multiply(ref _position, ref xf);
+            Fix64 l = -(AetherVector2.Dot(normal, p) - offset);
             if (l < -Radius + Settings.Epsilon)
             {
                 //Completely dry
-                return 0;
+                return Fix64.Zero;
             }
             if (l > Radius)
             {
@@ -178,9 +179,9 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
             }
 
             //Magic
-            float l2 = l * l;
-            float area = _2radius * (float)((Math.Asin(l / Radius) + Constant.Pi / 2) + l * Math.Sqrt(_2radius - l2));
-            float com = -2.0f / 3.0f * (float)Math.Pow(_2radius - l2, 1.5f) / area;
+            Fix64 l2 = l * l;
+            Fix64 area = _2radius * ((MathUtils.Asin(l / Radius) + Fix64.PiOver2) + l * Fix64.Sqrt(_2radius - l2));
+            Fix64 com = -Fix64Constants.Two / Fix64Constants.Three * Fix64.Pow(_2radius - l2, Fix64Constants.OnePointFive) / area;
 
             sc.X = p.X + normal.X * com;
             sc.Y = p.Y + normal.Y * com;

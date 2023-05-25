@@ -27,6 +27,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -48,8 +49,8 @@ namespace tainicom.Aether.Physics2D.Dynamics
     public class Fixture
     {
         private bool _isSensor;
-        private float _friction;
-        private float _restitution;
+        private Fix64 _friction;
+        private Fix64 _restitution;
 
         internal Category _collidesWith;
         internal Category _collisionCategories;
@@ -89,8 +90,8 @@ namespace tainicom.Aether.Physics2D.Dynamics
             _collisionGroup = 0;
 
             //Fixture defaults
-            Friction = 0.2f;
-            Restitution = 0f;
+            Friction = Fix64Constants.PointTwo;
+            Restitution = Fix64.Zero;
         }
 
         public Fixture(Shape shape) : this()
@@ -200,12 +201,11 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// existing contacts.
         /// </summary>
         /// <value>The friction.</value>
-        public float Friction
+        public Fix64 Friction
         {
             get { return _friction; }
             set
             {
-                Debug.Assert(!float.IsNaN(value));
                 _friction = value;
             }
         }
@@ -215,12 +215,11 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// existing contacts.
         /// </summary>
         /// <value>The restitution.</value>
-        public float Restitution
+        public Fix64 Restitution
         {
             get { return _restitution; }
             set
             {
-                Debug.Assert(!float.IsNaN(value));
                 _restitution = value;
             }
         }
@@ -273,7 +272,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <param name="point">A point in world coordinates.</param>
         /// <returns></returns>
-        public bool TestPoint(ref Vector2 point)
+        public bool TestPoint(ref AetherVector2 point)
         {
             return Shape.TestPoint(ref Body._xf, ref point);
         }
@@ -350,7 +349,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
 
                 proxy.AABB.Combine(ref aabb1, ref aabb2);
 
-                Vector2 displacement = transform2.p - transform1.p;
+                AetherVector2 displacement = transform2.p - transform1.p;
 
                 broadPhase.MoveProxy(proxy.ProxyId, ref proxy.AABB, displacement);
             }

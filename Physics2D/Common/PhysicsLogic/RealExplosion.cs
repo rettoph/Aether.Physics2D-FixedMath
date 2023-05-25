@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,29 +18,29 @@ using Vector2 = Microsoft.Xna.Framework.Vector2;
 namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
 {
     // Original Code by Steven Lu - see http://www.box2d.org/forum/viewtopic.php?f=3&t=1688
-    // Ported to Farseer 3.0 by Nicolás Hormazábal
+    // Ported to Farseer Fix64Constants.Three by Nicolás Hormazábal
 
     internal struct ShapeData
     {
         public Body Body;
-        public float Max;
-        public float Min; // absolute angles
+        public Fix64 Max;
+        public Fix64 Min; // absolute angles
     }
 
     /// <summary>
     /// This is a comprarer used for 
     /// detecting angle difference between rays
     /// </summary>
-    internal class RayDataComparer : IComparer<float>
+    internal class RayDataComparer : IComparer<Fix64>
     {
-        #region IComparer<float> Members
+        #region IComparer<Fix64> Members
 
-        int IComparer<float>.Compare(float a, float b)
+        int IComparer<Fix64>.Compare(Fix64 a, Fix64 b)
         {
-            float diff = (a - b);
-            if (diff > 0)
+            Fix64 diff = (a - b);
+            if (diff > Fix64.Zero)
                 return 1;
-            if (diff < 0)
+            if (diff < Fix64.Zero)
                 return -1;
             return 0;
         }
@@ -71,13 +72,13 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
         /// <summary>
         /// Two degrees: maximum angle from edges to first ray tested
         /// </summary>
-        private const float MaxEdgeOffset = Constant.Pi / 90;
+        private static readonly Fix64 MaxEdgeOffset = Constant.Pi / Fix64Constants.Ninety;
 
         /// <summary>
         /// Ratio of arc length to angle from edges to first ray tested.
         /// Defaults to 1/40.
         /// </summary>
-        public float EdgeRatio = 1.0f / 40.0f;
+        public Fix64 EdgeRatio = Fix64.One / Fix64Constants.Fourty;
 
         /// <summary>
         /// Ignore Explosion if it happens inside a shape.
@@ -89,7 +90,7 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
         /// Max angle between rays (used when segment is large).
         /// Defaults to 15 degrees
         /// </summary>
-        public float MaxAngle = Constant.Pi / 15;
+        public Fix64 MaxAngle = Constant.Pi / Fix64Constants.Fifteen;
 
         /// <summary>
         /// Maximum number of shapes involved in the explosion.
@@ -119,11 +120,11 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
         /// <param name="radius">The explosion radius </param>
         /// <param name="maxForce">The explosion force at the explosion point (then is inversely proportional to the square of the distance)</param>
         /// <returns>A list of bodies and the amount of force that was applied to them.</returns>
-        public Dictionary<Fixture, Vector2> Activate(Vector2 pos, float radius, float maxForce)
+        public Dictionary<Fixture, AetherVector2> Activate(AetherVector2 pos, Fix64 radius, Fix64 maxForce)
         {
             AABB aabb;
-            aabb.LowerBound = pos + new Vector2(-radius, -radius);
-            aabb.UpperBound = pos + new Vector2(radius, radius);
+            aabb.LowerBound = pos + new AetherVector2(-radius, -radius);
+            aabb.UpperBound = pos + new AetherVector2(radius, radius);
             Fixture[] shapes = new Fixture[MaxShapes];
 
             // More than 5 shapes in an explosion could be possible, but still strange.
@@ -157,12 +158,12 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
                 }, ref aabb);
 
             if (exit)
-                return new Dictionary<Fixture, Vector2>();
+                return new Dictionary<Fixture, AetherVector2>();
 
-            Dictionary<Fixture, Vector2> exploded = new Dictionary<Fixture, Vector2>(shapeCount + containedShapeCount);
+            Dictionary<Fixture, AetherVector2> exploded = new Dictionary<Fixture, AetherVector2>(shapeCount + containedShapeCount);
 
             // Per shape max/min angles for now.
-            float[] vals = new float[shapeCount * 2];
+            Fix64[] vals = new Fix64[shapeCount * 2];
             int valIndex = 0;
             for (int i = 0; i < shapeCount; ++i)
             {
@@ -172,43 +173,43 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
                 {
                     // We create a "diamond" approximation of the circle
                     Vertices v = new Vertices();
-                    Vector2 vec = Vector2.Zero + new Vector2(cs.Radius, 0);
+                    AetherVector2 vec = AetherVector2.Zero + new AetherVector2(cs.Radius, Fix64.Zero);
                     v.Add(vec);
-                    vec = Vector2.Zero + new Vector2(0, cs.Radius);
+                    vec = AetherVector2.Zero + new AetherVector2(Fix64.Zero, cs.Radius);
                     v.Add(vec);
-                    vec = Vector2.Zero + new Vector2(-cs.Radius, cs.Radius);
+                    vec = AetherVector2.Zero + new AetherVector2(-cs.Radius, cs.Radius);
                     v.Add(vec);
-                    vec = Vector2.Zero + new Vector2(0, -cs.Radius);
+                    vec = AetherVector2.Zero + new AetherVector2(Fix64.Zero, -cs.Radius);
                     v.Add(vec);
-                    ps = new PolygonShape(v, 0);
+                    ps = new PolygonShape(v, Fix64.Zero);
                 }
                 else
                     ps = shapes[i].Shape as PolygonShape;
 
                 if ((shapes[i].Body.BodyType == BodyType.Dynamic) && ps != null)
                 {
-                    Vector2 toCentroid = shapes[i].Body.GetWorldPoint(ps.MassData.Centroid) - pos;
-                    float angleToCentroid = (float)Math.Atan2(toCentroid.Y, toCentroid.X);
-                    float min = float.MaxValue;
-                    float max = float.MinValue;
-                    float minAbsolute = 0.0f;
-                    float maxAbsolute = 0.0f;
+                    AetherVector2 toCentroid = shapes[i].Body.GetWorldPoint(ps.MassData.Centroid) - pos;
+                    Fix64 angleToCentroid = Fix64.Atan2(toCentroid.Y, toCentroid.X);
+                    Fix64 min = Fix64.MaxValue;
+                    Fix64 max = Fix64.MinValue;
+                    Fix64 minAbsolute = Fix64.Zero;
+                    Fix64 maxAbsolute = Fix64.Zero;
 
                     for (int j = 0; j < ps.Vertices.Count; ++j)
                     {
-                        Vector2 toVertex = (shapes[i].Body.GetWorldPoint(ps.Vertices[j]) - pos);
-                        float newAngle = (float)Math.Atan2(toVertex.Y, toVertex.X);
-                        float diff = (newAngle - angleToCentroid);
+                        AetherVector2 toVertex = (shapes[i].Body.GetWorldPoint(ps.Vertices[j]) - pos);
+                        Fix64 newAngle = Fix64.Atan2(toVertex.Y, toVertex.X);
+                        Fix64 diff = (newAngle - angleToCentroid);
 
-                        diff = (diff - Constant.Pi) % (2 * Constant.Pi);
+                        diff = (diff - Constant.Pi) % (Fix64.PiTimes2);
                         // the minus pi is important. It means cutoff for going other direction is at 180 deg where it needs to be
 
-                        if (diff < 0.0f)
-                            diff += 2 * Constant.Pi; // correction for not handling negs
+                        if (diff < Fix64.Zero)
+                            diff += Fix64.PiTimes2; // correction for not handling negs
 
                         diff -= Constant.Pi;
 
-                        if (Math.Abs(diff) > Constant.Pi)
+                        if ( Fix64.Abs(diff) > Constant.Pi)
                             continue; // Something's wrong, point not in shape but exists angle diff > 180
 
                         if (diff > max)
@@ -237,7 +238,7 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
             for (int i = 0; i < valIndex; ++i)
             {
                 Fixture fixture = null;
-                float midpt;
+                Fix64 midpt;
 
                 int iplus = (i == valIndex - 1 ? 0 : i + 1);
                 if (vals[i] == vals[iplus])
@@ -246,17 +247,17 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
                 if (i == valIndex - 1)
                 {
                     // the single edgecase
-                    midpt = (vals[0] + Constant.Pi * 2 + vals[i]);
+                    midpt = (vals[0] + Fix64.PiTimes2 + vals[i]);
                 }
                 else
                 {
                     midpt = (vals[i + 1] + vals[i]);
                 }
 
-                midpt = midpt / 2;
+                midpt = midpt / Fix64Constants.Two;
 
-                Vector2 p1 = pos;
-                Vector2 p2 = radius * new Vector2((float)Math.Cos(midpt), (float)Math.Sin(midpt)) + pos;
+                AetherVector2 p1 = pos;
+                AetherVector2 p2 = radius * new AetherVector2((Fix64) Fix64.Cos(midpt), (Fix64) Fix64.Sin(midpt)) + pos;
 
                 // RaycastOne
                 bool hitClosest = false;
@@ -265,7 +266,7 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
                                       Body body = f.Body;
 
                                       if (!IsActiveOn(body))
-                                          return 0;
+                                          return Fix64.Zero;
 
                                       hitClosest = true;
                                       fixture = f;
@@ -303,7 +304,7 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
                         _data[0] = fi;
                         while (_data.First().Min >= _data.First().Max)
                         {
-                            fi.Min -= Constant.Pi * 2;
+                            fi.Min -= Fix64.PiTimes2;
                             _data[0] = fi;
                         }
                     }
@@ -313,7 +314,7 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
                     while ((_data.Count > 0)
                            && (_data.Last().Min >= _data.Last().Max)) // just making sure min<max
                     {
-                        last.Min = _data.Last().Min - 2 * Constant.Pi;
+                        last.Min = _data.Last().Min - Fix64.PiTimes2;
                         _data[lastPos] = last;
                     }
                     rayMissed = false;
@@ -329,33 +330,33 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
                 if (!IsActiveOn(_data[i].Body))
                     continue;
 
-                float arclen = _data[i].Max - _data[i].Min;
+                Fix64 arclen = _data[i].Max - _data[i].Min;
 
-                float first = Math.Min(MaxEdgeOffset, EdgeRatio * arclen);
-                int insertedRays = (int)Math.Ceiling(((arclen - 2.0f * first) - (MinRays - 1) * MaxAngle) / MaxAngle);
+                Fix64 first = MathUtils.Min(MaxEdgeOffset, EdgeRatio * arclen);
+                int insertedRays = (int)Fix64.Ceiling(((arclen - Fix64Constants.Two * first) - (Fix64)(MinRays - 1) * MaxAngle) / MaxAngle);
 
                 if (insertedRays < 0)
                     insertedRays = 0;
 
-                float offset = (arclen - first * 2.0f) / ((float)MinRays + insertedRays - 1);
+                Fix64 offset = (arclen - first * Fix64Constants.Two) / (Fix64)(MinRays + insertedRays - 1);
 
                 //Note: This loop can go into infinite as it operates on floats.
                 //Added FloatEquals with a large epsilon.
-                for (float j = _data[i].Min + first;
-                     j < _data[i].Max || MathUtils.FloatEquals(j, _data[i].Max, 0.0001f);
+                for (Fix64 j = _data[i].Min + first;
+                     j < _data[i].Max || MathUtils.FloatEquals(j, _data[i].Max, Fix64Constants.PointZeroZeroZeroOne);
                      j += offset)
                 {
-                    Vector2 p1 = pos;
-                    Vector2 p2 = pos + radius * new Vector2((float)Math.Cos(j), (float)Math.Sin(j));
-                    Vector2 hitpoint = Vector2.Zero;
-                    float minlambda = float.MaxValue;
+                    AetherVector2 p1 = pos;
+                    AetherVector2 p2 = pos + radius * new AetherVector2((Fix64) Fix64.Cos(j), (Fix64) Fix64.Sin(j));
+                    AetherVector2 hitpoint = AetherVector2.Zero;
+                    Fix64 minlambda = Fix64.MaxValue;
 
                     foreach (Fixture f in _data[i].Body.FixtureList)
                     {
                         RayCastInput ri;
                         ri.Point1 = p1;
                         ri.Point2 = p2;
-                        ri.MaxFraction = 50f;
+                        ri.MaxFraction = Fix64Constants.Fifty;
 
                         RayCastOutput ro;
                         if (f.RayCast(out ro, ref ri, 0))
@@ -363,16 +364,16 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
                             if (minlambda > ro.Fraction)
                             {
                                 minlambda = ro.Fraction;
-                                hitpoint = ro.Fraction * p2 + (1 - ro.Fraction) * p1;
+                                hitpoint = ro.Fraction * p2 + (Fix64.One - ro.Fraction) * p1;
                             }
                         }
 
                         // the force that is to be applied for this particular ray.
                         // offset is angular coverage. lambda*length of segment is distance.
-                        float impulse = (arclen / (MinRays + insertedRays)) * maxForce * 180.0f / Constant.Pi * (1.0f - Math.Min(1.0f, minlambda));
+                        Fix64 impulse = (arclen / (Fix64)(MinRays + insertedRays)) * maxForce * Fix64Constants.OneEighty / Constant.Pi * (Fix64.One - MathUtils.Min(Fix64.One, minlambda));
 
                         // We Apply the impulse!!!
-                        Vector2 vectImp = Vector2.Dot(impulse * new Vector2((float)Math.Cos(j), (float)Math.Sin(j)), -ro.Normal) * new Vector2((float)Math.Cos(j), (float)Math.Sin(j));
+                        AetherVector2 vectImp = AetherVector2.Dot(impulse * new AetherVector2((Fix64) Fix64.Cos(j), (Fix64) Fix64.Sin(j)), -ro.Normal) * new AetherVector2((Fix64) Fix64.Cos(j), (Fix64) Fix64.Sin(j));
                         _data[i].Body.ApplyLinearImpulse(ref vectImp, ref hitpoint);
 
                         // We gather the fixtures for returning them
@@ -381,7 +382,7 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
                         else
                             exploded.Add(f, vectImp);
 
-                        if (minlambda > 1.0f)
+                        if (minlambda > Fix64.One)
                             hitpoint = p2;
                     }
                 }
@@ -395,8 +396,8 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
                 if (!IsActiveOn(fix.Body))
                     continue;
 
-                float impulse = MinRays * maxForce * 180.0f / Constant.Pi;
-                Vector2 hitPoint;
+                Fix64 impulse = (Fix64)MinRays * maxForce * Fix64Constants.OneEighty / Constant.Pi;
+                AetherVector2 hitPoint;
 
                 CircleShape circShape = fix.Shape as CircleShape;
                 if (circShape != null)
@@ -409,7 +410,7 @@ namespace tainicom.Aether.Physics2D.Common.PhysicsLogic
                     hitPoint = fix.Body.GetWorldPoint(shape.MassData.Centroid);
                 }
 
-                Vector2 vectImp = impulse * (hitPoint - pos);
+                AetherVector2 vectImp = impulse * (hitPoint - pos);
 
                 fix.Body.ApplyLinearImpulse(ref vectImp, ref hitPoint);
 

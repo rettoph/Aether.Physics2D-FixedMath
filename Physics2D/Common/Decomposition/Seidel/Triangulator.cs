@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 
@@ -18,11 +19,11 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.Seidel
         private Trapezoid _boundingBox;
         private List<Edge> _edgeList;
         private QueryGraph _queryGraph;
-        private float _sheer = 0.001f;
+        private Fix64 _sheer = Fix64Constants.PointZeroZeroOne;
         private TrapezoidalMap _trapezoidalMap;
         private List<MonotoneMountain> _xMonoPoly;
 
-        public Triangulator(List<Point> polyLine, float sheer)
+        public Triangulator(List<Point> polyLine, Fix64 sheer)
         {
             _sheer = sheer;
             Triangles = new List<List<Point>>();

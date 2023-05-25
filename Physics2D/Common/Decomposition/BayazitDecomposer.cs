@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System.Collections.Generic;
 using System.Diagnostics;
 using tainicom.Aether.Physics2D.Common;
@@ -42,8 +43,8 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
         private static List<Vertices> TriangulatePolygon(Vertices vertices)
         {
             List<Vertices> list = new List<Vertices>();
-            Vector2 lowerInt = new Vector2();
-            Vector2 upperInt = new Vector2(); // intersection points
+            AetherVector2 lowerInt = new AetherVector2();
+            AetherVector2 upperInt = new AetherVector2(); // intersection points
             int lowerIndex = 0, upperIndex = 0;
             Vertices lowerPoly, upperPoly;
 
@@ -51,13 +52,13 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
             {
                 if (Reflex(i, vertices))
                 {
-                    float upperDist;
-                    float lowerDist = upperDist = float.MaxValue;
+                    Fix64 upperDist;
+                    Fix64 lowerDist = upperDist = Fix64.MaxValue;
                     for (int j = 0; j < vertices.Count; ++j)
                     {
                         // if line intersects with an edge
-                        float d;
-                        Vector2 p;
+                        Fix64 d;
+                        AetherVector2 p;
                         if (Left(At(i - 1, vertices), At(i, vertices), At(j, vertices)) && RightOn(At(i - 1, vertices), At(i, vertices), At(j - 1, vertices)))
                         {
                             // find the point of intersection
@@ -97,7 +98,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
                     // if there are no vertices to connect to, choose a point in the middle
                     if (lowerIndex == (upperIndex + 1) % vertices.Count)
                     {
-                        Vector2 p = ((lowerInt + upperInt) / 2);
+                        AetherVector2 p = ((lowerInt + upperInt) / Fix64Constants.Two);
 
                         lowerPoly = Copy(i, upperIndex, vertices);
                         lowerPoly.Add(p);
@@ -106,7 +107,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
                     }
                     else
                     {
-                        double highestScore = 0, bestIndex = lowerIndex;
+                        Fix64 highestScore = Fix64.Zero, bestIndex = (Fix64)lowerIndex;
                         while (upperIndex < lowerIndex)
                             upperIndex += vertices.Count;
 
@@ -114,21 +115,21 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
                         {
                             if (CanSee(i, j, vertices))
                             {
-                                double score = 1 / (SquareDist(At(i, vertices), At(j, vertices)) + 1);
+                                Fix64 score = Fix64.One / (SquareDist(At(i, vertices), At(j, vertices)) + Fix64.One);
                                 if (Reflex(j, vertices))
                                 {
                                     if (RightOn(At(j - 1, vertices), At(j, vertices), At(i, vertices)) && LeftOn(At(j + 1, vertices), At(j, vertices), At(i, vertices)))
-                                        score += 3;
+                                        score += Fix64Constants.Three;
                                     else
-                                        score += 2;
+                                        score += Fix64Constants.Two;
                                 }
                                 else
                                 {
-                                    score += 1;
+                                    score += Fix64.One;
                                 }
                                 if (score > highestScore)
                                 {
-                                    bestIndex = j;
+                                    bestIndex = (Fix64)j;
                                     highestScore = score;
                                 }
                             }
@@ -156,7 +157,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
             return list;
         }
 
-        private static Vector2 At(int i, Vertices vertices)
+        private static AetherVector2 At(int i, Vertices vertices)
         {
             int s = vertices.Count;
             return vertices[i < 0 ? s - 1 - ((-i - 1) % s) : i % s];
@@ -203,7 +204,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
                 if ((k + 1) % vertices.Count == i || k == i || (k + 1) % vertices.Count == j || k == j)
                     continue; // ignore incident edges
 
-                Vector2 intersectionPoint;
+                AetherVector2 intersectionPoint;
 
                 if (LineTools.LineIntersect(At(i, vertices), At(j, vertices), At(k, vertices), At(k + 1, vertices), out intersectionPoint))
                     return false;
@@ -221,30 +222,30 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
             return Right(At(i - 1, vertices), At(i, vertices), At(i + 1, vertices));
         }
 
-        private static bool Left(Vector2 a, Vector2 b, Vector2 c)
+        private static bool Left(AetherVector2 a, AetherVector2 b, AetherVector2 c)
         {
-            return MathUtils.Area(ref a, ref b, ref c) > 0;
+            return MathUtils.Area(ref a, ref b, ref c) > Fix64.Zero;
         }
 
-        private static bool LeftOn(Vector2 a, Vector2 b, Vector2 c)
+        private static bool LeftOn(AetherVector2 a, AetherVector2 b, AetherVector2 c)
         {
-            return MathUtils.Area(ref a, ref b, ref c) >= 0;
+            return MathUtils.Area(ref a, ref b, ref c) >= Fix64.Zero;
         }
 
-        private static bool Right(Vector2 a, Vector2 b, Vector2 c)
+        private static bool Right(AetherVector2 a, AetherVector2 b, AetherVector2 c)
         {
-            return MathUtils.Area(ref a, ref b, ref c) < 0;
+            return MathUtils.Area(ref a, ref b, ref c) < Fix64.Zero;
         }
 
-        private static bool RightOn(Vector2 a, Vector2 b, Vector2 c)
+        private static bool RightOn(AetherVector2 a, AetherVector2 b, AetherVector2 c)
         {
-            return MathUtils.Area(ref a, ref b, ref c) <= 0;
+            return MathUtils.Area(ref a, ref b, ref c) <= Fix64.Zero;
         }
 
-        private static float SquareDist(Vector2 a, Vector2 b)
+        private static Fix64 SquareDist(AetherVector2 a, AetherVector2 b)
         {
-            float dx = b.X - a.X;
-            float dy = b.Y - a.Y;
+            Fix64 dx = b.X - a.X;
+            Fix64 dy = b.Y - a.Y;
             return dx * dx + dy * dy;
         }
     }

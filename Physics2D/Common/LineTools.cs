@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System;
 using tainicom.Aether.Physics2D.Collision;
 #if XNAAPI
@@ -13,27 +14,27 @@ namespace tainicom.Aether.Physics2D.Common
 {
     /// <summary>
     /// Collection of helper methods for misc collisions.
-    /// Does float tolerance and line collisions with lines and AABBs.
+    /// Does Fix64 tolerance and line collisions with lines and AABBs.
     /// </summary>
     public static class LineTools
     {
-        public static float DistanceBetweenPointAndLineSegment(ref Vector2 point, ref Vector2 start, ref Vector2 end)
+        public static Fix64 DistanceBetweenPointAndLineSegment(ref AetherVector2 point, ref AetherVector2 start, ref AetherVector2 end)
         {
             if (start == end)
-                return Vector2.Distance(point, start);
+                return AetherVector2.Distance(point, start);
 
-            Vector2 v = end - start;
-            Vector2 w = point - start;
+            AetherVector2 v = end - start;
+            AetherVector2 w = point - start;
 
-            float c1 = Vector2.Dot(w, v);
-            if (c1 <= 0) return Vector2.Distance(point, start);
+            Fix64 c1 = AetherVector2.Dot(w, v);
+            if (c1 <= Fix64.Zero) return AetherVector2.Distance(point, start);
 
-            float c2 = Vector2.Dot(v, v);
-            if (c2 <= c1) return Vector2.Distance(point, end);
+            Fix64 c2 = AetherVector2.Dot(v, v);
+            if (c2 <= c1) return AetherVector2.Distance(point, end);
 
-            float b = c1 / c2;
-            Vector2 pointOnLine = start + v * b;
-            return Vector2.Distance(point, pointOnLine);
+            Fix64 b = c1 / c2;
+            AetherVector2 pointOnLine = start + v * b;
+            return AetherVector2.Distance(point, pointOnLine);
         }
 
         // From Eric Jordan's convex decomposition library
@@ -45,33 +46,33 @@ namespace tainicom.Aether.Physics2D.Common
         ///Grazing lines should not return true.
         /// 
         /// </summary>
-        public static bool LineIntersect2(ref Vector2 a0, ref Vector2 a1, ref Vector2 b0, ref  Vector2 b1, out Vector2 intersectionPoint)
+        public static bool LineIntersect2(ref AetherVector2 a0, ref AetherVector2 a1, ref AetherVector2 b0, ref  AetherVector2 b1, out AetherVector2 intersectionPoint)
         {
-            intersectionPoint = Vector2.Zero;
+            intersectionPoint = AetherVector2.Zero;
 
             if (a0 == b0 || a0 == b1 || a1 == b0 || a1 == b1)
                 return false;
 
-            float x1 = a0.X;
-            float y1 = a0.Y;
-            float x2 = a1.X;
-            float y2 = a1.Y;
-            float x3 = b0.X;
-            float y3 = b0.Y;
-            float x4 = b1.X;
-            float y4 = b1.Y;
+            Fix64 x1 = a0.X;
+            Fix64 y1 = a0.Y;
+            Fix64 x2 = a1.X;
+            Fix64 y2 = a1.Y;
+            Fix64 x3 = b0.X;
+            Fix64 y3 = b0.Y;
+            Fix64 x4 = b1.X;
+            Fix64 y4 = b1.Y;
 
             //AABB early exit
-            if (Math.Max(x1, x2) < Math.Min(x3, x4) || Math.Max(x3, x4) < Math.Min(x1, x2))
+            if (MathUtils.Max(x1, x2) < MathUtils.Min(x3, x4) || MathUtils.Max(x3, x4) < MathUtils.Min(x1, x2))
                 return false;
 
-            if (Math.Max(y1, y2) < Math.Min(y3, y4) || Math.Max(y3, y4) < Math.Min(y1, y2))
+            if (MathUtils.Max(y1, y2) < MathUtils.Min(y3, y4) || MathUtils.Max(y3, y4) < MathUtils.Min(y1, y2))
                 return false;
 
-            float ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3));
-            float ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3));
-            float denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
-            if (Math.Abs(denom) < Settings.Epsilon)
+            Fix64 ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3));
+            Fix64 ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3));
+            Fix64 denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
+            if ( Fix64.Abs(denom) < Settings.Epsilon)
             {
                 //Lines are too close to parallel to call
                 return false;
@@ -79,7 +80,7 @@ namespace tainicom.Aether.Physics2D.Common
             ua /= denom;
             ub /= denom;
 
-            if ((0 < ua) && (ua < 1) && (0 < ub) && (ub < 1))
+            if ((Fix64.Zero < ua) && (ua < Fix64.One) && (Fix64.Zero < ub) && (ub < Fix64.One))
             {
                 intersectionPoint.X = (x1 + ua * (x2 - x1));
                 intersectionPoint.Y = (y1 + ua * (y2 - y1));
@@ -90,18 +91,18 @@ namespace tainicom.Aether.Physics2D.Common
         }
 
         //From Mark Bayazit's convex decomposition algorithm
-        public static Vector2 LineIntersect(Vector2 p1, Vector2 p2, Vector2 q1, Vector2 q2)
+        public static AetherVector2 LineIntersect(AetherVector2 p1, AetherVector2 p2, AetherVector2 q1, AetherVector2 q2)
         {
-            Vector2 i = Vector2.Zero;
-            float a1 = p2.Y - p1.Y;
-            float b1 = p1.X - p2.X;
-            float c1 = a1 * p1.X + b1 * p1.Y;
-            float a2 = q2.Y - q1.Y;
-            float b2 = q1.X - q2.X;
-            float c2 = a2 * q1.X + b2 * q1.Y;
-            float det = a1 * b2 - a2 * b1;
+            AetherVector2 i = AetherVector2.Zero;
+            Fix64 a1 = p2.Y - p1.Y;
+            Fix64 b1 = p1.X - p2.X;
+            Fix64 c1 = a1 * p1.X + b1 * p1.Y;
+            Fix64 a2 = q2.Y - q1.Y;
+            Fix64 b2 = q1.X - q2.X;
+            Fix64 c2 = a2 * q1.X + b2 * q1.Y;
+            Fix64 det = a1 * b2 - a2 * b1;
 
-            if (!MathUtils.FloatEquals(det, 0))
+            if (!MathUtils.FloatEquals(det, Fix64.Zero))
             {
                 // lines are not parallel
                 i.X = (b2 * c1 - b1 * c2) / det;
@@ -134,46 +135,46 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="secondIsSegment">Set this to true to require that the
         /// intersection point be on the second line segment.</param>
         /// <returns>True if an intersection is detected, false otherwise.</returns>
-        public static bool LineIntersect(ref Vector2 point1, ref Vector2 point2, ref Vector2 point3, ref Vector2 point4, bool firstIsSegment, bool secondIsSegment, out Vector2 point)
+        public static bool LineIntersect(ref AetherVector2 point1, ref AetherVector2 point2, ref AetherVector2 point3, ref AetherVector2 point4, bool firstIsSegment, bool secondIsSegment, out AetherVector2 point)
         {
-            point = new Vector2();
+            point = new AetherVector2();
 
             // these are reused later.
             // each lettered sub-calculation is used twice, except
             // for b and d, which are used 3 times
-            float a = point4.Y - point3.Y;
-            float b = point2.X - point1.X;
-            float c = point4.X - point3.X;
-            float d = point2.Y - point1.Y;
+            Fix64 a = point4.Y - point3.Y;
+            Fix64 b = point2.X - point1.X;
+            Fix64 c = point4.X - point3.X;
+            Fix64 d = point2.Y - point1.Y;
 
             // denominator to solution of linear system
-            float denom = (a * b) - (c * d);
+            Fix64 denom = (a * b) - (c * d);
 
             // if denominator is 0, then lines are parallel
             if (!(denom >= -Settings.Epsilon && denom <= Settings.Epsilon))
             {
-                float e = point1.Y - point3.Y;
-                float f = point1.X - point3.X;
-                float oneOverDenom = 1.0f / denom;
+                Fix64 e = point1.Y - point3.Y;
+                Fix64 f = point1.X - point3.X;
+                Fix64 oneOverDenom = Fix64.One / denom;
 
                 // numerator of first equation
-                float ua = (c * e) - (a * f);
+                Fix64 ua = (c * e) - (a * f);
                 ua *= oneOverDenom;
 
                 // check if intersection point of the two lines is on line segment 1
-                if (!firstIsSegment || ua >= 0.0f && ua <= 1.0f)
+                if (!firstIsSegment || ua >= Fix64.Zero && ua <= Fix64.One)
                 {
                     // numerator of second equation
-                    float ub = (b * e) - (d * f);
+                    Fix64 ub = (b * e) - (d * f);
                     ub *= oneOverDenom;
 
                     // check if intersection point of the two lines is on line segment 2
                     // means the line segments intersect, since we know it is on
                     // segment 1 as well.
-                    if (!secondIsSegment || ub >= 0.0f && ub <= 1.0f)
+                    if (!secondIsSegment || ub >= Fix64.Zero && ub <= Fix64.One)
                     {
                         // check if they are coincident (no collision in this case)
-                        if (ua != 0f || ub != 0f)
+                        if (ua != Fix64.Zero || ub != Fix64.Zero)
                         {
                             //There is an intersection
                             point.X = point1.X + ua * b;
@@ -211,7 +212,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="secondIsSegment">Set this to true to require that the
         /// intersection point be on the second line segment.</param>
         /// <returns>True if an intersection is detected, false otherwise.</returns>
-        public static bool LineIntersect(Vector2 point1, Vector2 point2, Vector2 point3, Vector2 point4, bool firstIsSegment, bool secondIsSegment, out Vector2 intersectionPoint)
+        public static bool LineIntersect(AetherVector2 point1, AetherVector2 point2, AetherVector2 point3, AetherVector2 point4, bool firstIsSegment, bool secondIsSegment, out AetherVector2 intersectionPoint)
         {
             return LineIntersect(ref point1, ref point2, ref point3, ref point4, firstIsSegment, secondIsSegment, out intersectionPoint);
         }
@@ -230,7 +231,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="intersectionPoint">This is set to the intersection
         /// point if an intersection is detected.</param>
         /// <returns>True if an intersection is detected, false otherwise.</returns>
-        public static bool LineIntersect(ref Vector2 point1, ref Vector2 point2, ref Vector2 point3, ref Vector2 point4, out Vector2 intersectionPoint)
+        public static bool LineIntersect(ref AetherVector2 point1, ref AetherVector2 point2, ref AetherVector2 point3, ref AetherVector2 point4, out AetherVector2 intersectionPoint)
         {
             return LineIntersect(ref point1, ref point2, ref point3, ref point4, true, true, out intersectionPoint);
         }
@@ -249,7 +250,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="intersectionPoint">This is set to the intersection
         /// point if an intersection is detected.</param>
         /// <returns>True if an intersection is detected, false otherwise.</returns>
-        public static bool LineIntersect(Vector2 point1, Vector2 point2, Vector2 point3, Vector2 point4, out Vector2 intersectionPoint)
+        public static bool LineIntersect(AetherVector2 point1, AetherVector2 point2, AetherVector2 point3, AetherVector2 point4, out AetherVector2 intersectionPoint)
         {
             return LineIntersect(ref point1, ref point2, ref point3, ref point4, true, true, out intersectionPoint);
         }
@@ -264,13 +265,13 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="point1">The first point of the line segment to test</param>
         /// <param name="point2">The second point of the line segment to test.</param>
         /// <param name="vertices">The vertices, as described above</param>
-        public static Vertices LineSegmentVerticesIntersect(ref Vector2 point1, ref Vector2 point2, Vertices vertices)
+        public static Vertices LineSegmentVerticesIntersect(ref AetherVector2 point1, ref AetherVector2 point2, Vertices vertices)
         {
             Vertices intersectionPoints = new Vertices();
 
             for (int i = 0; i < vertices.Count; i++)
             {
-                Vector2 point;
+                AetherVector2 point;
                 if (LineIntersect(vertices[i], vertices[vertices.NextIndex(i)], point1, point2, true, true, out point))
                 {
                     intersectionPoints.Add(point);
@@ -286,7 +287,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="point1">The first point of the line segment to test</param>
         /// <param name="point2">The second point of the line segment to test.</param>
         /// <param name="aabb">The AABB that is used for testing intersection.</param>
-        public static Vertices LineSegmentAABBIntersect(ref Vector2 point1, ref Vector2 point2, AABB aabb)
+        public static Vertices LineSegmentAABBIntersect(ref AetherVector2 point1, ref AetherVector2 point2, AABB aabb)
         {
             return LineSegmentVerticesIntersect(ref point1, ref point2, aabb.Vertices);
         }

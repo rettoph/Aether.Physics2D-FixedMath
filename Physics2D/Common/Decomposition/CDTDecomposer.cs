@@ -15,6 +15,7 @@ using tainicom.Aether.Physics2D.Common.Decomposition.CDT.Delaunay;
 using tainicom.Aether.Physics2D.Common.Decomposition.CDT.Delaunay.Sweep;
 using tainicom.Aether.Physics2D.Common.Decomposition.CDT.Polygon;
 using tainicom.Aether.Physics2D.Common;
+using FixedMath.NET;
 #if XNAAPI
 using Complex = tainicom.Aether.Physics2D.Common.Complex;
 using Vector2 = Microsoft.Xna.Framework.Vector2;
@@ -46,7 +47,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
 
             Polygon poly = new Polygon();
 
-            foreach (Vector2 vertex in vertices)
+            foreach (AetherVector2 vertex in vertices)
                 poly.Points.Add(new TriangulationPoint(vertex.X, vertex.Y));
 
             if (vertices.Holes != null)
@@ -55,7 +56,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
                 {
                     Polygon hole = new Polygon();
 
-                    foreach (Vector2 vertex in holeVertices)
+                    foreach (AetherVector2 vertex in holeVertices)
                         hole.Points.Add(new TriangulationPoint(vertex.X, vertex.Y));
 
                     poly.AddHole(hole);
@@ -73,7 +74,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
                 Vertices v = new Vertices();
                 foreach (TriangulationPoint p in triangle.Points)
                 {
-                    v.Add(new Vector2((float)p.X, (float)p.Y));
+                    v.Add(new AetherVector2(p.X, p.Y));
                 }
                 results.Add(v);
             }

@@ -40,6 +40,7 @@
 //   Eliminate Add/RemoveNode ?
 //   Comments comments and more comments!
 
+using FixedMath.NET;
 using System;
 using System.Text;
 
@@ -91,7 +92,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT.Delaunay.Sweep
         /// MM:  This seems to be used by LocateNode to guess a position in the implicit linked list of AdvancingFrontNodes near x
         ///      Removed an overload that depended on this being exact
         /// </summary>
-        private AdvancingFrontNode FindSearchNode(double x)
+        private AdvancingFrontNode FindSearchNode(Fix64 x)
         {
             // TODO: implement BST index 
             return Search;
@@ -105,7 +106,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT.Delaunay.Sweep
             return LocateNode(point.X);
         }
 
-        private AdvancingFrontNode LocateNode(double x)
+        private AdvancingFrontNode LocateNode(Fix64 x)
         {
             AdvancingFrontNode node = FindSearchNode(x);
             if (x < node.Value)
@@ -134,9 +135,9 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT.Delaunay.Sweep
         /// </summary>
         public AdvancingFrontNode LocatePoint(TriangulationPoint point)
         {
-            double px = point.X;
+            Fix64 px = point.X;
             AdvancingFrontNode node = FindSearchNode(px);
-            double nx = node.Point.X;
+            Fix64 nx = node.Point.X;
 
             if (px == nx)
             {

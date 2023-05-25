@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System.Collections.Generic;
 using tainicom.Aether.Physics2D.Collision.Shapes;
 using tainicom.Aether.Physics2D.Dynamics;
@@ -12,15 +13,15 @@ namespace tainicom.Aether.Physics2D.Content
     public class FixtureTemplate
     {
         public Shape Shape;
-        public float Restitution;
-        public float Friction;
+        public Fix64 Restitution;
+        public Fix64 Friction;
         public string Name;
     }
 
     public class BodyTemplate
     {
         public List<FixtureTemplate> Fixtures;
-        public float Mass;
+        public Fix64 Mass;
         public BodyType BodyType;
 
         public BodyTemplate()
@@ -41,7 +42,7 @@ namespace tainicom.Aether.Physics2D.Content
                 fixture.Friction = fixtureTemplate.Friction;
             }
 
-            if (Mass > 0f)
+            if (Mass > Fix64.Zero)
                 body.Mass = Mass;
 
             return body;

@@ -8,6 +8,7 @@
 * Copyright (c) 2012 Ian Qvist
 */
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -59,13 +60,13 @@ namespace tainicom.Aether.Physics2D.Common
     }
     
     [DebuggerDisplay("Count = {Count} Vertices = {ToString()}")]
-    public class Vertices : List<Vector2>
+    public class Vertices : List<AetherVector2>
     {
         public Vertices() { }
 
         public Vertices(int capacity) : base(capacity) { }
 
-        public Vertices(IEnumerable<Vector2> vertices)
+        public Vertices(IEnumerable<AetherVector2> vertices)
         {
             AddRange(vertices);
         }
@@ -91,7 +92,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// Gets the next vertex. Used for iterating all the edges with wrap-around.
         /// </summary>
         /// <param name="index">The current index</param>
-        public Vector2 NextVertex(int index)
+        public AetherVector2 NextVertex(int index)
         {
             return this[NextIndex(index)];
         }
@@ -109,7 +110,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// Gets the previous vertex. Used for iterating all the edges with wrap-around.
         /// </summary>
         /// <param name="index">The current index</param>
-        public Vector2 PreviousVertex(int index)
+        public AetherVector2 PreviousVertex(int index)
         {
             return this[PreviousIndex(index)];
         }
@@ -119,26 +120,26 @@ namespace tainicom.Aether.Physics2D.Common
         /// If the area is less than 0, it indicates that the polygon is clockwise winded.
         /// </summary>
         /// <returns>The signed area</returns>
-        public float GetSignedArea()
+        public Fix64 GetSignedArea()
         {
             //The simplest polygon which can exist in the Euclidean plane has 3 sides.
             if (Count < 3)
-                return 0;
+                return Fix64.Zero;
 
             int i;
-            float area = 0;
+            Fix64 area = Fix64.Zero;
 
             for (i = 0; i < Count; i++)
             {
                 int j = (i + 1) % Count;
 
-                Vector2 vi = this[i];
-                Vector2 vj = this[j];
+                AetherVector2 vi = this[i];
+                AetherVector2 vj = this[j];
 
                 area += vi.X * vj.Y;
                 area -= vi.Y * vj.X;
             }
-            area /= 2.0f;
+            area /= Fix64Constants.Two;
             return area;
         }
 
@@ -146,42 +147,41 @@ namespace tainicom.Aether.Physics2D.Common
         /// Gets the area.
         /// </summary>
         /// <returns></returns>
-        public float GetArea()
+        public Fix64 GetArea()
         {
-            float area = GetSignedArea();
-            return (area < 0 ? -area : area);
+            Fix64 area = GetSignedArea();
+            return (area < Fix64.Zero ? -area : area);
         }
 
         /// <summary>
         /// Gets the centroid.
         /// </summary>
         /// <returns></returns>
-        public Vector2 GetCentroid()
+        public AetherVector2 GetCentroid()
         {
             //The simplest polygon which can exist in the Euclidean plane has 3 sides.
             if (Count < 3)
-                return new Vector2(float.NaN, float.NaN);
+                return new AetherVector2(Fix64.Zero, Fix64.Zero);
 
             // Same algorithm is used by Box2D
-            Vector2 c = Vector2.Zero;
-            float area = 0.0f;
-            const float inv3 = 1.0f / 3.0f;
+            AetherVector2 c = AetherVector2.Zero;
+            Fix64 area = Fix64.Zero;
 
             for (int i = 0; i < Count; ++i)
             {
                 // Triangle vertices.
-                Vector2 current = this[i];
-                Vector2 next = (i + 1 < Count ? this[i + 1] : this[0]);
+                AetherVector2 current = this[i];
+                AetherVector2 next = (i + 1 < Count ? this[i + 1] : this[0]);
 
-                float triangleArea = 0.5f * (current.X * next.Y - current.Y * next.X);
+                Fix64 triangleArea = Fix64Constants.PointFive * (current.X * next.Y - current.Y * next.X);
                 area += triangleArea;
 
                 // Area weighted centroid
-                c += triangleArea * inv3 * (current + next);
+                c += triangleArea * Fix64Constants.k_inv3 * (current + next);
             }
 
             // Centroid
-            c *= 1.0f / area;
+            c *= Fix64.One / area;
             return c;
         }
 
@@ -191,8 +191,8 @@ namespace tainicom.Aether.Physics2D.Common
         public AABB GetAABB()
         {
             AABB aabb;
-            Vector2 lowerBound = new Vector2(float.MaxValue, float.MaxValue);
-            Vector2 upperBound = new Vector2(float.MinValue, float.MinValue);
+            AetherVector2 lowerBound = new AetherVector2(Fix64.MaxValue, Fix64.MaxValue);
+            AetherVector2 upperBound = new AetherVector2(Fix64.MinValue, Fix64.MinValue);
 
             for (int i = 0; i < Count; ++i)
             {
@@ -225,7 +225,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// Translates the vertices with the specified vector.
         /// </summary>
         /// <param name="value">The value.</param>
-        public void Translate(Vector2 value)
+        public void Translate(AetherVector2 value)
         {
             Translate(ref value);
         }
@@ -234,7 +234,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// Translates the vertices with the specified vector.
         /// </summary>
         /// <param name="value">The vector.</param>
-        public void Translate(ref Vector2 value)
+        public void Translate(ref AetherVector2 value)
         {
             Debug.Assert(!AttachedToBody, "Translating vertices that are used by a Body can result in unstable behavior. Use Body.Position instead.");
 
@@ -254,7 +254,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// Scales the vertices with the specified vector.
         /// </summary>
         /// <param name="value">The Value.</param>
-        public void Scale(Vector2 value)
+        public void Scale(AetherVector2 value)
         {
             Scale(ref value);
         }
@@ -263,7 +263,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// Scales the vertices with the specified vector.
         /// </summary>
         /// <param name="value">The Value.</param>
-        public void Scale(ref Vector2 value)
+        public void Scale(ref AetherVector2 value)
         {
             Debug.Assert(!AttachedToBody, "Scaling vertices that are used by a Body can result in unstable behavior.");
 
@@ -286,17 +286,17 @@ namespace tainicom.Aether.Physics2D.Common
         /// will cause problems with collisions. Use Body.Rotation instead.
         /// </summary>
         /// <param name="value">The amount to rotate by in radians.</param>
-        public void Rotate(float value)
+        public void Rotate(Fix64 value)
         {
             Debug.Assert(!AttachedToBody, "Rotating vertices that are used by a Body can result in unstable behavior.");
 
-            float num1 = (float)Math.Cos(value);
-            float num2 = (float)Math.Sin(value);
+            Fix64 num1 = (Fix64) Fix64.Cos(value);
+            Fix64 num2 = (Fix64) Fix64.Sin(value);
 
             for (int i = 0; i < Count; i++)
             {
-                Vector2 position = this[i];
-                this[i] = new Vector2((position.X * num1 + position.Y * -num2), (position.X * num2 + position.Y * num1));
+                AetherVector2 position = this[i];
+                this[i] = new AetherVector2((position.X * num1 + position.Y * -num2), (position.X * num2 + position.Y * num1));
             }
 
             if (Holes != null && Holes.Count > 0)
@@ -333,7 +333,7 @@ namespace tainicom.Aether.Physics2D.Common
             for (int i = 0; i < Count; ++i)
             {
                 int next = i + 1 < Count ? i + 1 : 0;
-                Vector2 edge = this[next] - this[i];
+                AetherVector2 edge = this[next] - this[i];
 
                 for (int j = 0; j < Count; ++j)
                 {
@@ -341,11 +341,11 @@ namespace tainicom.Aether.Physics2D.Common
                     if (j == i || j == next)
                         continue;
 
-                    Vector2 r = this[j] - this[i];
+                    AetherVector2 r = this[j] - this[i];
 
-                    float s = edge.X * r.Y - edge.Y * r.X;
+                    Fix64 s = edge.X * r.Y - edge.Y * r.X;
 
-                    if (s <= 0.0f)
+                    if (s <= Fix64.Zero)
                         return false;
                 }
             }
@@ -362,7 +362,7 @@ namespace tainicom.Aether.Physics2D.Common
             if (Count < 3)
                 return false;
 
-            return (GetSignedArea() > 0.0f);
+            return (GetSignedArea() > Fix64.Zero);
         }
 
         /// <summary>
@@ -389,14 +389,14 @@ namespace tainicom.Aether.Physics2D.Common
 
             for (int i = 0; i < Count; ++i)
             {
-                Vector2 a1 = this[i];
-                Vector2 a2 = NextVertex(i);
+                AetherVector2 a1 = this[i];
+                AetherVector2 a2 = NextVertex(i);
                 for (int j = i + 1; j < Count; ++j)
                 {
-                    Vector2 b1 = this[j];
-                    Vector2 b2 = NextVertex(j);
+                    AetherVector2 b1 = this[j];
+                    AetherVector2 b2 = NextVertex(j);
 
-                    Vector2 temp;
+                    AetherVector2 temp;
 
                     if (LineTools.LineIntersect2(ref a1, ref a2, ref b1, ref b2, out temp))
                         return false;
@@ -432,7 +432,7 @@ namespace tainicom.Aether.Physics2D.Common
             for (int i = 0; i < Count; ++i)
             {
                 int next = i + 1 < Count ? i + 1 : 0;
-                Vector2 edge = this[next] - this[i];
+                AetherVector2 edge = this[next] - this[i];
                 if (edge.LengthSquared() <= Settings.Epsilon*Settings.Epsilon)
                 {
                     return PolygonError.SideTooSmall;
@@ -451,16 +451,16 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="axis">The axis.</param>
         /// <param name="min">The min.</param>
         /// <param name="max">The max.</param>
-        public void ProjectToAxis(ref Vector2 axis, out float min, out float max)
+        public void ProjectToAxis(ref AetherVector2 axis, out Fix64 min, out Fix64 max)
         {
             // To project a point on an axis use the dot product
-            float dotProduct = Vector2.Dot(axis, this[0]);
+            Fix64 dotProduct = AetherVector2.Dot(axis, this[0]);
             min = dotProduct;
             max = dotProduct;
 
             for (int i = 0; i < Count; i++)
             {
-                dotProduct = Vector2.Dot(this[i], axis);
+                dotProduct = AetherVector2.Dot(this[i], axis);
                 if (dotProduct < min)
                 {
                     min = dotProduct;
@@ -483,7 +483,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// <returns>-1 if the winding number is zero and the point is outside
         /// the polygon, 1 if the point is inside the polygon, and 0 if the point
         /// is on the polygons edge.</returns>
-        public int PointInPolygon(ref Vector2 point)
+        public int PointInPolygon(ref AetherVector2 point)
         {
             // Winding number
             int wn = 0;
@@ -492,27 +492,27 @@ namespace tainicom.Aether.Physics2D.Common
             for (int i = 0; i < Count; i++)
             {
                 // Get points
-                Vector2 p1 = this[i];
-                Vector2 p2 = this[NextIndex(i)];
+                AetherVector2 p1 = this[i];
+                AetherVector2 p2 = this[NextIndex(i)];
 
                 // Test if a point is directly on the edge
-                Vector2 edge = p2 - p1;
-                float area = MathUtils.Area(ref p1, ref p2, ref point);
-                if (area == 0f && Vector2.Dot(point - p1, edge) >= 0f && Vector2.Dot(point - p2, edge) <= 0f)
+                AetherVector2 edge = p2 - p1;
+                Fix64 area = MathUtils.Area(ref p1, ref p2, ref point);
+                if (area == Fix64.Zero && AetherVector2.Dot(point - p1, edge) >= Fix64.Zero && AetherVector2.Dot(point - p2, edge) <= Fix64.Zero)
                 {
                     return 0;
                 }
                 // Test edge for intersection with ray from point
                 if (p1.Y <= point.Y)
                 {
-                    if (p2.Y > point.Y && area > 0f)
+                    if (p2.Y > point.Y && area > Fix64.Zero)
                     {
                         ++wn;
                     }
                 }
                 else
                 {
-                    if (p2.Y <= point.Y && area < 0f)
+                    if (p2.Y <= point.Y && area < Fix64.Zero)
                     {
                         --wn;
                     }
@@ -526,21 +526,21 @@ namespace tainicom.Aether.Physics2D.Common
         /// If this sum is 2pi then the point is an interior point, if 0 then the point is an exterior point. 
         /// ref: http://ozviz.wasp.uwa.edu.au/~pbourke/geometry/insidepoly/  - Solution 2 
         /// </summary>
-        public bool PointInPolygonAngle(ref Vector2 point)
+        public bool PointInPolygonAngle(ref AetherVector2 point)
         {
-            double angle = 0;
+            Fix64 angle = Fix64.Zero;
 
             // Iterate through polygon's edges
             for (int i = 0; i < Count; i++)
             {
                 // Get points
-                Vector2 p1 = this[i] - point;
-                Vector2 p2 = this[NextIndex(i)] - point;
+                AetherVector2 p1 = this[i] - point;
+                AetherVector2 p2 = this[NextIndex(i)] - point;
 
                 angle += MathUtils.VectorAngle(ref p1, ref p2);
             }
 
-            if (Math.Abs(angle) < Math.PI)
+            if ( Fix64.Abs(angle) < Fix64.Pi)
             {
                 return false;
             }
@@ -560,7 +560,7 @@ namespace tainicom.Aether.Physics2D.Common
                 this[i] = Vector2.Transform(this[i], transform);
 
             // Transform holes
-            if (Holes != null && Holes.Count > 0)
+            if (Holes != null && Holes.Count > Fix64.Zero)
             {
                 for (int i = 0; i < Holes.Count; i++)
                 {

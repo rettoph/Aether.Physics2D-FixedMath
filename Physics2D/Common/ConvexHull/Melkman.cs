@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using tainicom.Aether.Physics2D.Common;
 #if XNAAPI
 using Vector2 = Microsoft.Xna.Framework.Vector2;
@@ -36,13 +37,13 @@ namespace tainicom.Aether.Physics2D.Common.ConvexHull
 
             //We'll never need a queue larger than the current number of Vertices +1
             //Create double-ended queue
-            Vector2[] deque = new Vector2[vertices.Count + 1];
+            AetherVector2[] deque = new AetherVector2[vertices.Count + 1];
             int qf = 3, qb = 0; //Queue front index, queue back index
 
             //Start by placing first 3 vertices in convex CCW order
             int startIndex = 3;
-            float k = MathUtils.Area(vertices[0], vertices[1], vertices[2]);
-            if (k == 0)
+            Fix64 k = MathUtils.Area(vertices[0], vertices[1], vertices[2]);
+            if (k == Fix64.Zero)
             {
                 //Vertices are collinear.
                 deque[0] = vertices[0];
@@ -53,8 +54,8 @@ namespace tainicom.Aether.Physics2D.Common.ConvexHull
                 //Go until the end of the collinear sequence of vertices
                 for (startIndex = 3; startIndex < vertices.Count; startIndex++)
                 {
-                    Vector2 tmp = vertices[startIndex];
-                    if (MathUtils.Area(ref deque[0], ref deque[1], ref tmp) == 0) //This point is also collinear
+                    AetherVector2 tmp = vertices[startIndex];
+                    if (MathUtils.Area(ref deque[0], ref deque[1], ref tmp) == Fix64.Zero) //This point is also collinear
                         deque[1] = vertices[startIndex];
                     else break;
                 }
@@ -62,7 +63,7 @@ namespace tainicom.Aether.Physics2D.Common.ConvexHull
             else
             {
                 deque[0] = deque[3] = vertices[2];
-                if (k > 0)
+                if (k > Fix64.Zero)
                 {
                     //Is Left.  Set deque = {2, 0, 1, 2}
                     deque[1] = vertices[0];
@@ -82,14 +83,14 @@ namespace tainicom.Aether.Physics2D.Common.ConvexHull
             //Add vertices one at a time and adjust convex hull as needed
             for (int i = startIndex; i < vertices.Count; i++)
             {
-                Vector2 nextPt = vertices[i];
+                AetherVector2 nextPt = vertices[i];
 
                 //Ignore if it is already within the convex hull we have constructed
-                if (MathUtils.Area(ref deque[qfm1], ref deque[qf], ref nextPt) > 0 && MathUtils.Area(ref deque[qb], ref deque[qbm1], ref nextPt) > 0)
+                if (MathUtils.Area(ref deque[qfm1], ref deque[qf], ref nextPt) > Fix64.Zero && MathUtils.Area(ref deque[qb], ref deque[qbm1], ref nextPt) > Fix64.Zero)
                     continue;
 
                 //Pop front until convex
-                while (!(MathUtils.Area(ref deque[qfm1], ref deque[qf], ref nextPt) > 0))
+                while (!(MathUtils.Area(ref deque[qfm1], ref deque[qf], ref nextPt) > Fix64.Zero))
                 {
                     //Pop the front element from the queue
                     qf = qfm1; //qf--;
@@ -102,7 +103,7 @@ namespace tainicom.Aether.Physics2D.Common.ConvexHull
                 deque[qf] = nextPt;
 
                 //Pop back until convex
-                while (!(MathUtils.Area(ref deque[qb], ref deque[qbm1], ref nextPt) > 0))
+                while (!(MathUtils.Area(ref deque[qb], ref deque[qbm1], ref nextPt) > Fix64.Zero))
                 {
                     //Pop the back element from the queue
                     qb = qbm1; //qb++;

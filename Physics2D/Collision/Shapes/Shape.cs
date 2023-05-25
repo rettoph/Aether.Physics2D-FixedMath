@@ -25,6 +25,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using System;
 using System.Diagnostics;
 using tainicom.Aether.Physics2D.Common;
@@ -42,22 +43,22 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         /// <summary>
         /// The area of the shape
         /// </summary>
-        public float Area { get; internal set; }
+        public Fix64 Area { get; internal set; }
 
         /// <summary>
         /// The position of the shape's centroid relative to the shape's origin.
         /// </summary>
-        public Vector2 Centroid { get; internal set; }
+        public AetherVector2 Centroid { get; internal set; }
 
         /// <summary>
         /// The rotational inertia of the shape about the local origin.
         /// </summary>
-        public float Inertia { get; internal set; }
+        public Fix64 Inertia { get; internal set; }
 
         /// <summary>
         /// The mass of the shape, usually in kilograms.
         /// </summary>
-        public float Mass { get; internal set; }
+        public Fix64 Mass { get; internal set; }
 
         /// <summary>
         /// The equal operator
@@ -127,11 +128,11 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
     /// </summary>
     public abstract class Shape
     {
-        internal float _density;
-        internal float _radius;
-        internal float _2radius;
+        internal Fix64 _density;
+        internal Fix64 _radius;
+        internal Fix64 _2radius;
 
-        protected Shape(float density)
+        protected Shape(Fix64 density)
         {
             _density = density;
             ShapeType = ShapeType.Unknown;
@@ -163,12 +164,12 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         /// Changing the density causes a recalculation of shape properties.
         /// </summary>
         /// <value>The density.</value>
-        public float Density
+        public Fix64 Density
         {
             get { return _density; }
             set
             {
-                Debug.Assert(value >= 0);
+                Debug.Assert(value >= Fix64.Zero);
 
                 _density = value;
                 ComputeProperties();
@@ -179,12 +180,12 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         /// Radius of the Shape
         /// Changing the radius causes a recalculation of shape properties.
         /// </summary>
-        public float Radius
+        public Fix64 Radius
         {
             get { return _radius; }
             set
             {
-                Debug.Assert(value >= 0);
+                Debug.Assert(value >= Fix64.Zero);
 
                 _radius = value;
                 _2radius = _radius * _radius;
@@ -206,7 +207,7 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         /// <param name="transform">The shape world transform.</param>
         /// <param name="point">A point in world coordinates.</param>
         /// <returns>True if the point is inside the shape</returns>
-        public abstract bool TestPoint(ref Transform transform, ref Vector2 point);
+        public abstract bool TestPoint(ref Transform transform, ref AetherVector2 point);
 
         /// <summary>
         /// Cast a ray against a child shape.
@@ -235,6 +236,6 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         /// <summary>
         /// Used for the buoyancy controller
         /// </summary>
-        public abstract float ComputeSubmergedArea(ref Vector2 normal, float offset, ref Transform xf, out Vector2 sc);
+        public abstract Fix64 ComputeSubmergedArea(ref AetherVector2 normal, Fix64 offset, ref Transform xf, out AetherVector2 sc);
     }
 }

@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -32,7 +33,7 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
 
     public static class YuPengClipper
     {
-        private const float ClipperEpsilonSquared = 1.192092896e-07f;
+        private static readonly Fix64 ClipperEpsilonSquared = Fix64Constants.ClipperEpsilonSquared;
 
         public static List<Vertices> Union(Vertices polygon1, Vertices polygon2, out PolyClipError error)
         {
@@ -78,12 +79,12 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
 
             // Translate polygons into upper right quadrant
             // as the algorithm depends on it
-            Vector2 lbSubject = subject.GetAABB().LowerBound;
-            Vector2 lbClip = clip.GetAABB().LowerBound;
-            Vector2 translate;
-            Vector2.Min(ref lbSubject, ref lbClip, out translate);
-            translate = Vector2.One - translate;
-            if (translate != Vector2.Zero)
+            AetherVector2 lbSubject = subject.GetAABB().LowerBound;
+            AetherVector2 lbClip = clip.GetAABB().LowerBound;
+            AetherVector2 translate;
+            AetherVector2.Min(ref lbSubject, ref lbClip, out translate);
+            translate = AetherVector2.One - translate;
+            if (translate != AetherVector2.Zero)
             {
                 slicedSubject.Translate(ref translate);
                 slicedClip.Translate(ref translate);
@@ -94,9 +95,9 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
             slicedClip.ForceCounterClockWise();
 
             List<Edge> subjectSimplices;
-            List<float> subjectCoeff;
+            List<Fix64> subjectCoeff;
             List<Edge> clipSimplices;
-            List<float> clipCoeff;
+            List<Fix64> clipCoeff;
             // Build simplical chains from the polygons and calculate the
             // the corresponding coefficients
             CalculateSimplicalChain(slicedSubject, out subjectCoeff, out subjectSimplices);
@@ -116,7 +117,7 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
 
             // Reverse the polygon translation from the beginning
             // and remove collinear points from output
-            translate *= -1f;
+            translate *= -Fix64.One;
             for (int i = 0; i < result.Count; ++i)
             {
                 result[i].Translate(ref translate);
@@ -142,24 +143,24 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
             for (int i = 0; i < polygon1.Count; i++)
             {
                 // Get edge vertices
-                Vector2 a = polygon1[i];
-                Vector2 b = polygon1[polygon1.NextIndex(i)];
+                AetherVector2 a = polygon1[i];
+                AetherVector2 b = polygon1[polygon1.NextIndex(i)];
 
                 // Get intersections between this edge and polygon2
                 for (int j = 0; j < polygon2.Count; j++)
                 {
-                    Vector2 c = polygon2[j];
-                    Vector2 d = polygon2[polygon2.NextIndex(j)];
+                    AetherVector2 c = polygon2[j];
+                    AetherVector2 d = polygon2[polygon2.NextIndex(j)];
 
-                    Vector2 intersectionPoint;
+                    AetherVector2 intersectionPoint;
                     // Check if the edges intersect
                     if (LineTools.LineIntersect(a, b, c, d, out intersectionPoint))
                     {
                         // calculate alpha values for sorting multiple intersections points on a edge
-                        float alpha;
+                        Fix64 alpha;
                         // Insert intersection point into first polygon
                         alpha = GetAlpha(a, b, intersectionPoint);
-                        if (alpha > 0f && alpha < 1f)
+                        if (alpha > Fix64.Zero && alpha < Fix64.One)
                         {
                             int index = slicedPoly1.IndexOf(a) + 1;
                             while (index < slicedPoly1.Count &&
@@ -171,7 +172,7 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
                         }
                         // Insert intersection point into second polygon
                         alpha = GetAlpha(c, d, intersectionPoint);
-                        if (alpha > 0f && alpha < 1f)
+                        if (alpha > Fix64.Zero && alpha < Fix64.One)
                         {
                             int index = slicedPoly2.IndexOf(c) + 1;
                             while (index < slicedPoly2.Count &&
@@ -211,15 +212,15 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
         /// Calculates the simplical chain corresponding to the input polygon.
         /// </summary>
         /// <remarks>Used by method <c>Execute()</c>.</remarks>
-        private static void CalculateSimplicalChain(Vertices poly, out List<float> coeff,
+        private static void CalculateSimplicalChain(Vertices poly, out List<Fix64> coeff,
                                                     out List<Edge> simplicies)
         {
             simplicies = new List<Edge>();
-            coeff = new List<float>();
+            coeff = new List<Fix64>();
             for (int i = 0; i < poly.Count; ++i)
             {
                 simplicies.Add(new Edge(poly[i], poly[poly.NextIndex(i)]));
-                coeff.Add(CalculateSimplexCoefficient(Vector2.Zero, poly[i], poly[poly.NextIndex(i)]));
+                coeff.Add(CalculateSimplexCoefficient(AetherVector2.Zero, poly[i], poly[poly.NextIndex(i)]));
             }
         }
 
@@ -228,22 +229,22 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
         /// the given simplical chains and builds the result chain.
         /// </summary>
         /// <remarks>Used by method <c>Execute()</c>.</remarks>
-        private static void CalculateResultChain(List<float> poly1Coeff, List<Edge> poly1Simplicies,
-                                                   List<float> poly2Coeff, List<Edge> poly2Simplicies,
+        private static void CalculateResultChain(List<Fix64> poly1Coeff, List<Edge> poly1Simplicies,
+                                                   List<Fix64> poly2Coeff, List<Edge> poly2Simplicies,
                                                    PolyClipType clipType, out List<Edge> resultSimplices)
         {
             resultSimplices = new List<Edge>();
 
             for (int i = 0; i < poly1Simplicies.Count; ++i)
             {
-                float edgeCharacter = 0;
+                Fix64 edgeCharacter = Fix64.Zero;
                 if (poly2Simplicies.Contains(poly1Simplicies[i]))
                 {
-                    edgeCharacter = 1f;
+                    edgeCharacter = Fix64.One;
                 }
                 else if (poly2Simplicies.Contains(-poly1Simplicies[i]) && clipType == PolyClipType.Union)
                 {
-                    edgeCharacter = 1f;
+                    edgeCharacter = Fix64.One;
                 }
                 else
                 {
@@ -258,14 +259,14 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
                 }
                 if (clipType == PolyClipType.Intersect)
                 {
-                    if (edgeCharacter == 1f)
+                    if (edgeCharacter == Fix64.One)
                     {
                         resultSimplices.Add(poly1Simplicies[i]);
                     }
                 }
                 else
                 {
-                    if (edgeCharacter == 0f)
+                    if (edgeCharacter == Fix64.Zero)
                     {
                         resultSimplices.Add(poly1Simplicies[i]);
                     }
@@ -273,17 +274,17 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
             }
             for (int i = 0; i < poly2Simplicies.Count; ++i)
             {
-                float edgeCharacter = 0f;
+                Fix64 edgeCharacter = Fix64.Zero;
                 if (!resultSimplices.Contains(poly2Simplicies[i]) &&
                     !resultSimplices.Contains(-poly2Simplicies[i]))
                 {
                     if (poly1Simplicies.Contains(-poly2Simplicies[i]) && clipType == PolyClipType.Union)
                     {
-                        edgeCharacter = 1f;
+                        edgeCharacter = Fix64.One;
                     }
                     else
                     {
-                        edgeCharacter = 0f;
+                        edgeCharacter = Fix64.Zero;
                         for (int j = 0; j < poly1Simplicies.Count; ++j)
                         {
                             if (!poly1Simplicies.Contains(poly2Simplicies[i]) && !poly1Simplicies.Contains(-poly2Simplicies[i]))
@@ -294,14 +295,14 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
                         }
                         if (clipType == PolyClipType.Intersect || clipType == PolyClipType.Difference)
                         {
-                            if (edgeCharacter == 1f)
+                            if (edgeCharacter == Fix64.One)
                             {
                                 resultSimplices.Add(-poly2Simplicies[i]);
                             }
                         }
                         else
                         {
-                            if (edgeCharacter == 0f)
+                            if (edgeCharacter == Fix64.Zero)
                             {
                                 resultSimplices.Add(poly2Simplicies[i]);
                             }
@@ -386,17 +387,17 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
         /// Needed to calculate the characteristics function of a simplex.
         /// </summary>
         /// <remarks>Used by method <c>CalculateEdgeCharacter()</c>.</remarks>
-        private static float CalculateBeta(Vector2 point, Edge e, float coefficient)
+        private static Fix64 CalculateBeta(AetherVector2 point, Edge e, Fix64 coefficient)
         {
-            float result = 0f;
+            Fix64 result = Fix64.Zero;
             if (PointInSimplex(point, e))
             {
                 result = coefficient;
             }
-            if (PointOnLineSegment(Vector2.Zero, e.EdgeStart, point) ||
-                PointOnLineSegment(Vector2.Zero, e.EdgeEnd, point))
+            if (PointOnLineSegment(AetherVector2.Zero, e.EdgeStart, point) ||
+                PointOnLineSegment(AetherVector2.Zero, e.EdgeEnd, point))
             {
-                result = .5f * coefficient;
+                result = Fix64Constants.PointFive * coefficient;
             }
             return result;
         }
@@ -405,7 +406,7 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
         /// Needed for sorting multiple intersections points on the same edge.
         /// </summary>
         /// <remarks>Used by method <c>CalculateIntersections()</c>.</remarks>
-        private static float GetAlpha(Vector2 start, Vector2 end, Vector2 point)
+        private static Fix64 GetAlpha(AetherVector2 start, AetherVector2 end, AetherVector2 point)
         {
             return (point - start).LengthSquared() / (end - start).LengthSquared();
         }
@@ -414,20 +415,20 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
         /// Returns the coefficient of a simplex.
         /// </summary>
         /// <remarks>Used by method <c>CalculateSimplicalChain()</c>.</remarks>
-        private static float CalculateSimplexCoefficient(Vector2 a, Vector2 b, Vector2 c)
+        private static Fix64 CalculateSimplexCoefficient(AetherVector2 a, AetherVector2 b, AetherVector2 c)
         {
-            float isLeft = MathUtils.Area(ref a, ref b, ref c);
-            if (isLeft < 0f)
+            Fix64 isLeft = MathUtils.Area(ref a, ref b, ref c);
+            if (isLeft < Fix64.Zero)
             {
-                return -1f;
+                return -Fix64.One;
             }
 
-            if (isLeft > 0f)
+            if (isLeft > Fix64.Zero)
             {
-                return 1f;
+                return Fix64.One;
             }
 
-            return 0f;
+            return Fix64.Zero;
         }
 
         /// <summary>
@@ -437,10 +438,10 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
         /// <param name="edge">The edge that the point is tested against.</param>
         /// <returns>False if the winding number is even and the point is outside
         /// the simplex and True otherwise.</returns>
-        private static bool PointInSimplex(Vector2 point, Edge edge)
+        private static bool PointInSimplex(AetherVector2 point, Edge edge)
         {
             Vertices polygon = new Vertices();
-            polygon.Add(Vector2.Zero);
+            polygon.Add(AetherVector2.Zero);
             polygon.Add(edge.EdgeStart);
             polygon.Add(edge.EdgeEnd);
             return (polygon.PointInPolygon(ref point) == 1);
@@ -450,15 +451,15 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
         /// Tests if a point lies on a line segment.
         /// </summary>
         /// <remarks>Used by method <c>CalculateBeta()</c>.</remarks>
-        private static bool PointOnLineSegment(Vector2 start, Vector2 end, Vector2 point)
+        private static bool PointOnLineSegment(AetherVector2 start, AetherVector2 end, AetherVector2 point)
         {
-            Vector2 segment = end - start;
-            return MathUtils.Area(ref start, ref end, ref point) == 0f &&
-                   Vector2.Dot(point - start, segment) >= 0f &&
-                   Vector2.Dot(point - end, segment) <= 0f;
+            AetherVector2 segment = end - start;
+            return MathUtils.Area(ref start, ref end, ref point) == Fix64.Zero &&
+                   AetherVector2.Dot(point - start, segment) >= Fix64.Zero &&
+                   AetherVector2.Dot(point - end, segment) <= Fix64.Zero;
         }
 
-        private static bool VectorEqual(Vector2 vec1, Vector2 vec2)
+        private static bool VectorEqual(AetherVector2 vec1, AetherVector2 vec2)
         {
             return (vec2 - vec1).LengthSquared() <= ClipperEpsilonSquared;
         }
@@ -468,18 +469,18 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
         /// <summary>Specifies an Edge. Edges are used to represent simplicies in simplical chains</summary>
         private sealed class Edge
         {
-            public Edge(Vector2 edgeStart, Vector2 edgeEnd)
+            public Edge(AetherVector2 edgeStart, AetherVector2 edgeEnd)
             {
                 EdgeStart = edgeStart;
                 EdgeEnd = edgeEnd;
             }
 
-            public Vector2 EdgeStart { get; private set; }
-            public Vector2 EdgeEnd { get; private set; }
+            public AetherVector2 EdgeStart { get; private set; }
+            public AetherVector2 EdgeEnd { get; private set; }
 
-            public Vector2 GetCenter()
+            public AetherVector2 GetCenter()
             {
-                return (EdgeStart + EdgeEnd) / 2f;
+                return (EdgeStart + EdgeEnd) / Fix64Constants.Two;
             }
 
             public static Edge operator -(Edge e)

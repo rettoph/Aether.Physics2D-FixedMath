@@ -43,6 +43,7 @@
 //     Bundling everything into an AoS mess?
 //     Hardcode them all as ABC ?
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -327,18 +328,18 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT.Delaunay
             if (i != -1) EdgeIsConstrained[i] = true;
         }
 
-        public double Area()
+        public Fix64 Area()
         {
-            double b = Points[0].X - Points[1].X;
-            double h = Points[2].Y - Points[1].Y;
+            Fix64 b = Points[0].X - Points[1].X;
+            Fix64 h = Points[2].Y - Points[1].Y;
 
-            return Math.Abs((b*h*0.5f));
+            return  Fix64.Abs((b*h*Fix64Constants.PointFive));
         }
 
         public TriangulationPoint Centroid()
         {
-            double cx = (Points[0].X + Points[1].X + Points[2].X)/3f;
-            double cy = (Points[0].Y + Points[1].Y + Points[2].Y)/3f;
+            Fix64 cx = (Points[0].X + Points[1].X + Points[2].X)/Fix64Constants.Three;
+            Fix64 cy = (Points[0].Y + Points[1].Y + Points[2].Y)/Fix64Constants.Three;
             return new TriangulationPoint(cx, cy);
         }
 

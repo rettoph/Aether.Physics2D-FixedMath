@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System.Collections.Generic;
 using tainicom.Aether.Physics2D.Collision;
 using tainicom.Aether.Physics2D.Collision.Shapes;
@@ -21,29 +22,29 @@ namespace tainicom.Aether.Physics2D.Controllers
         /// Controls the rotational drag that the fluid exerts on the bodies within it. Use higher values will simulate thick fluid, like honey, lower values to
         /// simulate water-like fluids. 
         /// </summary>
-        public float AngularDragCoefficient;
+        public Fix64 AngularDragCoefficient;
 
         /// <summary>
         /// Density of the fluid. Higher values will make things more buoyant, lower values will cause things to sink.
         /// </summary>
-        public float Density;
+        public Fix64 Density;
 
         /// <summary>
         /// Controls the linear drag that the fluid exerts on the bodies within it.  Use higher values will simulate thick fluid, like honey, lower values to
         /// simulate water-like fluids.
         /// </summary>
-        public float LinearDragCoefficient;
+        public Fix64 LinearDragCoefficient;
 
         /// <summary>
         /// Acts like waterflow. Defaults to 0,0.
         /// </summary>
-        public Vector2 Velocity;
+        public AetherVector2 Velocity;
 
         private AABB _container;
 
-        private Vector2 _gravity;
-        private Vector2 _normal;
-        private float _offset;
+        private AetherVector2 _gravity;
+        private AetherVector2 _normal;
+        private Fix64 _offset;
         private ICollection<Body> _uniqueBodies = new List<Body>();
 
         /// <summary>
@@ -54,10 +55,10 @@ namespace tainicom.Aether.Physics2D.Controllers
         /// <param name="linearDragCoefficient">Linear drag coefficient of the fluid</param>
         /// <param name="rotationalDragCoefficient">Rotational drag coefficient of the fluid</param>
         /// <param name="gravity">The direction gravity acts. Buoyancy force will act in opposite direction of gravity.</param>
-        public BuoyancyController(AABB container, float density, float linearDragCoefficient, float rotationalDragCoefficient, Vector2 gravity)
+        public BuoyancyController(AABB container, Fix64 density, Fix64 linearDragCoefficient, Fix64 rotationalDragCoefficient, AetherVector2 gravity)
         {
             Container = container;
-            _normal = new Vector2(0, 1);
+            _normal = new AetherVector2(Fix64.Zero, Fix64.One);
             Density = density;
             LinearDragCoefficient = linearDragCoefficient;
             AngularDragCoefficient = rotationalDragCoefficient;
@@ -74,7 +75,7 @@ namespace tainicom.Aether.Physics2D.Controllers
             }
         }
 
-        public override void Update(float dt)
+        public override void Update(Fix64 dt)
         {
             _uniqueBodies.Clear();
             World.QueryAABB(fixture =>
@@ -90,10 +91,10 @@ namespace tainicom.Aether.Physics2D.Controllers
 
             foreach (Body body in _uniqueBodies)
             {
-                Vector2 areac = Vector2.Zero;
-                Vector2 massc = Vector2.Zero;
-                float area = 0;
-                float mass = 0;
+                AetherVector2 areac = AetherVector2.Zero;
+                AetherVector2 massc = AetherVector2.Zero;
+                Fix64 area = Fix64.Zero;
+                Fix64 mass = Fix64.Zero;
 
                 foreach (Fixture fixture in body.FixtureList)
                 {
@@ -102,8 +103,8 @@ namespace tainicom.Aether.Physics2D.Controllers
 
                     Shape shape = fixture.Shape;
 
-                    Vector2 sc;
-                    float sarea = shape.ComputeSubmergedArea(ref _normal, _offset, ref body._xf, out sc);
+                    AetherVector2 sc;
+                    Fix64 sarea = shape.ComputeSubmergedArea(ref _normal, _offset, ref body._xf, out sc);
                     area += sarea;
                     areac.X += sarea * sc.X;
                     areac.Y += sarea * sc.Y;
@@ -122,12 +123,12 @@ namespace tainicom.Aether.Physics2D.Controllers
                     continue;
 
                 //Buoyancy
-                Vector2 buoyancyForce = -Density * area * _gravity;
+                AetherVector2 buoyancyForce = -Density * area * _gravity;
                 body.ApplyForce(buoyancyForce, massc);
 
                 //Linear drag
-                Vector2 dragVelocity = body.GetLinearVelocityFromWorldPoint(areac) - Velocity;
-                Vector2 dragForce = dragVelocity * (-LinearDragCoefficient * area);
+                AetherVector2 dragVelocity = body.GetLinearVelocityFromWorldPoint(areac) - Velocity;
+                AetherVector2 dragForce = dragVelocity * (-LinearDragCoefficient * area);
                 body.ApplyForce(dragForce, areac);
 
                 //Angular drag
