@@ -217,19 +217,5 @@ namespace tainicom.Aether.Physics2D.Common
 
         #endregion Fast ref methods
 
-        /// <summary>
-        /// Creates a new <see cref="AetherVector2"/> that contains linear interpolation of the specified vectors.
-        /// </summary>
-        /// <param name="value1">The first vector.</param>
-        /// <param name="value2">The second vector.</param>
-        /// <param name="amount">Weighting value(between 0.0 and 1.0).</param>
-        /// <returns>The result of linear interpolation of the specified vectors.</returns>
-        public static AetherVector2 Lerp(AetherVector2 v1, AetherVector2 v2, Fix64 amount)
-        {
-            return new AetherVector2(
-                x: MathUtils.Lerp(v1.X, v2.X, amount),
-                y: MathUtils.Lerp(v1.Y, v2.Y, amount));
-        }
-
     }
 }

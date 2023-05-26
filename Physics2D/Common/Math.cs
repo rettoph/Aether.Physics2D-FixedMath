@@ -317,11 +317,6 @@ namespace tainicom.Aether.Physics2D.Common
 
             return Fix64.Zero;
         }
-
-        public static Fix64 Lerp(Fix64 v1, Fix64 v2, Fix64 amount)
-        {
-            return v1 + (v2 - v1) * amount;
-        }
     }
 
     /// <summary>
