@@ -36,6 +36,11 @@ namespace tainicom.Aether.Physics2D.Dynamics
             return body;
         }
 
+        public virtual Body CreateBody(BodyType bodyType = BodyType.Static)
+        {
+            return this.CreateBody(AetherVector2.Zero, Fix64.Zero, bodyType);
+        }
+
         public Body CreateEdge(AetherVector2 start, AetherVector2 end)
         {
             Body body = CreateBody();
