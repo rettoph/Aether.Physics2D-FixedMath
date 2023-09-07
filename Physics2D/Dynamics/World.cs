@@ -108,6 +108,11 @@ namespace tainicom.Aether.Physics2D.Dynamics
         public BodyDelegate BodyRemoved;
 
         /// <summary>
+        /// Fires whenever a body is woken up or put to sleep
+        /// </summary>
+        public BodyDelegate BodyAwakeChanged;
+
+        /// <summary>
         /// Fires whenever a fixture has been added
         /// </summary>
         public FixtureDelegate FixtureAdded;

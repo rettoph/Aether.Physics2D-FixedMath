@@ -261,6 +261,11 @@ namespace tainicom.Aether.Physics2D.Dynamics
         {
             set
             {
+                if(_awake == value)
+                {
+                    return;
+                }
+
                 if (value)
                 {
                     if (!_awake)
@@ -294,6 +299,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
                 }
 
                 _awake = value;
+                _world.BodyAwakeChanged(_world, this);
             }
             get { return _awake; }
         }
