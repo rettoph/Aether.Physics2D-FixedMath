@@ -25,6 +25,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using System;
 using System.Diagnostics;
 using tainicom.Aether.Physics2D.Common;
@@ -44,7 +45,7 @@ namespace tainicom.Aether.Physics2D.Collision
         public DistanceProxy ProxyB;
         public Sweep SweepA;
         public Sweep SweepB;
-        public float TMax; // defines sweep interval [0, tMax]
+        public Fix64 TMax; // defines sweep interval [0, tMax]
     }
 
     public enum TOIOutputState
@@ -59,7 +60,7 @@ namespace tainicom.Aether.Physics2D.Collision
     public struct TOIOutput
     {
         public TOIOutputState State;
-        public float T;
+        public Fix64 T;
     }
 
     public enum SeparationFunctionType
@@ -72,9 +73,9 @@ namespace tainicom.Aether.Physics2D.Collision
     public static class SeparationFunction
     {
         [ThreadStatic]
-        private static Vector2 _axis;
+        private static AetherVector2 _axis;
         [ThreadStatic]
-        private static Vector2 _localPoint;
+        private static AetherVector2 _localPoint;
         [ThreadStatic]
         private static DistanceProxy _proxyA;
         [ThreadStatic]
@@ -84,9 +85,9 @@ namespace tainicom.Aether.Physics2D.Collision
         [ThreadStatic]
         private static SeparationFunctionType _type;
 
-        public static void Set(ref SimplexCache cache, ref DistanceProxy proxyA, ref Sweep sweepA, ref DistanceProxy proxyB, ref Sweep sweepB, float t1)
+        public static void Set(ref SimplexCache cache, ref DistanceProxy proxyA, ref Sweep sweepA, ref DistanceProxy proxyB, ref Sweep sweepB, Fix64 t1)
         {
-            _localPoint = Vector2.Zero;
+            _localPoint = AetherVector2.Zero;
             _proxyA = proxyA;
             _proxyB = proxyB;
             int count = cache.Count;
@@ -102,10 +103,10 @@ namespace tainicom.Aether.Physics2D.Collision
             if (count == 1)
             {
                 _type = SeparationFunctionType.Points;
-                Vector2 localPointA = _proxyA.Vertices[cache.IndexA[0]];
-                Vector2 localPointB = _proxyB.Vertices[cache.IndexB[0]];
-                Vector2 pointA = Transform.Multiply(ref localPointA, ref xfA);
-                Vector2 pointB = Transform.Multiply(ref localPointB, ref xfB);
+                AetherVector2 localPointA = _proxyA.Vertices[cache.IndexA[0]];
+                AetherVector2 localPointB = _proxyB.Vertices[cache.IndexB[0]];
+                AetherVector2 pointA = Transform.Multiply(ref localPointA, ref xfA);
+                AetherVector2 pointB = Transform.Multiply(ref localPointB, ref xfB);
                 _axis = pointB - pointA;
                 _axis.Normalize();
             }
@@ -113,22 +114,22 @@ namespace tainicom.Aether.Physics2D.Collision
             {
                 // Two points on B and one on A.
                 _type = SeparationFunctionType.FaceB;
-                Vector2 localPointB1 = proxyB.Vertices[cache.IndexB[0]];
-                Vector2 localPointB2 = proxyB.Vertices[cache.IndexB[1]];
+                AetherVector2 localPointB1 = proxyB.Vertices[cache.IndexB[0]];
+                AetherVector2 localPointB2 = proxyB.Vertices[cache.IndexB[1]];
 
-                Vector2 a = localPointB2 - localPointB1;
-                _axis = new Vector2(a.Y, -a.X);
+                AetherVector2 a = localPointB2 - localPointB1;
+                _axis = new AetherVector2(a.Y, -a.X);
                 _axis.Normalize();
-                Vector2 normal = Complex.Multiply(ref _axis, ref xfB.q);
+                AetherVector2 normal = Complex.Multiply(ref _axis, ref xfB.q);
 
-                _localPoint = 0.5f * (localPointB1 + localPointB2);
-                Vector2 pointB = Transform.Multiply(ref _localPoint, ref xfB);
+                _localPoint = Fix64Constants.PointFive * (localPointB1 + localPointB2);
+                AetherVector2 pointB = Transform.Multiply(ref _localPoint, ref xfB);
 
-                Vector2 localPointA = proxyA.Vertices[cache.IndexA[0]];
-                Vector2 pointA = Transform.Multiply(ref localPointA, ref xfA);
+                AetherVector2 localPointA = proxyA.Vertices[cache.IndexA[0]];
+                AetherVector2 pointA = Transform.Multiply(ref localPointA, ref xfA);
 
-                float s = Vector2.Dot(pointA - pointB, normal);
-                if (s < 0.0f)
+                Fix64 s = AetherVector2.Dot(pointA - pointB, normal);
+                if (s < Fix64.Zero)
                 {
                     _axis = -_axis;
                 }
@@ -137,29 +138,29 @@ namespace tainicom.Aether.Physics2D.Collision
             {
                 // Two points on A and one or two points on B.
                 _type = SeparationFunctionType.FaceA;
-                Vector2 localPointA1 = _proxyA.Vertices[cache.IndexA[0]];
-                Vector2 localPointA2 = _proxyA.Vertices[cache.IndexA[1]];
+                AetherVector2 localPointA1 = _proxyA.Vertices[cache.IndexA[0]];
+                AetherVector2 localPointA2 = _proxyA.Vertices[cache.IndexA[1]];
 
-                Vector2 a = localPointA2 - localPointA1;
-                _axis = new Vector2(a.Y, -a.X);
+                AetherVector2 a = localPointA2 - localPointA1;
+                _axis = new AetherVector2(a.Y, -a.X);
                 _axis.Normalize();
-                Vector2 normal = Complex.Multiply(ref _axis, ref xfA.q);
+                AetherVector2 normal = Complex.Multiply(ref _axis, ref xfA.q);
 
-                _localPoint = 0.5f * (localPointA1 + localPointA2);
-                Vector2 pointA = Transform.Multiply(ref _localPoint, ref xfA);
+                _localPoint = Fix64Constants.PointFive * (localPointA1 + localPointA2);
+                AetherVector2 pointA = Transform.Multiply(ref _localPoint, ref xfA);
 
-                Vector2 localPointB = _proxyB.Vertices[cache.IndexB[0]];
-                Vector2 pointB = Transform.Multiply(ref localPointB, ref xfB);
+                AetherVector2 localPointB = _proxyB.Vertices[cache.IndexB[0]];
+                AetherVector2 pointB = Transform.Multiply(ref localPointB, ref xfB);
 
-                float s = Vector2.Dot(pointB - pointA, normal);
-                if (s < 0.0f)
+                Fix64 s = AetherVector2.Dot(pointB - pointA, normal);
+                if (s < Fix64.Zero)
                 {
                     _axis = -_axis;
                 }
             }
         }
 
-        public static float FindMinSeparation(out int indexA, out int indexB, float t)
+        public static Fix64 FindMinSeparation(out int indexA, out int indexB, Fix64 t)
         {
             Transform xfA, xfB;
             _sweepA.GetTransform(out xfA, t);
@@ -169,53 +170,53 @@ namespace tainicom.Aether.Physics2D.Collision
             {
                 case SeparationFunctionType.Points:
                     {
-                        Vector2 axisA =  Complex.Divide(ref _axis, ref xfA.q);
-                        Vector2 axisB = -Complex.Divide(ref _axis, ref xfB.q);
+                        AetherVector2 axisA =  Complex.Divide(ref _axis, ref xfA.q);
+                        AetherVector2 axisB = -Complex.Divide(ref _axis, ref xfB.q);
 
                         indexA = _proxyA.GetSupport(axisA);
                         indexB = _proxyB.GetSupport(axisB);
 
-                        Vector2 localPointA = _proxyA.Vertices[indexA];
-                        Vector2 localPointB = _proxyB.Vertices[indexB];
+                        AetherVector2 localPointA = _proxyA.Vertices[indexA];
+                        AetherVector2 localPointB = _proxyB.Vertices[indexB];
 
-                        Vector2 pointA = Transform.Multiply(ref localPointA, ref xfA);
-                        Vector2 pointB = Transform.Multiply(ref localPointB, ref xfB);
+                        AetherVector2 pointA = Transform.Multiply(ref localPointA, ref xfA);
+                        AetherVector2 pointB = Transform.Multiply(ref localPointB, ref xfB);
 
-                        float separation = Vector2.Dot(pointB - pointA, _axis);
+                        Fix64 separation = AetherVector2.Dot(pointB - pointA, _axis);
                         return separation;
                     }
 
                 case SeparationFunctionType.FaceA:
                     {
-                        Vector2 normal = Complex.Multiply(ref _axis, ref xfA.q);
-                        Vector2 pointA = Transform.Multiply(ref _localPoint, ref xfA);
+                        AetherVector2 normal = Complex.Multiply(ref _axis, ref xfA.q);
+                        AetherVector2 pointA = Transform.Multiply(ref _localPoint, ref xfA);
 
-                        Vector2 axisB = -Complex.Divide(ref normal, ref xfB.q);
+                        AetherVector2 axisB = -Complex.Divide(ref normal, ref xfB.q);
 
                         indexA = -1;
                         indexB = _proxyB.GetSupport(axisB);
 
-                        Vector2 localPointB = _proxyB.Vertices[indexB];
-                        Vector2 pointB = Transform.Multiply(ref localPointB, ref xfB);
+                        AetherVector2 localPointB = _proxyB.Vertices[indexB];
+                        AetherVector2 pointB = Transform.Multiply(ref localPointB, ref xfB);
 
-                        float separation = Vector2.Dot(pointB - pointA, normal);
+                        Fix64 separation = AetherVector2.Dot(pointB - pointA, normal);
                         return separation;
                     }
 
                 case SeparationFunctionType.FaceB:
                     {
-                        Vector2 normal = Complex.Multiply(ref _axis, ref xfB.q);
-                        Vector2 pointB = Transform.Multiply(ref _localPoint, ref xfB);
+                        AetherVector2 normal = Complex.Multiply(ref _axis, ref xfB.q);
+                        AetherVector2 pointB = Transform.Multiply(ref _localPoint, ref xfB);
 
-                        Vector2 axisA = -Complex.Divide(ref normal, ref xfA.q);
+                        AetherVector2 axisA = -Complex.Divide(ref normal, ref xfA.q);
 
                         indexB = -1;
                         indexA = _proxyA.GetSupport(axisA);
 
-                        Vector2 localPointA = _proxyA.Vertices[indexA];
-                        Vector2 pointA = Transform.Multiply(ref localPointA, ref xfA);
+                        AetherVector2 localPointA = _proxyA.Vertices[indexA];
+                        AetherVector2 pointA = Transform.Multiply(ref localPointA, ref xfA);
 
-                        float separation = Vector2.Dot(pointA - pointB, normal);
+                        Fix64 separation = AetherVector2.Dot(pointA - pointB, normal);
                         return separation;
                     }
 
@@ -223,11 +224,11 @@ namespace tainicom.Aether.Physics2D.Collision
                     Debug.Assert(false);
                     indexA = -1;
                     indexB = -1;
-                    return 0.0f;
+                    return Fix64.Zero;
             }
         }
 
-        public static float Evaluate(int indexA, int indexB, float t)
+        public static Fix64 Evaluate(int indexA, int indexB, Fix64 t)
         {
             Transform xfA, xfB;
             _sweepA.GetTransform(out xfA, t);
@@ -237,40 +238,40 @@ namespace tainicom.Aether.Physics2D.Collision
             {
                 case SeparationFunctionType.Points:
                     {
-                        Vector2 localPointA = _proxyA.Vertices[indexA];
-                        Vector2 localPointB = _proxyB.Vertices[indexB];
+                        AetherVector2 localPointA = _proxyA.Vertices[indexA];
+                        AetherVector2 localPointB = _proxyB.Vertices[indexB];
 
-                        Vector2 pointA = Transform.Multiply(ref localPointA, ref xfA);
-                        Vector2 pointB = Transform.Multiply(ref localPointB, ref xfB);
-                        float separation = Vector2.Dot(pointB - pointA, _axis);
+                        AetherVector2 pointA = Transform.Multiply(ref localPointA, ref xfA);
+                        AetherVector2 pointB = Transform.Multiply(ref localPointB, ref xfB);
+                        Fix64 separation = AetherVector2.Dot(pointB - pointA, _axis);
 
                         return separation;
                     }
                 case SeparationFunctionType.FaceA:
                     {
-                        Vector2 normal = Complex.Multiply(ref _axis, ref xfA.q);
-                        Vector2 pointA = Transform.Multiply(ref _localPoint, ref xfA);
+                        AetherVector2 normal = Complex.Multiply(ref _axis, ref xfA.q);
+                        AetherVector2 pointA = Transform.Multiply(ref _localPoint, ref xfA);
 
-                        Vector2 localPointB = _proxyB.Vertices[indexB];
-                        Vector2 pointB = Transform.Multiply(ref localPointB, ref xfB);
+                        AetherVector2 localPointB = _proxyB.Vertices[indexB];
+                        AetherVector2 pointB = Transform.Multiply(ref localPointB, ref xfB);
 
-                        float separation = Vector2.Dot(pointB - pointA, normal);
+                        Fix64 separation = AetherVector2.Dot(pointB - pointA, normal);
                         return separation;
                     }
                 case SeparationFunctionType.FaceB:
                     {
-                        Vector2 normal = Complex.Multiply(ref _axis, ref xfB.q);
-                        Vector2 pointB = Transform.Multiply(ref _localPoint, ref xfB);
+                        AetherVector2 normal = Complex.Multiply(ref _axis, ref xfB.q);
+                        AetherVector2 pointB = Transform.Multiply(ref _localPoint, ref xfB);
 
-                        Vector2 localPointA = _proxyA.Vertices[indexA];
-                        Vector2 pointA = Transform.Multiply(ref localPointA, ref xfA);
+                        AetherVector2 localPointA = _proxyA.Vertices[indexA];
+                        AetherVector2 pointA = Transform.Multiply(ref localPointA, ref xfA);
 
-                        float separation = Vector2.Dot(pointA - pointB, normal);
+                        Fix64 separation = AetherVector2.Dot(pointA - pointB, normal);
                         return separation;
                     }
                 default:
                     Debug.Assert(false);
-                    return 0.0f;
+                    return Fix64.Zero;
             }
         }
     }
@@ -311,14 +312,13 @@ namespace tainicom.Aether.Physics2D.Collision
             sweepA.Normalize();
             sweepB.Normalize();
 
-            float tMax = input.TMax;
+            Fix64 tMax = input.TMax;
 
-            float totalRadius = input.ProxyA.Radius + input.ProxyB.Radius;
-            float target = Math.Max(Settings.LinearSlop, totalRadius - 3.0f * Settings.LinearSlop);
-            const float tolerance = 0.25f * Settings.LinearSlop;
-            Debug.Assert(target > tolerance);
+            Fix64 totalRadius = input.ProxyA.Radius + input.ProxyB.Radius;
+            Fix64 target = MathUtils.Max(Settings.LinearSlop, totalRadius - Fix64Constants.Three * Settings.LinearSlop);
+            Debug.Assert(target > Fix64Constants.tolerance);
 
-            float t1 = 0.0f;
+            Fix64 t1 = Fix64.Zero;
             const int k_maxIterations = 20;
             int iter = 0;
 
@@ -345,15 +345,15 @@ namespace tainicom.Aether.Physics2D.Collision
                 Distance.ComputeDistance(out distanceOutput, out cache, distanceInput);
 
                 // If the shapes are overlapped, we give up on continuous collision.
-                if (distanceOutput.Distance <= 0.0f)
+                if (distanceOutput.Distance <= Fix64.Zero)
                 {
                     // Failure!
                     output.State = TOIOutputState.Overlapped;
-                    output.T = 0.0f;
+                    output.T = Fix64.Zero;
                     break;
                 }
 
-                if (distanceOutput.Distance < target + tolerance)
+                if (distanceOutput.Distance < target + Fix64Constants.tolerance)
                 {
                     // Victory!
                     output.State = TOIOutputState.Touching;
@@ -366,16 +366,16 @@ namespace tainicom.Aether.Physics2D.Collision
                 // Compute the TOI on the separating axis. We do this by successively
                 // resolving the deepest point. This loop is bounded by the number of vertices.
                 bool done = false;
-                float t2 = tMax;
+                Fix64 t2 = tMax;
                 int pushBackIter = 0;
                 for (; ; )
                 {
                     // Find the deepest point at t2. Store the witness point indices.
                     int indexA, indexB;
-                    float s2 = SeparationFunction.FindMinSeparation(out indexA, out indexB, t2);
+                    Fix64 s2 = SeparationFunction.FindMinSeparation(out indexA, out indexB, t2);
 
                     // Is the final configuration separated?
-                    if (s2 > target + tolerance)
+                    if (s2 > target + Fix64Constants.tolerance)
                     {
                         // Victory!
                         output.State = TOIOutputState.Seperated;
@@ -385,7 +385,7 @@ namespace tainicom.Aether.Physics2D.Collision
                     }
 
                     // Has the separation reached tolerance?
-                    if (s2 > target - tolerance)
+                    if (s2 > target - Fix64Constants.tolerance)
                     {
                         // Advance the sweeps
                         t1 = t2;
@@ -393,11 +393,11 @@ namespace tainicom.Aether.Physics2D.Collision
                     }
 
                     // Compute the initial separation of the witness points.
-                    float s1 = SeparationFunction.Evaluate(indexA, indexB, t1);
+                    Fix64 s1 = SeparationFunction.Evaluate(indexA, indexB, t1);
 
                     // Check for initial overlap. This might happen if the root finder
                     // runs out of iterations.
-                    if (s1 < target - tolerance)
+                    if (s1 < target - Fix64Constants.tolerance)
                     {
                         output.State = TOIOutputState.Failed;
                         output.T = t1;
@@ -406,7 +406,7 @@ namespace tainicom.Aether.Physics2D.Collision
                     }
 
                     // Check for touching
-                    if (s1 <= target + tolerance)
+                    if (s1 <= target + Fix64Constants.tolerance)
                     {
                         // Victory! t1 should hold the TOI (could be 0.0).
                         output.State = TOIOutputState.Touching;
@@ -417,11 +417,11 @@ namespace tainicom.Aether.Physics2D.Collision
 
                     // Compute 1D root of: f(x) - target = 0
                     int rootIterCount = 0;
-                    float a1 = t1, a2 = t2;
+                    Fix64 a1 = t1, a2 = t2;
                     for (; ; )
                     {
                         // Use a mix of the secant rule and bisection.
-                        float t;
+                        Fix64 t;
                         if ((rootIterCount & 1) != 0)
                         {
                             // Secant rule to improve convergence.
@@ -430,7 +430,7 @@ namespace tainicom.Aether.Physics2D.Collision
                         else
                         {
                             // Bisection to guarantee progress.
-                            t = 0.5f * (a1 + a2);
+                            t = Fix64Constants.PointFive * (a1 + a2);
                         }
 
                         ++rootIterCount;
@@ -438,9 +438,9 @@ namespace tainicom.Aether.Physics2D.Collision
                         if (Settings.EnableDiagnostics) //FPE: We only gather diagnostics when enabled
                             ++TOIRootIters;
 
-                        float s = SeparationFunction.Evaluate(indexA, indexB, t);
+                        Fix64 s = SeparationFunction.Evaluate(indexA, indexB, t);
 
-                        if (Math.Abs(s - target) < tolerance)
+                        if ( Fix64.Abs(s - target) < Fix64Constants.tolerance)
                         {
                             // t2 holds a tentative value for t1
                             t2 = t;

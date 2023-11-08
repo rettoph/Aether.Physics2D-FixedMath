@@ -27,6 +27,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using tainicom.Aether.Physics2D.Collision;
 using tainicom.Aether.Physics2D.Common;
 using tainicom.Aether.Physics2D.Controllers;
@@ -46,7 +47,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
 
     /// <summary>
     /// Called for each fixture found in the query. You control how the ray cast
-    /// proceeds by returning a float:
+    /// proceeds by returning a Fix64:
     /// return -1: ignore this fixture and continue
     /// return 0: terminate the ray cast
     /// return fraction: clip the ray to this point
@@ -56,7 +57,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
     /// @param normal the normal vector at the point of intersection
     /// @return 0 to terminate, fraction to clip the ray for closest hit, 1 to continue
     /// </summary>
-    public delegate float RayCastReportFixtureDelegate(Fixture fixture, Vector2 point, Vector2 normal, float fraction);
+    public delegate Fix64 RayCastReportFixtureDelegate(Fixture fixture, AetherVector2 point, AetherVector2 normal, Fix64 fraction);
 
     /// <summary>
     /// This delegate is called when a contact is deleted

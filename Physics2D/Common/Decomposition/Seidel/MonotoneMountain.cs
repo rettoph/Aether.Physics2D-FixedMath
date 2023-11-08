@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,7 +13,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.Seidel
     internal class MonotoneMountain
     {
         // Almost Pi!
-        private const float PiSlop = 3.1f;
+        private static readonly Fix64 PiSlop = Fix64Constants.PiSlop;
 
         // Triangles that constitute the mountain
         public List<List<Point>> Triangles;
@@ -88,9 +89,9 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.Seidel
             Point p = _head.Next;
             while (p.Neq(_tail))
             {
-                float a = Angle(p);
+                Fix64 a = Angle(p);
                 // If the point is almost colinear with it's neighbor, remove it!
-                if (a >= PiSlop || a <= -PiSlop || a == 0.0f)
+                if (a >= PiSlop || a <= -PiSlop || a == Fix64.Zero)
                     Remove(p);
                 else if (IsConvex(p))
                     _convexPoints.Add(p);
@@ -146,24 +147,24 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.Seidel
             }
         }
 
-        private float Angle(Point p)
+        private Fix64 Angle(Point p)
         {
             Point a = (p.Next - p);
             Point b = (p.Prev - p);
-            return (float)Math.Atan2(a.Cross(b), a.Dot(b));
+            return Fix64.Atan2(a.Cross(b), a.Dot(b));
         }
 
         private bool AngleSign()
         {
             Point a = (_head.Next - _head);
             Point b = (_tail - _head);
-            return Math.Atan2(a.Cross(b), a.Dot(b)) >= 0;
+            return Fix64.Atan2(a.Cross(b), a.Dot(b)) >= Fix64.Zero;
         }
 
         // Determines if the inslide angle is convex or reflex
         private bool IsConvex(Point p)
         {
-            if (_positive != (Angle(p) >= 0))
+            if (_positive != (Angle(p) >= Fix64.Zero))
                 return false;
             return true;
         }

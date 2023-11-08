@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System.Collections.Generic;
 using tainicom.Aether.Physics2D.Common;
 #if XNAAPI
@@ -36,7 +37,7 @@ namespace tainicom.Aether.Physics2D.Common.ConvexHull
             //Sort by X-axis
             pointSet.Sort(_pointComparer);
 
-            Vector2[] h = new Vector2[pointSet.Count];
+            AetherVector2[] h = new AetherVector2[pointSet.Count];
             Vertices res;
 
             int top = -1; // indices for bottom and top of the stack
@@ -44,7 +45,7 @@ namespace tainicom.Aether.Physics2D.Common.ConvexHull
 
             // Get the indices of points with min x-coord and min|max y-coord
             const int minmin = 0;
-            float xmin = pointSet[0].X;
+            Fix64 xmin = pointSet[0].X;
             for (i = 1; i < pointSet.Count; i++)
             {
                 if (pointSet[i].X != xmin)
@@ -75,7 +76,7 @@ namespace tainicom.Aether.Physics2D.Common.ConvexHull
 
             // Get the indices of points with max x-coord and min|max y-coord
             int maxmax = pointSet.Count - 1;
-            float xmax = pointSet[pointSet.Count - 1].X;
+            Fix64 xmax = pointSet[pointSet.Count - 1].X;
             for (i = pointSet.Count - 2; i >= 0; i--)
             {
                 if (pointSet[i].X != xmax)
@@ -89,13 +90,13 @@ namespace tainicom.Aether.Physics2D.Common.ConvexHull
             while (++i <= maxmin)
             {
                 // the lower line joins P[minmin] with P[maxmin]
-                if (MathUtils.Area(pointSet[minmin], pointSet[maxmin], pointSet[i]) >= 0 && i < maxmin)
+                if (MathUtils.Area(pointSet[minmin], pointSet[maxmin], pointSet[i]) >= Fix64.Zero && i < maxmin)
                     continue; // ignore P[i] above or on the lower line
 
                 while (top > 0) // there are at least 2 points on the stack
                 {
                     // test if P[i] is left of the line at the stack top
-                    if (MathUtils.Area(h[top - 1], h[top], pointSet[i]) > 0)
+                    if (MathUtils.Area(h[top - 1], h[top], pointSet[i]) > Fix64.Zero)
                         break; // P[i] is a new hull vertex
 
                     top--; // pop top point off stack
@@ -111,13 +112,13 @@ namespace tainicom.Aether.Physics2D.Common.ConvexHull
             while (--i >= minmax)
             {
                 // the upper line joins P[maxmax] with P[minmax]
-                if (MathUtils.Area(pointSet[maxmax], pointSet[minmax], pointSet[i]) >= 0 && i > minmax)
+                if (MathUtils.Area(pointSet[maxmax], pointSet[minmax], pointSet[i]) >= Fix64.Zero && i > minmax)
                     continue; // ignore P[i] below or on the upper line
 
                 while (top > bot) // at least 2 points on the upper stack
                 {
                     // test if P[i] is left of the line at the stack top
-                    if (MathUtils.Area(h[top - 1], h[top], pointSet[i]) > 0)
+                    if (MathUtils.Area(h[top - 1], h[top], pointSet[i]) > Fix64.Zero)
                         break; // P[i] is a new hull vertex
 
                     top--; // pop top point off stack
@@ -139,9 +140,9 @@ namespace tainicom.Aether.Physics2D.Common.ConvexHull
             return res;
         }
 
-        private class PointComparer : Comparer<Vector2>
+        private class PointComparer : Comparer<AetherVector2>
         {
-            public override int Compare(Vector2 a, Vector2 b)
+            public override int Compare(AetherVector2 a, AetherVector2 b)
             {
                 int f = a.X.CompareTo(b.X);
                 return f != 0 ? f : a.Y.CompareTo(b.Y);

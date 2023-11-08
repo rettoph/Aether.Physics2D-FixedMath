@@ -25,6 +25,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using System;
 using System.Diagnostics;
 using tainicom.Aether.Physics2D.Common;
@@ -60,22 +61,22 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
     public class PulleyJoint : Joint
     {
         // Solver shared
-        private float _impulse;
+        private Fix64 _impulse;
 
         // Solver temp
         private int _indexA;
         private int _indexB;
-        private Vector2 _uA;
-        private Vector2 _uB;
-        private Vector2 _rA;
-        private Vector2 _rB;
-        private Vector2 _localCenterA;
-        private Vector2 _localCenterB;
-        private float _invMassA;
-        private float _invMassB;
-        private float _invIA;
-        private float _invIB;
-        private float _mass;
+        private AetherVector2 _uA;
+        private AetherVector2 _uB;
+        private AetherVector2 _rA;
+        private AetherVector2 _rB;
+        private AetherVector2 _localCenterA;
+        private AetherVector2 _localCenterB;
+        private Fix64 _invMassA;
+        private Fix64 _invMassB;
+        private Fix64 _invIA;
+        private Fix64 _invIB;
+        private Fix64 _mass;
 
         internal PulleyJoint()
         {
@@ -93,7 +94,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <param name="worldAnchorB">The world anchor for the second body.</param>
         /// <param name="ratio">The ratio.</param>
         /// <param name="useWorldCoordinates">Set to true if you are using world coordinates as anchors.</param>
-        public PulleyJoint(Body bodyA, Body bodyB, Vector2 anchorA, Vector2 anchorB, Vector2 worldAnchorA, Vector2 worldAnchorB, float ratio, bool useWorldCoordinates = false)
+        public PulleyJoint(Body bodyA, Body bodyB, AetherVector2 anchorA, AetherVector2 anchorB, AetherVector2 worldAnchorA, AetherVector2 worldAnchorB, Fix64 ratio, bool useWorldCoordinates = false)
             : base(bodyA, bodyB)
         {
             JointType = JointType.Pulley;
@@ -106,9 +107,9 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
                 LocalAnchorA = BodyA.GetLocalPoint(anchorA);
                 LocalAnchorB = BodyB.GetLocalPoint(anchorB);
 
-                Vector2 dA = anchorA - worldAnchorA;
+                AetherVector2 dA = anchorA - worldAnchorA;
                 LengthA = dA.Length();
-                Vector2 dB = anchorB - worldAnchorB;
+                AetherVector2 dB = anchorB - worldAnchorB;
                 LengthB = dB.Length();
             }
             else
@@ -116,64 +117,64 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
                 LocalAnchorA = anchorA;
                 LocalAnchorB = anchorB;
 
-                Vector2 dA = anchorA - BodyA.GetLocalPoint(worldAnchorA);
+                AetherVector2 dA = anchorA - BodyA.GetLocalPoint(worldAnchorA);
                 LengthA = dA.Length();
-                Vector2 dB = anchorB - BodyB.GetLocalPoint(worldAnchorB);
+                AetherVector2 dB = anchorB - BodyB.GetLocalPoint(worldAnchorB);
                 LengthB = dB.Length();
             }
 
-            Debug.Assert(ratio != 0.0f);
+            Debug.Assert(ratio != Fix64.Zero);
             Debug.Assert(ratio > Settings.Epsilon);
 
             Ratio = ratio;
             Constant = LengthA + ratio * LengthB;
-            _impulse = 0.0f;
+            _impulse = Fix64.Zero;
         }
 
         /// <summary>
         /// The local anchor point on BodyA
         /// </summary>
-        public Vector2 LocalAnchorA { get; set; }
+        public AetherVector2 LocalAnchorA { get; set; }
 
         /// <summary>
         /// The local anchor point on BodyB
         /// </summary>
-        public Vector2 LocalAnchorB { get; set; }
+        public AetherVector2 LocalAnchorB { get; set; }
 
         /// <summary>
         /// Get the first world anchor.
         /// </summary>
         /// <value></value>
-        public override sealed Vector2 WorldAnchorA { get; set; }
+        public override sealed AetherVector2 WorldAnchorA { get; set; }
 
         /// <summary>
         /// Get the second world anchor.
         /// </summary>
         /// <value></value>
-        public override sealed Vector2 WorldAnchorB { get; set; }
+        public override sealed AetherVector2 WorldAnchorB { get; set; }
 
         /// <summary>
         /// Get the current length of the segment attached to body1.
         /// </summary>
         /// <value></value>
-        public float LengthA { get; set; }
+        public Fix64 LengthA { get; set; }
 
         /// <summary>
         /// Get the current length of the segment attached to body2.
         /// </summary>
         /// <value></value>
-        public float LengthB { get; set; }
+        public Fix64 LengthB { get; set; }
 
         /// <summary>
         /// The current length between the anchor point on BodyA and WorldAnchorA
         /// </summary>
-        public float CurrentLengthA
+        public Fix64 CurrentLengthA
         {
             get
             {
-                Vector2 p = BodyA.GetWorldPoint(LocalAnchorA);
-                Vector2 s = WorldAnchorA;
-                Vector2 d = p - s;
+                AetherVector2 p = BodyA.GetWorldPoint(LocalAnchorA);
+                AetherVector2 s = WorldAnchorA;
+                AetherVector2 d = p - s;
                 return d.Length();
             }
         }
@@ -181,13 +182,13 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <summary>
         /// The current length between the anchor point on BodyB and WorldAnchorB
         /// </summary>
-        public float CurrentLengthB
+        public Fix64 CurrentLengthB
         {
             get
             {
-                Vector2 p = BodyB.GetWorldPoint(LocalAnchorB);
-                Vector2 s = WorldAnchorB;
-                Vector2 d = p - s;
+                AetherVector2 p = BodyB.GetWorldPoint(LocalAnchorB);
+                AetherVector2 s = WorldAnchorB;
+                AetherVector2 d = p - s;
                 return d.Length();
             }
         }
@@ -196,20 +197,20 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// Get the pulley ratio.
         /// </summary>
         /// <value></value>
-        public float Ratio { get; set; }
+        public Fix64 Ratio { get; set; }
 
         //FPE note: Only used for serialization.
-        internal float Constant { get; set; }
+        internal Fix64 Constant { get; set; }
 
-        public override Vector2 GetReactionForce(float invDt)
+        public override AetherVector2 GetReactionForce(Fix64 invDt)
         {
-            Vector2 P = _impulse * _uB;
+            AetherVector2 P = _impulse * _uB;
             return invDt * P;
         }
 
-        public override float GetReactionTorque(float invDt)
+        public override Fix64 GetReactionTorque(Fix64 invDt)
         {
-            return 0.0f;
+            return Fix64.Zero;
         }
 
         internal override void InitVelocityConstraints(ref SolverData data)
@@ -223,15 +224,15 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             _invIA = BodyA._invI;
             _invIB = BodyB._invI;
 
-            Vector2 cA = data.positions[_indexA].c;
-            float aA = data.positions[_indexA].a;
-            Vector2 vA = data.velocities[_indexA].v;
-            float wA = data.velocities[_indexA].w;
+            AetherVector2 cA = data.positions[_indexA].c;
+            Fix64 aA = data.positions[_indexA].a;
+            AetherVector2 vA = data.velocities[_indexA].v;
+            Fix64 wA = data.velocities[_indexA].w;
 
-            Vector2 cB = data.positions[_indexB].c;
-            float aB = data.positions[_indexB].a;
-            Vector2 vB = data.velocities[_indexB].v;
-            float wB = data.velocities[_indexB].w;
+            AetherVector2 cB = data.positions[_indexB].c;
+            Fix64 aB = data.positions[_indexB].a;
+            AetherVector2 vB = data.velocities[_indexB].v;
+            Fix64 wB = data.velocities[_indexB].w;
 
             Complex qA = Complex.FromAngle(aA);
             Complex qB = Complex.FromAngle(aB);
@@ -243,39 +244,39 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             _uA = cA + _rA - WorldAnchorA;
             _uB = cB + _rB - WorldAnchorB;
 
-            float lengthA = _uA.Length();
-            float lengthB = _uB.Length();
+            Fix64 lengthA = _uA.Length();
+            Fix64 lengthB = _uB.Length();
 
-            if (lengthA > 10.0f * Settings.LinearSlop)
+            if (lengthA > Fix64Constants.Ten * Settings.LinearSlop)
             {
-                _uA *= 1.0f / lengthA;
+                _uA *= Fix64.One / lengthA;
             }
             else
             {
-                _uA = Vector2.Zero;
+                _uA = AetherVector2.Zero;
             }
 
-            if (lengthB > 10.0f * Settings.LinearSlop)
+            if (lengthB > Fix64Constants.Ten * Settings.LinearSlop)
             {
-                _uB *= 1.0f / lengthB;
+                _uB *= Fix64.One / lengthB;
             }
             else
             {
-                _uB = Vector2.Zero;
+                _uB = AetherVector2.Zero;
             }
 
             // Compute effective mass.
-            float ruA = MathUtils.Cross(ref _rA, ref _uA);
-            float ruB = MathUtils.Cross(ref _rB, ref _uB);
+            Fix64 ruA = MathUtils.Cross(ref _rA, ref _uA);
+            Fix64 ruB = MathUtils.Cross(ref _rB, ref _uB);
 
-            float mA = _invMassA + _invIA * ruA * ruA;
-            float mB = _invMassB + _invIB * ruB * ruB;
+            Fix64 mA = _invMassA + _invIA * ruA * ruA;
+            Fix64 mB = _invMassB + _invIB * ruB * ruB;
 
             _mass = mA + Ratio * Ratio * mB;
 
-            if (_mass > 0.0f)
+            if (_mass > Fix64.Zero)
             {
-                _mass = 1.0f / _mass;
+                _mass = Fix64.One / _mass;
             }
 
             if (data.step.warmStarting)
@@ -284,8 +285,8 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
                 _impulse *= data.step.dtRatio;
 
                 // Warm starting.
-                Vector2 PA = -(_impulse) * _uA;
-                Vector2 PB = (-Ratio * _impulse) * _uB;
+                AetherVector2 PA = -(_impulse) * _uA;
+                AetherVector2 PB = (-Ratio * _impulse) * _uB;
 
                 vA += _invMassA * PA;
                 wA += _invIA * MathUtils.Cross(ref _rA, ref PA);
@@ -294,7 +295,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             }
             else
             {
-                _impulse = 0.0f;
+                _impulse = Fix64.Zero;
             }
 
             data.velocities[_indexA].v = vA;
@@ -305,20 +306,20 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
 
         internal override void SolveVelocityConstraints(ref SolverData data)
         {
-            Vector2 vA = data.velocities[_indexA].v;
-            float wA = data.velocities[_indexA].w;
-            Vector2 vB = data.velocities[_indexB].v;
-            float wB = data.velocities[_indexB].w;
+            AetherVector2 vA = data.velocities[_indexA].v;
+            Fix64 wA = data.velocities[_indexA].w;
+            AetherVector2 vB = data.velocities[_indexB].v;
+            Fix64 wB = data.velocities[_indexB].w;
 
-            Vector2 vpA = vA + MathUtils.Cross(wA, ref _rA);
-            Vector2 vpB = vB + MathUtils.Cross(wB, ref _rB);
+            AetherVector2 vpA = vA + MathUtils.Cross(wA, ref _rA);
+            AetherVector2 vpB = vB + MathUtils.Cross(wB, ref _rB);
 
-            float Cdot = -Vector2.Dot(_uA, vpA) - Ratio * Vector2.Dot(_uB, vpB);
-            float impulse = -_mass * Cdot;
+            Fix64 Cdot = -AetherVector2.Dot(_uA, vpA) - Ratio * AetherVector2.Dot(_uB, vpB);
+            Fix64 impulse = -_mass * Cdot;
             _impulse += impulse;
 
-            Vector2 PA = -impulse * _uA;
-            Vector2 PB = -Ratio * impulse * _uB;
+            AetherVector2 PA = -impulse * _uA;
+            AetherVector2 PB = -Ratio * impulse * _uB;
             vA += _invMassA * PA;
             wA += _invIA * MathUtils.Cross(ref _rA, ref PA);
             vB += _invMassB * PB;
@@ -332,63 +333,63 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
 
         internal override bool SolvePositionConstraints(ref SolverData data)
         {
-            Vector2 cA = data.positions[_indexA].c;
-            float aA = data.positions[_indexA].a;
-            Vector2 cB = data.positions[_indexB].c;
-            float aB = data.positions[_indexB].a;
+            AetherVector2 cA = data.positions[_indexA].c;
+            Fix64 aA = data.positions[_indexA].a;
+            AetherVector2 cB = data.positions[_indexB].c;
+            Fix64 aB = data.positions[_indexB].a;
 
             Complex qA = Complex.FromAngle(aA);
             Complex qB = Complex.FromAngle(aB);
 
-            Vector2 rA = Complex.Multiply(LocalAnchorA - _localCenterA, ref qA);
-            Vector2 rB = Complex.Multiply(LocalAnchorB - _localCenterB, ref qB);
+            AetherVector2 rA = Complex.Multiply(LocalAnchorA - _localCenterA, ref qA);
+            AetherVector2 rB = Complex.Multiply(LocalAnchorB - _localCenterB, ref qB);
 
             // Get the pulley axes.
-            Vector2 uA = cA + rA - WorldAnchorA;
-            Vector2 uB = cB + rB - WorldAnchorB;
+            AetherVector2 uA = cA + rA - WorldAnchorA;
+            AetherVector2 uB = cB + rB - WorldAnchorB;
 
-            float lengthA = uA.Length();
-            float lengthB = uB.Length();
+            Fix64 lengthA = uA.Length();
+            Fix64 lengthB = uB.Length();
 
-            if (lengthA > 10.0f * Settings.LinearSlop)
+            if (lengthA > Fix64Constants.Ten * Settings.LinearSlop)
             {
-                uA *= 1.0f / lengthA;
+                uA *= Fix64.One / lengthA;
             }
             else
             {
-                uA = Vector2.Zero;
+                uA = AetherVector2.Zero;
             }
 
-            if (lengthB > 10.0f * Settings.LinearSlop)
+            if (lengthB > Fix64Constants.Ten * Settings.LinearSlop)
             {
-                uB *= 1.0f / lengthB;
+                uB *= Fix64.One / lengthB;
             }
             else
             {
-                uB = Vector2.Zero;
+                uB = AetherVector2.Zero;
             }
 
             // Compute effective mass.
-            float ruA = MathUtils.Cross(ref rA, ref uA);
-            float ruB = MathUtils.Cross(ref rB, ref uB);
+            Fix64 ruA = MathUtils.Cross(ref rA, ref uA);
+            Fix64 ruB = MathUtils.Cross(ref rB, ref uB);
 
-            float mA = _invMassA + _invIA * ruA * ruA;
-            float mB = _invMassB + _invIB * ruB * ruB;
+            Fix64 mA = _invMassA + _invIA * ruA * ruA;
+            Fix64 mB = _invMassB + _invIB * ruB * ruB;
 
-            float mass = mA + Ratio * Ratio * mB;
+            Fix64 mass = mA + Ratio * Ratio * mB;
 
-            if (mass > 0.0f)
+            if (mass > Fix64.Zero)
             {
-                mass = 1.0f / mass;
+                mass = Fix64.One / mass;
             }
 
-            float C = Constant - lengthA - Ratio * lengthB;
-            float linearError = Math.Abs(C);
+            Fix64 C = Constant - lengthA - Ratio * lengthB;
+            Fix64 linearError =  Fix64.Abs(C);
 
-            float impulse = -mass * C;
+            Fix64 impulse = -mass * C;
 
-            Vector2 PA = -impulse * uA;
-            Vector2 PB = -Ratio * impulse * uB;
+            AetherVector2 PA = -impulse * uA;
+            AetherVector2 PB = -Ratio * impulse * uB;
 
             cA += _invMassA * PA;
             aA += _invIA * MathUtils.Cross(ref rA, ref PA);

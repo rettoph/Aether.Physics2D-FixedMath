@@ -1,41 +1,52 @@
 ﻿// Copyright (c) 2017 Kastellanos Nikolaos
 
+using FixedMath.NET;
 using System;
 
 namespace tainicom.Aether.Physics2D.Common
 {
-    public struct Vector3 : IEquatable<Vector3>
+    public struct AetherVector3 : IEquatable<AetherVector3>
     {
-        private static readonly Vector3 _zero = new Vector3(0, 0, 0);
-        private static readonly Vector3 _one  = new Vector3(1, 1, 1);
+        private static readonly AetherVector3 _zero = new AetherVector3(Fix64.Zero, Fix64.Zero, Fix64.Zero);
+        private static readonly AetherVector3 _one  = new AetherVector3(Fix64.One, Fix64.One, Fix64.One);
 
 
-        public float X;
-        public float Y;
-        public float Z;
+        public Fix64 X;
+        public Fix64 Y;
+        public Fix64 Z;
 
-        public static Vector3 Zero { get { return _zero; } }
-        public static Vector3 One { get { return _one; } }
+        public static AetherVector3 Zero { get { return _zero; } }
+        public static AetherVector3 One { get { return _one; } }
 
 
-        public Vector3(float x, float y, float z)
+        public AetherVector3(Fix64 x, Fix64 y, Fix64 z)
         {
             this.X = x;
             this.Y = y;
             this.Z = z;
         }
 
-        public Vector3(float xyz)
+        public AetherVector3(Fix64 xyz)
         {
             this.X = xyz;
             this.Y = xyz;
             this.Z = xyz;
         }
 
-
-        internal static Vector3 Cross(Vector3 left, Vector3 right)
+        public Fix64 Length()
         {
-            Vector3 result;
+            return Fix64.Sqrt(X * X + Y * Y + Z * Z);
+        }
+
+        public Fix64 LengthSquared()
+        {
+            return (X * X + Y * Y + Z * Z);
+        }
+
+
+        internal static AetherVector3 Cross(AetherVector3 left, AetherVector3 right)
+        {
+            AetherVector3 result;
             result.X = left.Y * right.Z - left.Z * right.Y;
             result.Y = left.Z * right.X - left.X * right.Z;
             result.Z = left.X * right.Y - left.Y * right.X;
@@ -43,7 +54,7 @@ namespace tainicom.Aether.Physics2D.Common
 
         }
 
-        internal static float Dot(Vector3 left, Vector3 right)
+        internal static Fix64 Dot(AetherVector3 left, AetherVector3 right)
         {
             return left.X * right.X + left.Y * right.Y + left.Z * right.Z;
         }
@@ -55,17 +66,17 @@ namespace tainicom.Aether.Physics2D.Common
 
         public override bool Equals(object obj)
         {
-            return (obj is Vector3) ? Equals((Vector3)obj) : false;
+            return (obj is AetherVector3) ? Equals((AetherVector3)obj) : false;
         }
 
         #region Implement IEquatable<Vector3>
-        public bool Equals(Vector3 other)
+        public bool Equals(AetherVector3 other)
         {
             return (X == other.X && Y == other.Y && Z == other.Z);
         }
         #endregion Implement IEquatable<Vector3>
 
-        public static Vector3 operator +(Vector3 left, Vector3 right)
+        public static AetherVector3 operator +(AetherVector3 left, AetherVector3 right)
         {
             left.X += right.X;
             left.Y += right.Y;
@@ -73,7 +84,7 @@ namespace tainicom.Aether.Physics2D.Common
             return left;
         }
         
-        public static Vector3 operator -(Vector3 left, Vector3 right)
+        public static AetherVector3 operator -(AetherVector3 left, AetherVector3 right)
         {
             left.X -= right.X;
             left.Y -= right.Y;
@@ -81,7 +92,7 @@ namespace tainicom.Aether.Physics2D.Common
             return left;
         }
 
-        public static Vector3 operator -(Vector3 right)
+        public static AetherVector3 operator -(AetherVector3 right)
         {
             right.X = -right.X;
             right.Y = -right.Y;
@@ -89,7 +100,7 @@ namespace tainicom.Aether.Physics2D.Common
             return right;
         }
 
-        public static Vector3 operator *(Vector3 left, Vector3 right)
+        public static AetherVector3 operator *(AetherVector3 left, AetherVector3 right)
         {
             left.X *= right.X;
             left.Y *= right.Y;
@@ -97,7 +108,7 @@ namespace tainicom.Aether.Physics2D.Common
             return left;
         }
 
-        public static Vector3 operator *(Vector3 left, float right)
+        public static AetherVector3 operator *(AetherVector3 left, Fix64 right)
         {
             left.X *= right;
             left.Y *= right;
@@ -105,7 +116,7 @@ namespace tainicom.Aether.Physics2D.Common
             return left;
         }
 
-        public static Vector3 operator *(float left, Vector3 right)
+        public static AetherVector3 operator *(Fix64 left, AetherVector3 right)
         {
             right.X *= left;
             right.Y *= left;
@@ -113,21 +124,21 @@ namespace tainicom.Aether.Physics2D.Common
             return right;
         }
         
-        public static Vector3 operator /(Vector3 left, float right)
+        public static AetherVector3 operator /(AetherVector3 left, Fix64 right)
         {
-            float invRight = 1f / right;
+            Fix64 invRight = Fix64.One / right;
             left.X *= invRight;
             left.Y *= invRight;
             left.Z *= invRight;
             return left;
         }
 
-        public static bool operator ==(Vector3 left, Vector3 right)
+        public static bool operator ==(AetherVector3 left, AetherVector3 right)
         {
             return left.X == right.X && left.Y == right.Y && left.Z == right.Z;
         }
 
-        public static bool operator !=(Vector3 left, Vector3 right)
+        public static bool operator !=(AetherVector3 left, AetherVector3 right)
         {
             return left.X != right.X || left.Y != right.Y || left.Z != right.Z;
         }

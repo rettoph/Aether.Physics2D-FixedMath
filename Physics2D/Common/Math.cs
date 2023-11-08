@@ -25,6 +25,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -38,67 +39,67 @@ namespace tainicom.Aether.Physics2D.Common
 {
     public static class MathUtils
     {
-        public static float Cross(ref Vector2 a, ref Vector2 b)
+        public static Fix64 Cross(ref AetherVector2 a, ref AetherVector2 b)
         {
             return a.X * b.Y - a.Y * b.X;
         }
 
-        public static float Cross(Vector2 a, Vector2 b)
+        public static Fix64 Cross(AetherVector2 a, AetherVector2 b)
         {
             return Cross(ref a, ref b);
         }
 
         /// Perform the cross product on two vectors.
-        public static Vector3 Cross(ref Vector3 a, ref Vector3 b)
+        public static AetherVector3 Cross(ref AetherVector3 a, ref AetherVector3 b)
         {
-            return new Vector3( a.Y * b.Z - a.Z * b.Y, 
+            return new AetherVector3( a.Y * b.Z - a.Z * b.Y, 
                                 a.Z * b.X - a.X * b.Z, 
                                 a.X * b.Y - a.Y * b.X);
         }
 
-        public static Vector2 Cross(Vector2 a, float s)
+        public static AetherVector2 Cross(AetherVector2 a, Fix64 s)
         {
-            return new Vector2(s * a.Y, -s * a.X);
+            return new AetherVector2(s * a.Y, -s * a.X);
         }
 
-        public static Vector2 Rot270(ref Vector2 a)
+        public static AetherVector2 Rot270(ref AetherVector2 a)
         {
-            return new Vector2(a.Y, -a.X);
+            return new AetherVector2(a.Y, -a.X);
         }
 
-        public static Vector2 Cross(float s, ref Vector2 a)
+        public static AetherVector2 Cross(Fix64 s, ref AetherVector2 a)
         {
-            return new Vector2(-s * a.Y, s * a.X);
+            return new AetherVector2(-s * a.Y, s * a.X);
         }
 
-        public static Vector2 Rot90(ref Vector2 a)
+        public static AetherVector2 Rot90(ref AetherVector2 a)
         {
-            return new Vector2(-a.Y, a.X);
+            return new AetherVector2(-a.Y, a.X);
         }
 
-        public static Vector2 Abs(Vector2 v)
+        public static AetherVector2 Abs(AetherVector2 v)
         {
-            return new Vector2(Math.Abs(v.X), Math.Abs(v.Y));
+            return new AetherVector2( Fix64.Abs(v.X),  Fix64.Abs(v.Y));
         }
 
-        public static Vector2 Mul(ref Mat22 A, Vector2 v)
+        public static AetherVector2 Mul(ref Mat22 A, AetherVector2 v)
         {
             return Mul(ref A, ref v);
         }
 
-        public static Vector2 Mul(ref Mat22 A, ref Vector2 v)
+        public static AetherVector2 Mul(ref Mat22 A, ref AetherVector2 v)
         {
-            return new Vector2(A.ex.X * v.X + A.ey.X * v.Y, A.ex.Y * v.X + A.ey.Y * v.Y);
+            return new AetherVector2(A.ex.X * v.X + A.ey.X * v.Y, A.ex.Y * v.X + A.ey.Y * v.Y);
         }
         
-        public static Vector2 MulT(ref Mat22 A, Vector2 v)
+        public static AetherVector2 MulT(ref Mat22 A, AetherVector2 v)
         {
             return MulT(ref A, ref v);
         }
 
-        public static Vector2 MulT(ref Mat22 A, ref Vector2 v)
+        public static AetherVector2 MulT(ref Mat22 A, ref AetherVector2 v)
         {
-            return new Vector2(v.X * A.ex.X + v.Y * A.ex.Y, v.X * A.ey.X + v.Y * A.ey.Y);
+            return new AetherVector2(v.X * A.ex.X + v.Y * A.ex.Y, v.X * A.ey.X + v.Y * A.ey.Y);
         }
 
 
@@ -112,7 +113,7 @@ namespace tainicom.Aether.Physics2D.Common
         }
 
         /// Multiply a matrix times a vector.
-        public static Vector3 Mul(Mat33 A, Vector3 v)
+        public static AetherVector3 Mul(Mat33 A, AetherVector3 v)
         {
             return v.X * A.ex + v.Y * A.ey + v.Z * A.ez;
         }
@@ -125,39 +126,15 @@ namespace tainicom.Aether.Physics2D.Common
         }
 
         /// Multiply a matrix times a vector.
-        public static Vector2 Mul22(Mat33 A, Vector2 v)
+        public static AetherVector2 Mul22(Mat33 A, AetherVector2 v)
         {
-            return new Vector2(A.ex.X * v.X + A.ey.X * v.Y, A.ex.Y * v.X + A.ey.Y * v.Y);
+            return new AetherVector2(A.ex.X * v.X + A.ey.X * v.Y, A.ex.Y * v.X + A.ey.Y * v.Y);
         }
         
         /// Get the skew vector such that dot(skew_vec, other) == cross(vec, other)
-        public static Vector2 Skew(Vector2 input)
+        public static AetherVector2 Skew(AetherVector2 input)
         {
-            return new Vector2(-input.Y, input.X);
-        }
-
-        /// <summary>
-        /// This function is used to ensure that a floating point number is
-        /// not a NaN or infinity.
-        /// </summary>
-        /// <param name="x">The x.</param>
-        /// <returns>
-        /// 	<c>true</c> if the specified x is valid; otherwise, <c>false</c>.
-        /// </returns>
-        public static bool IsValid(float x)
-        {
-            if (float.IsNaN(x))
-            {
-                // NaN.
-                return false;
-            }
-
-            return !float.IsInfinity(x);
-        }
-
-        public static bool IsValid(this Vector2 x)
-        {
-            return IsValid(x.X) && IsValid(x.Y);
+            return new AetherVector2(-input.Y, input.X);
         }
 
         public static int Clamp(int a, int low, int high)
@@ -165,19 +142,19 @@ namespace tainicom.Aether.Physics2D.Common
             return Math.Max(low, Math.Min(a, high));
         }
 
-        public static float Clamp(float a, float low, float high)
+        public static Fix64 Clamp(Fix64 a, Fix64 low, Fix64 high)
         {
-            return Math.Max(low, Math.Min(a, high));
+            return MathUtils.Max(low, MathUtils.Min(a, high));
         }
 
-        public static Vector2 Clamp(Vector2 a, Vector2 low, Vector2 high)
+        public static AetherVector2 Clamp(AetherVector2 a, AetherVector2 low, AetherVector2 high)
         {
-            a.X = Math.Max(low.X, Math.Min(a.X, high.X));
-            a.Y = Math.Max(low.Y, Math.Min(a.Y, high.Y));
+            a.X = MathUtils.Max(low.X, MathUtils.Min(a.X, high.X));
+            a.Y = MathUtils.Max(low.Y, MathUtils.Min(a.Y, high.Y));
             return a;
         }
 
-        public static void Cross(ref Vector2 a, ref Vector2 b, out float c)
+        public static void Cross(ref AetherVector2 a, ref AetherVector2 b, out Fix64 c)
         {
             c = a.X * b.Y - a.Y * b.X;
         }
@@ -187,32 +164,32 @@ namespace tainicom.Aether.Physics2D.Common
         /// The angle is from vector 1 to vector 2, positive anticlockwise
         /// The result is between -pi -> pi
         /// </summary>
-        public static double VectorAngle(ref Vector2 p1, ref Vector2 p2)
+        public static Fix64 VectorAngle(ref AetherVector2 p1, ref AetherVector2 p2)
         {
-            double theta1 = Math.Atan2(p1.Y, p1.X);
-            double theta2 = Math.Atan2(p2.Y, p2.X);
-            double dtheta = theta2 - theta1;
-            while (dtheta > Math.PI)
-                dtheta -= (2 * Math.PI);
-            while (dtheta < -Math.PI)
-                dtheta += (2 * Math.PI);
+            Fix64 theta1 = Fix64.Atan2(p1.Y, p1.X);
+            Fix64 theta2 = Fix64.Atan2(p2.Y, p2.X);
+            Fix64 dtheta = theta2 - theta1;
+            while (dtheta > Fix64.Pi)
+                dtheta -= Fix64.PiTimes2;
+            while (dtheta < -Fix64.Pi)
+                dtheta += Fix64.PiTimes2;
 
             return (dtheta);
         }
 
         /// Perform the dot product on two vectors.
-        public static float Dot(Vector3 a, Vector3 b)
+        public static Fix64 Dot(AetherVector3 a, AetherVector3 b)
         {
             return a.X * b.X + a.Y * b.Y + a.Z * b.Z;
         }
 
         /// Perform the dot product on two vectors.
-        public static float Dot(Vector2 a, ref Vector2 b)
+        public static Fix64 Dot(AetherVector2 a, ref AetherVector2 b)
         {
             return a.X * b.X + a.Y * b.Y;
         }
 
-        public static double VectorAngle(Vector2 p1, Vector2 p2)
+        public static Fix64 VectorAngle(AetherVector2 p1, AetherVector2 p2)
         {
             return VectorAngle(ref p1, ref p2);
         }
@@ -222,7 +199,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// </summary>
         /// <returns>Positive number if point is left, negative if point is right, 
         /// and 0 if points are collinear.</returns>
-        public static float Area(Vector2 a, Vector2 b, Vector2 c)
+        public static Fix64 Area(AetherVector2 a, AetherVector2 b, AetherVector2 c)
         {
             return Area(ref a, ref b, ref c);
         }
@@ -232,7 +209,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// </summary>
         /// <returns>Positive number if point is left, negative if point is right, 
         /// and 0 if points are collinear.</returns>
-        public static float Area(ref Vector2 a, ref Vector2 b, ref Vector2 c)
+        public static Fix64 Area(ref AetherVector2 a, ref AetherVector2 b, ref AetherVector2 c)
         {
             return a.X * (b.Y - c.Y) + b.X * (c.Y - a.Y) + c.X * (a.Y - b.Y);
         }
@@ -245,20 +222,33 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="c">Third vertex</param>
         /// <param name="tolerance">The tolerance</param>
         /// <returns></returns>
-        public static bool IsCollinear(ref Vector2 a, ref Vector2 b, ref Vector2 c, float tolerance = 0)
+        public static bool IsCollinear(ref AetherVector2 a, ref AetherVector2 b, ref AetherVector2 c, Fix64 tolerance)
         {
             return FloatInRange(Area(ref a, ref b, ref c), -tolerance, tolerance);
         }
 
-        public static void Cross(float s, ref Vector2 a, out Vector2 b)
+        /// <summary>
+        /// Determines if three vertices are collinear (ie. on a straight line)
+        /// </summary>
+        /// <param name="a">First vertex</param>
+        /// <param name="b">Second vertex</param>
+        /// <param name="c">Third vertex</param>
+        /// <param name="tolerance">The tolerance</param>
+        /// <returns></returns>
+        public static bool IsCollinear(ref AetherVector2 a, ref AetherVector2 b, ref AetherVector2 c)
+        {
+            return IsCollinear(ref a, ref b, ref c, Fix64.Zero);
+        }
+
+        public static void Cross(Fix64 s, ref AetherVector2 a, out AetherVector2 b)
         {
             b.X = -s * a.Y;
             b.Y =  s * a.X;
         }
 
-        public static bool FloatEquals(float value1, float value2)
+        public static bool FloatEquals(Fix64 value1, Fix64 value2)
         {
-            return Math.Abs(value1 - value2) <= Settings.Epsilon;
+            return  Fix64.Abs(value1 - value2) <= Settings.Epsilon;
         }
 
         /// <summary>
@@ -269,7 +259,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="value2">The second floating point Value.</param>
         /// <param name="delta">The floating point tolerance.</param>
         /// <returns>True if the values are "equal", false otherwise.</returns>
-        public static bool FloatEquals(float value1, float value2, float delta)
+        public static bool FloatEquals(Fix64 value1, Fix64 value2, Fix64 delta)
         {
             return FloatInRange(value1, value2 - delta, value2 + delta);
         }
@@ -283,11 +273,50 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="max">The maximum Value.</param>
         /// <returns>True if the Value is within the range specified,
         /// false otherwise.</returns>
-        public static bool FloatInRange(float value, float min, float max)
+        public static bool FloatInRange(Fix64 value, Fix64 min, Fix64 max)
         {
             return (value >= min && value <= max);
         }
 
+        public static Fix64 Min(Fix64 value1, Fix64 value2)
+        {
+            if (value2 < value1)
+            {
+                return value2;
+            }
+
+            return value1;
+        }
+
+        public static Fix64 Max(Fix64 value1, Fix64 value2)
+        {
+            if (value2 > value1)
+            {
+                return value2;
+            }
+
+            return value1;
+        }
+
+        public static Fix64 Asin(Fix64 value)
+        {
+            return Fix64.Atan(value / Fix64.Sqrt(Fix64.One - (value * value)));
+        }
+
+        public static Fix64 Sign(Fix64 value)
+        {
+            if(value > Fix64.Zero)
+            {
+                return Fix64.One;
+            }
+
+            if (value < Fix64.Zero)
+            {
+                return -Fix64.One;
+            }
+
+            return Fix64.Zero;
+        }
     }
 
     /// <summary>
@@ -295,14 +324,14 @@ namespace tainicom.Aether.Physics2D.Common
     /// </summary>
     public struct Mat22
     {
-        public Vector2 ex, ey;
+        public AetherVector2 ex, ey;
 
         /// <summary>
         /// Construct this matrix using columns.
         /// </summary>
         /// <param name="c1">The c1.</param>
         /// <param name="c2">The c2.</param>
-        public Mat22(Vector2 c1, Vector2 c2)
+        public Mat22(AetherVector2 c1, AetherVector2 c2)
         {
             ex = c1;
             ey = c2;
@@ -315,7 +344,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="a12">The a12.</param>
         /// <param name="a21">The a21.</param>
         /// <param name="a22">The a22.</param>
-        public Mat22(float a11, float a12, float a21, float a22)
+        public Mat22(Fix64 a11, Fix64 a12, Fix64 a21, Fix64 a22)
         {
             ex.X = a11;
             ex.Y = a21;
@@ -327,11 +356,11 @@ namespace tainicom.Aether.Physics2D.Common
         {
             get
             {
-                float a = ex.X, b = ey.X, c = ex.Y, d = ey.Y;
-                float det = a * d - b * c;
-                if (det != 0.0f)
+                Fix64 a = ex.X, b = ey.X, c = ex.Y, d = ey.Y;
+                Fix64 det = a * d - b * c;
+                if (det != Fix64.Zero)
                 {
-                    det = 1.0f / det;
+                    det = Fix64.One / det;
                 }
 
                 Mat22 result;
@@ -350,7 +379,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// </summary>
         /// <param name="c1">The c1.</param>
         /// <param name="c2">The c2.</param>
-        public void Set(Vector2 c1, Vector2 c2)
+        public void Set(AetherVector2 c1, AetherVector2 c2)
         {
             ex = c1;
             ey = c2;
@@ -361,10 +390,10 @@ namespace tainicom.Aether.Physics2D.Common
         /// </summary>
         public void SetIdentity()
         {
-            ex.X = 1.0f;
-            ey.X = 0.0f;
-            ex.Y = 0.0f;
-            ey.Y = 1.0f;
+            ex.X = Fix64.One;
+            ey.X = Fix64.Zero;
+            ex.Y = Fix64.Zero;
+            ey.Y = Fix64.One;
         }
 
         /// <summary>
@@ -372,10 +401,10 @@ namespace tainicom.Aether.Physics2D.Common
         /// </summary>
         public void SetZero()
         {
-            ex.X = 0.0f;
-            ey.X = 0.0f;
-            ex.Y = 0.0f;
-            ey.Y = 0.0f;
+            ex.X = Fix64.Zero;
+            ey.X = Fix64.Zero;
+            ex.Y = Fix64.Zero;
+            ey.Y = Fix64.Zero;
         }
 
         /// <summary>
@@ -384,16 +413,16 @@ namespace tainicom.Aether.Physics2D.Common
         /// </summary>
         /// <param name="b">The b.</param>
         /// <returns></returns>
-        public Vector2 Solve(Vector2 b)
+        public AetherVector2 Solve(AetherVector2 b)
         {
-            float a11 = ex.X, a12 = ey.X, a21 = ex.Y, a22 = ey.Y;
-            float det = a11 * a22 - a12 * a21;
-            if (det != 0.0f)
+            Fix64 a11 = ex.X, a12 = ey.X, a21 = ex.Y, a22 = ey.Y;
+            Fix64 det = a11 * a22 - a12 * a21;
+            if (det != Fix64.Zero)
             {
-                det = 1.0f / det;
+                det = Fix64.One / det;
             }
 
-            return new Vector2(det * (a22 * b.X - a12 * b.Y), det * (a11 * b.Y - a21 * b.X));
+            return new AetherVector2(det * (a22 * b.X - a12 * b.Y), det * (a11 * b.Y - a21 * b.X));
         }
 
         public static void Add(ref Mat22 A, ref Mat22 B, out Mat22 R)
@@ -408,7 +437,7 @@ namespace tainicom.Aether.Physics2D.Common
     /// </summary>
     public struct Mat33
     {
-        public Vector3 ex, ey, ez;
+        public AetherVector3 ex, ey, ez;
 
         /// <summary>
         /// Construct this matrix using columns.
@@ -416,7 +445,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// <param name="c1">The c1.</param>
         /// <param name="c2">The c2.</param>
         /// <param name="c3">The c3.</param>
-        public Mat33(Vector3 c1, Vector3 c2, Vector3 c3)
+        public Mat33(AetherVector3 c1, AetherVector3 c2, AetherVector3 c3)
         {
             ex = c1;
             ey = c2;
@@ -428,9 +457,9 @@ namespace tainicom.Aether.Physics2D.Common
         /// </summary>
         public void SetZero()
         {
-            ex = Vector3.Zero;
-            ey = Vector3.Zero;
-            ez = Vector3.Zero;
+            ex = AetherVector3.Zero;
+            ey = AetherVector3.Zero;
+            ez = AetherVector3.Zero;
         }
 
         /// <summary>
@@ -439,15 +468,15 @@ namespace tainicom.Aether.Physics2D.Common
         /// </summary>
         /// <param name="b">The b.</param>
         /// <returns></returns>
-        public Vector3 Solve33(Vector3 b)
+        public AetherVector3 Solve33(AetherVector3 b)
         {
-            float det = Vector3.Dot(ex, Vector3.Cross(ey, ez));
-            if (det != 0.0f)
+            Fix64 det = AetherVector3.Dot(ex, AetherVector3.Cross(ey, ez));
+            if (det != Fix64.Zero)
             {
-                det = 1.0f / det;
+                det = Fix64.One / det;
             }
 
-            return new Vector3(det * Vector3.Dot(b, Vector3.Cross(ey, ez)), det * Vector3.Dot(ex, Vector3.Cross(b, ez)), det * Vector3.Dot(ex, Vector3.Cross(ey, b)));
+            return new AetherVector3(det * AetherVector3.Dot(b, AetherVector3.Cross(ey, ez)), det * AetherVector3.Dot(ex, AetherVector3.Cross(b, ez)), det * AetherVector3.Dot(ex, AetherVector3.Cross(ey, b)));
         }
 
         /// <summary>
@@ -457,48 +486,48 @@ namespace tainicom.Aether.Physics2D.Common
         /// </summary>
         /// <param name="b">The b.</param>
         /// <returns></returns>
-        public Vector2 Solve22(Vector2 b)
+        public AetherVector2 Solve22(AetherVector2 b)
         {
-            float a11 = ex.X, a12 = ey.X, a21 = ex.Y, a22 = ey.Y;
-            float det = a11 * a22 - a12 * a21;
+            Fix64 a11 = ex.X, a12 = ey.X, a21 = ex.Y, a22 = ey.Y;
+            Fix64 det = a11 * a22 - a12 * a21;
 
-            if (det != 0.0f)
+            if (det != Fix64.Zero)
             {
-                det = 1.0f / det;
+                det = Fix64.One / det;
             }
 
-            return new Vector2(det * (a22 * b.X - a12 * b.Y), det * (a11 * b.Y - a21 * b.X));
+            return new AetherVector2(det * (a22 * b.X - a12 * b.Y), det * (a11 * b.Y - a21 * b.X));
         }
 
         /// Get the inverse of this matrix as a 2-by-2.
         /// Returns the zero matrix if singular.
         public void GetInverse22(ref Mat33 M)
         {
-            float a = ex.X, b = ey.X, c = ex.Y, d = ey.Y;
-            float det = a * d - b * c;
-            if (det != 0.0f)
+            Fix64 a = ex.X, b = ey.X, c = ex.Y, d = ey.Y;
+            Fix64 det = a * d - b * c;
+            if (det != Fix64.Zero)
             {
-                det = 1.0f / det;
+                det = Fix64.One / det;
             }
 
-            M.ex.X = det * d; M.ey.X = -det * b; M.ex.Z = 0.0f;
-            M.ex.Y = -det * c; M.ey.Y = det * a; M.ey.Z = 0.0f;
-            M.ez.X = 0.0f; M.ez.Y = 0.0f; M.ez.Z = 0.0f;
+            M.ex.X = det * d; M.ey.X = -det * b; M.ex.Z = Fix64.Zero;
+            M.ex.Y = -det * c; M.ey.Y = det * a; M.ey.Z = Fix64.Zero;
+            M.ez.X = Fix64.Zero; M.ez.Y = Fix64.Zero; M.ez.Z = Fix64.Zero;
         }
 
         /// Get the symmetric inverse of this matrix as a 3-by-3.
         /// Returns the zero matrix if singular.
         public void GetSymInverse33(ref Mat33 M)
         {
-            float det = MathUtils.Dot(ex, MathUtils.Cross(ref ey, ref ez));
-            if (det != 0.0f)
+            Fix64 det = MathUtils.Dot(ex, MathUtils.Cross(ref ey, ref ez));
+            if (det != Fix64.Zero)
             {
-                det = 1.0f / det;
+                det = Fix64.One / det;
             }
 
-            float a11 = ex.X, a12 = ey.X, a13 = ez.X;
-            float a22 = ey.Y, a23 = ez.Y;
-            float a33 = ez.Z;
+            Fix64 a11 = ex.X, a12 = ey.X, a13 = ez.X;
+            Fix64 a22 = ey.Y, a23 = ez.Y;
+            Fix64 a33 = ez.Z;
 
             M.ex.X = det * (a22 * a33 - a23 * a23);
             M.ex.Y = det * (a13 * a23 - a12 * a33);
@@ -521,10 +550,10 @@ namespace tainicom.Aether.Physics2D.Common
     /// </summary>
     public struct Transform
     {
-        private static readonly Transform _identity = new Transform(Vector2.Zero, Complex.One);
+        private static readonly Transform _identity = new Transform(AetherVector2.Zero, Complex.One);
 
         public Complex q;
-        public Vector2 p;
+        public AetherVector2 p;
 
         public static Transform Identity { get { return _identity; } }
 
@@ -533,7 +562,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// </summary>
         /// <param name="position">The position.</param>
         /// <param name="rotation">The rotation</param>
-        public Transform(Vector2 position, Complex rotation)
+        public Transform(AetherVector2 position, Complex rotation)
         {
             q = rotation;
             p = position;
@@ -544,44 +573,44 @@ namespace tainicom.Aether.Physics2D.Common
         /// </summary>
         /// <param name="position">The position.</param>
         /// <param name="angle">The rotation angle</param>
-        public Transform(Vector2 position, float angle)
+        public Transform(AetherVector2 position, Fix64 angle)
             : this(position, Complex.FromAngle(angle))
         {
         }
                 
-        public static Vector2 Multiply(Vector2 left, ref Transform right)
+        public static AetherVector2 Multiply(AetherVector2 left, ref Transform right)
         {
             return Multiply(ref left, ref right);
         }
 
-        public static Vector2 Multiply(ref Vector2 left, ref Transform right)
+        public static AetherVector2 Multiply(ref AetherVector2 left, ref Transform right)
         {
             // Opt: var result = Complex.Multiply(left, right.q) + right.p;
-            return new Vector2(
+            return new AetherVector2(
                 (left.X * right.q.R - left.Y * right.q.i) + right.p.X,
                 (left.Y * right.q.R + left.X * right.q.i) + right.p.Y);
         }
 
-        public static Vector2 Divide(Vector2 left, ref Transform right)
+        public static AetherVector2 Divide(AetherVector2 left, ref Transform right)
         {
             return Divide(ref left, ref right);
         }
 
-        public static Vector2 Divide(ref Vector2 left, ref Transform right)
+        public static AetherVector2 Divide(ref AetherVector2 left, ref Transform right)
         {
             // Opt: var result = Complex.Divide(left - right.p, right);
-            float px = left.X - right.p.X;
-            float py = left.Y - right.p.Y;
-            return new Vector2(
+            Fix64 px = left.X - right.p.X;
+            Fix64 py = left.Y - right.p.Y;
+            return new AetherVector2(
                 (px * right.q.R + py * right.q.i),
                 (py * right.q.R - px * right.q.i));
         }
 
-        public static void Divide(Vector2 left, ref Transform right, out Vector2 result)
+        public static void Divide(AetherVector2 left, ref Transform right, out AetherVector2 result)
         {
             // Opt: var result = Complex.Divide(left - right.p, right);
-            float px = left.X - right.p.X;
-            float py = left.Y - right.p.Y;
+            Fix64 px = left.X - right.p.X;
+            Fix64 py = left.Y - right.p.Y;
             result.X = (px * right.q.R + py * right.q.i);
             result.Y = (py * right.q.R - px * right.q.i);
         }
@@ -630,38 +659,38 @@ namespace tainicom.Aether.Physics2D.Common
         /// <summary>
         /// World angles
         /// </summary>
-        public float A;
+        public Fix64 A;
 
-        public float A0;
+        public Fix64 A0;
 
         /// <summary>
         /// Fraction of the current time step in the range [0,1]
         /// c0 and a0 are the positions at alpha0.
         /// </summary>
-        public float Alpha0;
+        public Fix64 Alpha0;
 
         /// <summary>
         /// Center world positions
         /// </summary>
-        public Vector2 C;
+        public AetherVector2 C;
 
-        public Vector2 C0;
+        public AetherVector2 C0;
 
         /// <summary>
         /// Local center of mass position
         /// </summary>
-        public Vector2 LocalCenter;
+        public AetherVector2 LocalCenter;
 
         /// <summary>
         /// Get the interpolated transform at a specific time.
         /// </summary>
         /// <param name="xfb">The transform.</param>
         /// <param name="beta">beta is a factor in [0,1], where 0 indicates alpha0.</param>
-        public void GetTransform(out Transform xfb, float beta)
+        public void GetTransform(out Transform xfb, Fix64 beta)
         {
-            xfb.p.X = (1.0f - beta) * C0.X + beta * C.X;
-            xfb.p.Y = (1.0f - beta) * C0.Y + beta * C.Y;
-            float angle = (1.0f - beta) * A0 + beta * A;
+            xfb.p.X = (Fix64.One - beta) * C0.X + beta * C.X;
+            xfb.p.Y = (Fix64.One - beta) * C0.Y + beta * C.Y;
+            Fix64 angle = (Fix64.One - beta) * A0 + beta * A;
             xfb.q = Complex.FromAngle(angle);
 
             // Shift to origin
@@ -672,10 +701,10 @@ namespace tainicom.Aether.Physics2D.Common
         /// Advance the sweep forward, yielding a new initial state.
         /// </summary>
         /// <param name="alpha">new initial time..</param>
-        public void Advance(float alpha)
+        public void Advance(Fix64 alpha)
         {
-            Debug.Assert(Alpha0 < 1.0f);
-            float beta = (alpha - Alpha0) / (1.0f - Alpha0);
+            Debug.Assert(Alpha0 < Fix64.One);
+            Fix64 beta = (alpha - Alpha0) / (Fix64.One - Alpha0);
             C0 += beta * (C - C0);
             A0 += beta * (A - A0);
             Alpha0 = alpha;
@@ -686,7 +715,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// </summary>
         public void Normalize()
         {
-            float d = Constant.Tau * (float)Math.Floor(A0 / Constant.Tau);
+            Fix64 d = Constant.Tau * Fix64.Floor(A0 / Constant.Tau);
             A0 -= d;
             A -= d;
         }

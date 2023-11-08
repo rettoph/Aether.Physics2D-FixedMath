@@ -34,6 +34,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using FixedMath.NET;
+
 namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT.Delaunay.Sweep
 {
     /**
@@ -46,8 +48,6 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT.Delaunay.Sweep
     {
         // Inital triangle factor, seed triangle will extend 30% of 
         // PointSet width to both left and right.
-        private const float ALPHA = 0.3f;
-
         public DTSweepBasin Basin = new DTSweepBasin();
         public DTSweepEdgeEvent EdgeEvent = new DTSweepEdgeEvent();
 
@@ -170,8 +170,8 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT.Delaunay.Sweep
         {
             base.PrepareTriangulation(t);
 
-            double xmax, xmin;
-            double ymax, ymin;
+            Fix64 xmax, xmin;
+            Fix64 ymax, ymin;
 
             xmax = xmin = Points[0].X;
             ymax = ymin = Points[0].Y;
@@ -189,8 +189,8 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT.Delaunay.Sweep
                     ymin = p.Y;
             }
 
-            double deltaX = ALPHA*(xmax - xmin);
-            double deltaY = ALPHA*(ymax - ymin);
+            Fix64 deltaX = Fix64Constants.ALPHA*(xmax - xmin);
+            Fix64 deltaY = Fix64Constants.ALPHA * (ymax - ymin);
             TriangulationPoint p1 = new TriangulationPoint(xmax + deltaX, ymin - deltaY);
             TriangulationPoint p2 = new TriangulationPoint(xmin - deltaX, ymin - deltaY);
 
@@ -223,7 +223,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT.Delaunay.Sweep
             public bool leftHighest;
             public AdvancingFrontNode leftNode;
             public AdvancingFrontNode rightNode;
-            public double width;
+            public Fix64 width;
         }
 
         #endregion

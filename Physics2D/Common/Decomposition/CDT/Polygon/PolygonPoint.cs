@@ -39,11 +39,13 @@
 // Future possibilities
 //   Documentation!
 
+using FixedMath.NET;
+
 namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT.Polygon
 {
     internal class PolygonPoint : TriangulationPoint
     {
-        public PolygonPoint(double x, double y) : base(x, y)
+        public PolygonPoint(Fix64 x, Fix64 y) : base(x, y)
         {
         }
 

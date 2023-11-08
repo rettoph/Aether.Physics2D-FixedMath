@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using tainicom.Aether.Physics2D.Common.PhysicsLogic;
@@ -19,10 +20,10 @@ namespace tainicom.Aether.Physics2D.Controllers
         public bool LimitAngularVelocity = true;
         public bool LimitLinearVelocity = true;
         private List<Body> _bodies = new List<Body>();
-        private float _maxAngularSqared;
-        private float _maxAngularVelocity;
-        private float _maxLinearSqared;
-        private float _maxLinearVelocity;
+        private Fix64 _maxAngularSqared;
+        private Fix64 _maxAngularVelocity;
+        private Fix64 _maxLinearSqared;
+        private Fix64 _maxLinearVelocity;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VelocityLimitController"/> class.
@@ -37,17 +38,17 @@ namespace tainicom.Aether.Physics2D.Controllers
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VelocityLimitController"/> class.
-        /// Pass in 0 or float.MaxValue to disable the limit.
+        /// Pass in 0 or Fix64.MaxValue to disable the limit.
         /// maxAngularVelocity = 0 will disable the angular velocity limit.
         /// </summary>
         /// <param name="maxLinearVelocity">The max linear velocity.</param>
         /// <param name="maxAngularVelocity">The max angular velocity.</param>
-        public VelocityLimitController(float maxLinearVelocity, float maxAngularVelocity)
+        public VelocityLimitController(Fix64 maxLinearVelocity, Fix64 maxAngularVelocity)
         {
-            if (maxLinearVelocity == 0 || maxLinearVelocity == float.MaxValue)
+            if (maxLinearVelocity == Fix64.Zero || maxLinearVelocity == Fix64.MaxValue)
                 LimitLinearVelocity = false;
 
-            if (maxAngularVelocity == 0 || maxAngularVelocity == float.MaxValue)
+            if (maxAngularVelocity == Fix64.Zero || maxAngularVelocity == Fix64.MaxValue)
                 LimitAngularVelocity = false;
 
             MaxLinearVelocity = maxLinearVelocity;
@@ -58,7 +59,7 @@ namespace tainicom.Aether.Physics2D.Controllers
         /// Gets or sets the max angular velocity.
         /// </summary>
         /// <value>The max angular velocity.</value>
-        public float MaxAngularVelocity
+        public Fix64 MaxAngularVelocity
         {
             get { return _maxAngularVelocity; }
             set
@@ -72,7 +73,7 @@ namespace tainicom.Aether.Physics2D.Controllers
         /// Gets or sets the max linear velocity.
         /// </summary>
         /// <value>The max linear velocity.</value>
-        public float MaxLinearVelocity
+        public Fix64 MaxLinearVelocity
         {
             get { return _maxLinearVelocity; }
             set
@@ -82,7 +83,7 @@ namespace tainicom.Aether.Physics2D.Controllers
             }
         }
 
-        public override void Update(float dt)
+        public override void Update(Fix64 dt)
         {
             foreach (Body body in _bodies)
             {
@@ -93,15 +94,15 @@ namespace tainicom.Aether.Physics2D.Controllers
                 {
                     //Translation
                     // Check for large velocities.
-                    float translationX = dt * body._linearVelocity.X;
-                    float translationY = dt * body._linearVelocity.Y;
-                    float result = translationX * translationX + translationY * translationY;
+                    Fix64 translationX = dt * body._linearVelocity.X;
+                    Fix64 translationY = dt * body._linearVelocity.Y;
+                    Fix64 result = translationX * translationX + translationY * translationY;
 
                     if (result > dt * _maxLinearSqared)
                     {
-                        float sq = (float)Math.Sqrt(result);
+                        Fix64 sq = Fix64.Sqrt(result);
 
-                        float ratio = _maxLinearVelocity / sq;
+                        Fix64 ratio = _maxLinearVelocity / sq;
                         body._linearVelocity.X *= ratio;
                         body._linearVelocity.Y *= ratio;
                     }
@@ -110,10 +111,10 @@ namespace tainicom.Aether.Physics2D.Controllers
                 if (LimitAngularVelocity)
                 {
                     //Rotation
-                    float rotation = dt * body._angularVelocity;
+                    Fix64 rotation = dt * body._angularVelocity;
                     if (rotation * rotation > _maxAngularSqared)
                     {
-                        float ratio = _maxAngularVelocity / Math.Abs(rotation);
+                        Fix64 ratio = _maxAngularVelocity /  Fix64.Abs(rotation);
                         body._angularVelocity *= ratio;
                     }
                 }

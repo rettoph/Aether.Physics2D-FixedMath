@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System.Collections.Generic;
 using tainicom.Aether.Physics2D.Collision;
 using tainicom.Aether.Physics2D.Common;
@@ -28,17 +29,17 @@ namespace tainicom.Aether.Physics2D.Common.TextureTools
         /// <summary>
         /// Center of terrain in world units.
         /// </summary>
-        public Vector2 Center;
+        public AetherVector2 Center;
 
         /// <summary>
         /// Width of terrain in world units.
         /// </summary>
-        public float Width;
+        public Fix64 Width;
 
         /// <summary>
         /// Height of terrain in world units.
         /// </summary>
-        public float Height;
+        public Fix64 Height;
 
         /// <summary>
         /// Points per each world unit used to define the terrain in the point cloud.
@@ -77,12 +78,12 @@ namespace tainicom.Aether.Physics2D.Common.TextureTools
         /// </summary>
         private List<Body>[,] _bodyMap;
 
-        private float _localWidth;
-        private float _localHeight;
+        private Fix64 _localWidth;
+        private Fix64 _localHeight;
         private int _xnum;
         private int _ynum;
         private AABB _dirtyArea;
-        private Vector2 _topLeft;
+        private AetherVector2 _topLeft;
 
         /// <summary>
         /// Creates a new terrain.
@@ -104,7 +105,7 @@ namespace tainicom.Aether.Physics2D.Common.TextureTools
         /// <param name="position">The position (center) of the terrain.</param>
         /// <param name="width">The width of the terrain.</param>
         /// <param name="height">The height of the terrain.</param>
-        public Terrain(World world, Vector2 position, float width, float height)
+        public Terrain(World world, AetherVector2 position, Fix64 width, Fix64 height)
         {
             World = world;
             Width = width;
@@ -118,28 +119,28 @@ namespace tainicom.Aether.Physics2D.Common.TextureTools
         public void Initialize()
         {
             // find top left of terrain in world space
-            _topLeft = new Vector2(Center.X - (Width * 0.5f), Center.Y - (-Height * 0.5f));
+            _topLeft = new AetherVector2(Center.X - (Width * Fix64Constants.PointFive), Center.Y - (-Height * Fix64Constants.PointFive));
 
             // convert the terrains size to a point cloud size
-            _localWidth = Width * PointsPerUnit;
-            _localHeight = Height * PointsPerUnit;
+            _localWidth = Width * (Fix64)PointsPerUnit;
+            _localHeight = Height * (Fix64)PointsPerUnit;
 
             _terrainMap = new sbyte[(int)_localWidth + 1, (int)_localHeight + 1];
 
-            for (int x = 0; x < _localWidth; x++)
+            for (int x = 0; (Fix64)x < _localWidth; x++)
             {
-                for (int y = 0; y < _localHeight; y++)
+                for (int y = 0; (Fix64)y < _localHeight; y++)
                 {
                     _terrainMap[x, y] = 1;
                 }
             }
 
-            _xnum = (int)(_localWidth / CellSize);
-            _ynum = (int)(_localHeight / CellSize);
+            _xnum = (int)(_localWidth / (Fix64)CellSize);
+            _ynum = (int)(_localHeight / (Fix64)CellSize);
             _bodyMap = new List<Body>[_xnum, _ynum];
 
             // make sure to mark the dirty area to an infinitely small box
-            _dirtyArea = new AABB(new Vector2(float.MaxValue, float.MaxValue), new Vector2(float.MinValue, float.MinValue));
+            _dirtyArea = new AABB(new AetherVector2(Fix64.MaxValue, Fix64.MaxValue), new AetherVector2(Fix64.MinValue, Fix64.MinValue));
         }
 
         /// <summary>
@@ -147,15 +148,15 @@ namespace tainicom.Aether.Physics2D.Common.TextureTools
         /// </summary>
         /// <param name="data"></param>
         /// <param name="offset"></param>
-        public void ApplyData(sbyte[,] data, Vector2 offset = default(Vector2))
+        public void ApplyData(sbyte[,] data, AetherVector2 offset = default(AetherVector2))
         {
             for (int x = 0; x < data.GetUpperBound(0); x++)
             {
                 for (int y = 0; y < data.GetUpperBound(1); y++)
                 {
-                    if (x + offset.X >= 0 && x + offset.X < _localWidth && y + offset.Y >= 0 && y + offset.Y < _localHeight)
+                    if ((Fix64)x + offset.X >= Fix64.Zero && (Fix64)x + offset.X < _localWidth && (Fix64)y + offset.Y >= Fix64.Zero && (Fix64)y + offset.Y < _localHeight)
                     {
-                        _terrainMap[(int)(x + offset.X), (int)(y + offset.Y)] = data[x, y];
+                        _terrainMap[(int)((Fix64)x + offset.X), (int)((Fix64)y + offset.Y)] = data[x, y];
                     }
                 }
             }
@@ -168,17 +169,17 @@ namespace tainicom.Aether.Physics2D.Common.TextureTools
         /// </summary>
         /// <param name="location">World location to modify. Automatically clipped.</param>
         /// <param name="value">-1 = inside terrain, 1 = outside terrain</param>
-        public void ModifyTerrain(Vector2 location, sbyte value)
+        public void ModifyTerrain(AetherVector2 location, sbyte value)
         {
             // find local position
             // make position local to map space
-            Vector2 p = location - _topLeft;
+            AetherVector2 p = location - _topLeft;
 
             // find map position for each axis
             p.X = p.X * _localWidth / Width;
             p.Y = p.Y * -_localHeight / Height;
 
-            if (p.X >= 0 && p.X < _localWidth && p.Y >= 0 && p.Y < _localHeight)
+            if (p.X >= Fix64.Zero && p.X < _localWidth && p.Y >= Fix64.Zero && p.Y < _localHeight)
             {
                 _terrainMap[(int)p.X, (int)p.Y] = value;
 
@@ -197,21 +198,21 @@ namespace tainicom.Aether.Physics2D.Common.TextureTools
         public void RegenerateTerrain()
         {
             //iterate effected cells
-            int xStart = (int)(_dirtyArea.LowerBound.X / CellSize);
+            int xStart = (int)(_dirtyArea.LowerBound.X / (Fix64)CellSize);
             if (xStart < 0) xStart = 0;
 
-            int xEnd = (int)(_dirtyArea.UpperBound.X / CellSize) + 1;
+            int xEnd = (int)(_dirtyArea.UpperBound.X / (Fix64)CellSize) + 1;
             if (xEnd > _xnum) xEnd = _xnum;
 
-            int yStart = (int)(_dirtyArea.LowerBound.Y / CellSize);
+            int yStart = (int)(_dirtyArea.LowerBound.Y / (Fix64)CellSize);
             if (yStart < 0) yStart = 0;
 
-            int yEnd = (int)(_dirtyArea.UpperBound.Y / CellSize) + 1;
+            int yEnd = (int)(_dirtyArea.UpperBound.Y / (Fix64)CellSize) + 1;
             if (yEnd > _ynum) yEnd = _ynum;
 
             RemoveOldData(xStart, xEnd, yStart, yEnd);
 
-            _dirtyArea = new AABB(new Vector2(float.MaxValue, float.MaxValue), new Vector2(float.MinValue, float.MinValue));
+            _dirtyArea = new AABB(new AetherVector2(Fix64.MaxValue, Fix64.MaxValue), new AetherVector2(Fix64.MinValue, Fix64.MinValue));
         }
 
         private void RemoveOldData(int xStart, int xEnd, int yStart, int yEnd)
@@ -239,16 +240,16 @@ namespace tainicom.Aether.Physics2D.Common.TextureTools
 
         private void GenerateTerrain(int gx, int gy)
         {
-            float ax = gx * CellSize;
-            float ay = gy * CellSize;
+            Fix64 ax = (Fix64)(gx * CellSize);
+            Fix64 ay = (Fix64)(gy * CellSize);
 
-            List<Vertices> polys = MarchingSquares.DetectSquares(new AABB(new Vector2(ax, ay), new Vector2(ax + CellSize, ay + CellSize)), SubCellSize, SubCellSize, _terrainMap, Iterations, true);
+            List<Vertices> polys = MarchingSquares.DetectSquares(new AABB(new AetherVector2(ax, ay), new AetherVector2(ax + (Fix64)CellSize, ay + (Fix64)CellSize)), (Fix64)SubCellSize, (Fix64)SubCellSize, _terrainMap, Iterations, true);
             if (polys.Count == 0) return;
 
             _bodyMap[gx, gy] = new List<Body>();
 
             // create the scale vector
-            Vector2 scale = new Vector2(1f / PointsPerUnit, 1f / -PointsPerUnit);
+            AetherVector2 scale = new AetherVector2(Fix64.One / (Fix64)PointsPerUnit, Fix64.One / -(Fix64)PointsPerUnit);
 
             // create physics object for this grid cell
             foreach (Vertices item in polys)
@@ -263,7 +264,7 @@ namespace tainicom.Aether.Physics2D.Common.TextureTools
                 foreach (Vertices poly in decompPolys)
                 {
                     if (poly.Count > 2)
-                        _bodyMap[gx, gy].Add(World.CreatePolygon(poly, 1));
+                        _bodyMap[gx, gy].Add(World.CreatePolygon(poly, Fix64.One, AetherVector2.Zero, Fix64.Zero));
                 }
             }
         }

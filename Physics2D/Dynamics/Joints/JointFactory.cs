@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using tainicom.Aether.Physics2D.Common;
 using tainicom.Aether.Physics2D.Dynamics;
 using tainicom.Aether.Physics2D.Dynamics.Joints;
@@ -24,52 +25,52 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             return joint;
         }
 
-        public static RevoluteJoint CreateRevoluteJoint(World world, Body bodyA, Body bodyB, Vector2 anchorA, Vector2 anchorB, bool useWorldCoordinates = false)
+        public static RevoluteJoint CreateRevoluteJoint(World world, Body bodyA, Body bodyB, AetherVector2 anchorA, AetherVector2 anchorB, bool useWorldCoordinates = false)
         {
             RevoluteJoint joint = new RevoluteJoint(bodyA, bodyB, anchorA, anchorB, useWorldCoordinates);
             world.Add(joint);
             return joint;
         }
 
-        public static RevoluteJoint CreateRevoluteJoint(World world, Body bodyA, Body bodyB, Vector2 anchor)
+        public static RevoluteJoint CreateRevoluteJoint(World world, Body bodyA, Body bodyB, AetherVector2 anchor)
         {
-            Vector2 localanchorA = bodyA.GetLocalPoint(bodyB.GetWorldPoint(anchor));
+            AetherVector2 localanchorA = bodyA.GetLocalPoint(bodyB.GetWorldPoint(anchor));
             RevoluteJoint joint = new RevoluteJoint(bodyA, bodyB, localanchorA, anchor);
             world.Add(joint);
             return joint;
         }
 
-        public static RopeJoint CreateRopeJoint(World world, Body bodyA, Body bodyB, Vector2 anchorA, Vector2 anchorB, bool useWorldCoordinates = false)
+        public static RopeJoint CreateRopeJoint(World world, Body bodyA, Body bodyB, AetherVector2 anchorA, AetherVector2 anchorB, bool useWorldCoordinates = false)
         {
             RopeJoint ropeJoint = new RopeJoint(bodyA, bodyB, anchorA, anchorB, useWorldCoordinates);
             world.Add(ropeJoint);
             return ropeJoint;
         }
 
-        public static WeldJoint CreateWeldJoint(World world, Body bodyA, Body bodyB, Vector2 anchorA, Vector2 anchorB, bool useWorldCoordinates = false)
+        public static WeldJoint CreateWeldJoint(World world, Body bodyA, Body bodyB, AetherVector2 anchorA, AetherVector2 anchorB, bool useWorldCoordinates = false)
         {
             WeldJoint weldJoint = new WeldJoint(bodyA, bodyB, anchorA, anchorB, useWorldCoordinates);
             world.Add(weldJoint);
             return weldJoint;
         }
 
-        public static PrismaticJoint CreatePrismaticJoint(World world, Body bodyA, Body bodyB, Vector2 anchor, Vector2 axis, bool useWorldCoordinates = false)
+        public static PrismaticJoint CreatePrismaticJoint(World world, Body bodyA, Body bodyB, AetherVector2 anchor, AetherVector2 axis, bool useWorldCoordinates = false)
         {
             PrismaticJoint joint = new PrismaticJoint(bodyA, bodyB, anchor, axis, useWorldCoordinates);
             world.Add(joint);
             return joint;
         }
 
-        public static WheelJoint CreateWheelJoint(World world, Body bodyA, Body bodyB, Vector2 anchor, Vector2 axis, bool useWorldCoordinates = false)
+        public static WheelJoint CreateWheelJoint(World world, Body bodyA, Body bodyB, AetherVector2 anchor, AetherVector2 axis, bool useWorldCoordinates = false)
         {
             WheelJoint joint = new WheelJoint(bodyA, bodyB, anchor, axis, useWorldCoordinates);
             world.Add(joint);
             return joint;
         }
 
-        public static WheelJoint CreateWheelJoint(World world, Body bodyA, Body bodyB, Vector2 axis)
+        public static WheelJoint CreateWheelJoint(World world, Body bodyA, Body bodyB, AetherVector2 axis)
         {
-            return CreateWheelJoint(world, bodyA, bodyB, Vector2.Zero, axis);
+            return CreateWheelJoint(world, bodyA, bodyB, AetherVector2.Zero, axis);
         }
 
         public static AngleJoint CreateAngleJoint(World world, Body bodyA, Body bodyB)
@@ -79,7 +80,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             return angleJoint;
         }
 
-        public static DistanceJoint CreateDistanceJoint(World world, Body bodyA, Body bodyB, Vector2 anchorA, Vector2 anchorB, bool useWorldCoordinates = false)
+        public static DistanceJoint CreateDistanceJoint(World world, Body bodyA, Body bodyB, AetherVector2 anchorA, AetherVector2 anchorB, bool useWorldCoordinates = false)
         {
             DistanceJoint distanceJoint = new DistanceJoint(bodyA, bodyB, anchorA, anchorB, useWorldCoordinates);
             world.Add(distanceJoint);
@@ -88,10 +89,10 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
 
         public static DistanceJoint CreateDistanceJoint(World world, Body bodyA, Body bodyB)
         {
-            return CreateDistanceJoint(world, bodyA, bodyB, Vector2.Zero, Vector2.Zero);
+            return CreateDistanceJoint(world, bodyA, bodyB, AetherVector2.Zero, AetherVector2.Zero);
         }
 
-        public static FrictionJoint CreateFrictionJoint(World world, Body bodyA, Body bodyB, Vector2 anchor, bool useWorldCoordinates = false)
+        public static FrictionJoint CreateFrictionJoint(World world, Body bodyA, Body bodyB, AetherVector2 anchor, bool useWorldCoordinates = false)
         {
             FrictionJoint frictionJoint = new FrictionJoint(bodyA, bodyB, anchor, useWorldCoordinates);
             world.Add(frictionJoint);
@@ -100,24 +101,24 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
 
         public static FrictionJoint CreateFrictionJoint(World world, Body bodyA, Body bodyB)
         {
-            return CreateFrictionJoint(world, bodyA, bodyB, Vector2.Zero);
+            return CreateFrictionJoint(world, bodyA, bodyB, AetherVector2.Zero);
         }
 
-        public static GearJoint CreateGearJoint(World world, Body bodyA, Body bodyB, Joint jointA, Joint jointB, float ratio)
+        public static GearJoint CreateGearJoint(World world, Body bodyA, Body bodyB, Joint jointA, Joint jointB, Fix64 ratio)
         {
             GearJoint gearJoint = new GearJoint(bodyA, bodyB, jointA, jointB, ratio);
             world.Add(gearJoint);
             return gearJoint;
         }
 
-        public static PulleyJoint CreatePulleyJoint(World world, Body bodyA, Body bodyB, Vector2 anchorA, Vector2 anchorB, Vector2 worldAnchorA, Vector2 worldAnchorB, float ratio, bool useWorldCoordinates = false)
+        public static PulleyJoint CreatePulleyJoint(World world, Body bodyA, Body bodyB, AetherVector2 anchorA, AetherVector2 anchorB, AetherVector2 worldAnchorA, AetherVector2 worldAnchorB, Fix64 ratio, bool useWorldCoordinates = false)
         {
             PulleyJoint pulleyJoint = new PulleyJoint(bodyA, bodyB, anchorA, anchorB, worldAnchorA, worldAnchorB, ratio, useWorldCoordinates);
             world.Add(pulleyJoint);
             return pulleyJoint;
         }
 
-        public static FixedMouseJoint CreateFixedMouseJoint(World world, Body body, Vector2 worldAnchor)
+        public static FixedMouseJoint CreateFixedMouseJoint(World world, Body body, AetherVector2 worldAnchor)
         {
             FixedMouseJoint joint = new FixedMouseJoint(body, worldAnchor);
             world.Add(joint);

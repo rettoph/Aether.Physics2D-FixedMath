@@ -5,6 +5,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System;
 using tainicom.Aether.Physics2D.Common;
 using tainicom.Aether.Physics2D.Dynamics;
@@ -30,7 +31,7 @@ namespace tainicom.Aether.Physics2D.Collision
 
         void RemoveProxy(int proxyId);
 
-        void MoveProxy(int proxyId, ref AABB aabb, Vector2 displacement);
+        void MoveProxy(int proxyId, ref AABB aabb, AetherVector2 displacement);
 
         void SetProxy(int proxyId, ref TNode proxy);
 
@@ -44,10 +45,10 @@ namespace tainicom.Aether.Physics2D.Collision
 
         void RayCast(BroadPhaseRayCastCallback callback, ref RayCastInput input);
 
-        void ShiftOrigin(Vector2 newOrigin);
+        void ShiftOrigin(AetherVector2 newOrigin);
     }
 
     public delegate void BroadphaseDelegate(int proxyIdA, int proxyIdB);
     public delegate bool BroadPhaseQueryCallback(int proxyId);
-    public delegate float BroadPhaseRayCastCallback(ref RayCastInput input, int proxyId);
+    public delegate Fix64 BroadPhaseRayCastCallback(ref RayCastInput input, int proxyId);
 }

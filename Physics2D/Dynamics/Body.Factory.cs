@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using tainicom.Aether.Physics2D.Collision.Shapes;
@@ -34,7 +35,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
             return fixture;
         }
 
-        public Fixture CreateEdge(Vector2 start, Vector2 end)
+        public Fixture CreateEdge(AetherVector2 start, AetherVector2 end)
         {
             EdgeShape edgeShape = new EdgeShape(start, end);
             return CreateFixture(edgeShape);
@@ -52,26 +53,26 @@ namespace tainicom.Aether.Physics2D.Dynamics
             return CreateFixture(shape);
         }
 
-        public Fixture CreateRectangle(float width, float height, float density, Vector2 offset)
+        public Fixture CreateRectangle(Fix64 width, Fix64 height, Fix64 density, AetherVector2 offset)
         {
-            Vertices rectangleVertices = PolygonTools.CreateRectangle(width / 2, height / 2);
+            Vertices rectangleVertices = PolygonTools.CreateRectangle(width / Fix64Constants.Two, height / Fix64Constants.Two);
             rectangleVertices.Translate(ref offset);
             PolygonShape rectangleShape = new PolygonShape(rectangleVertices, density);
             return CreateFixture(rectangleShape);
         }
 
-        public Fixture CreateCircle(float radius, float density)
+        public Fixture CreateCircle(Fix64 radius, Fix64 density)
         {
-            if (radius <= 0)
+            if (radius <= Fix64.Zero)
                 throw new ArgumentOutOfRangeException("radius", "Radius must be more than 0 meters");
 
             CircleShape circleShape = new CircleShape(radius, density);
             return CreateFixture(circleShape);
         }
 
-        public Fixture CreateCircle(float radius, float density, Vector2 offset)
+        public Fixture CreateCircle(Fix64 radius, Fix64 density, AetherVector2 offset)
         {
-            if (radius <= 0)
+            if (radius <= Fix64.Zero)
                 throw new ArgumentOutOfRangeException("radius", "Radius must be more than 0 meters");
 
             CircleShape circleShape = new CircleShape(radius, density);
@@ -79,7 +80,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
             return CreateFixture(circleShape);
         }
 
-        public Fixture CreatePolygon(Vertices vertices, float density)
+        public Fixture CreatePolygon(Vertices vertices, Fix64 density)
         {
             if (vertices.Count <= 1)
                 throw new ArgumentOutOfRangeException("vertices", "Too few points to be a polygon");
@@ -88,12 +89,12 @@ namespace tainicom.Aether.Physics2D.Dynamics
             return CreateFixture(polygon);
         }
 
-        public Fixture CreateEllipse(float xRadius, float yRadius, int edges, float density)
+        public Fixture CreateEllipse(Fix64 xRadius, Fix64 yRadius, int edges, Fix64 density)
         {
-            if (xRadius <= 0)
+            if (xRadius <= Fix64.Zero)
                 throw new ArgumentOutOfRangeException("xRadius", "X-radius must be more than 0");
 
-            if (yRadius <= 0)
+            if (yRadius <= Fix64.Zero)
                 throw new ArgumentOutOfRangeException("yRadius", "Y-radius must be more than 0");
 
             Vertices ellipseVertices = PolygonTools.CreateEllipse(xRadius, yRadius, edges);
@@ -101,7 +102,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
             return CreateFixture(polygonShape);
         }
 
-        public List<Fixture> CreateCompoundPolygon(List<Vertices> list, float density)
+        public List<Fixture> CreateCompoundPolygon(List<Vertices> list, Fix64 density)
         {
             List<Fixture> res = new List<Fixture>(list.Count);
 
@@ -123,17 +124,17 @@ namespace tainicom.Aether.Physics2D.Dynamics
             return res;
         }
 
-        public Fixture CreateLineArc(float radians, int sides, float radius, bool closed)
+        public Fixture CreateLineArc(Fix64 radians, int sides, Fix64 radius, bool closed)
         {
             Vertices arc = PolygonTools.CreateArc(radians, sides, radius);
-            arc.Rotate((Constant.Pi - radians) / 2);
+            arc.Rotate((Constant.Pi - radians) / Fix64Constants.Two);
             return closed ? CreateLoopShape(arc) : CreateChainShape(arc);
         }
 
-        public List<Fixture> CreateSolidArc(float density, float radians, int sides, float radius)
+        public List<Fixture> CreateSolidArc(Fix64 density, Fix64 radians, int sides, Fix64 radius)
         {
             Vertices arc = PolygonTools.CreateArc(radians, sides, radius);
-            arc.Rotate((Constant.Pi - radians) / 2);
+            arc.Rotate((Constant.Pi - radians) / Fix64Constants.Two);
 
             //Close the arc
             arc.Add(arc[0]);

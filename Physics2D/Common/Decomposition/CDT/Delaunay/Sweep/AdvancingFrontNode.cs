@@ -40,6 +40,8 @@
 // Future possibilities
 //   Comments!
 
+using FixedMath.NET;
+
 namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT.Delaunay.Sweep
 {
     internal class AdvancingFrontNode
@@ -48,7 +50,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT.Delaunay.Sweep
         public TriangulationPoint Point;
         public AdvancingFrontNode Prev;
         public DelaunayTriangle Triangle;
-        public double Value;
+        public Fix64 Value;
 
         public AdvancingFrontNode(TriangulationPoint point)
         {

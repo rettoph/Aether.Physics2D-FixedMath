@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -79,7 +80,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
         /// tools by removing the overhead of the checks, but you will need to handle checks
         /// yourself where it is needed.
         /// </param>
-        public static List<Vertices> ConvexPartition(Vertices vertices, TriangulationAlgorithm algorithm, bool discardAndFixInvalid = true, float tolerance = 0.001f, bool skipSanityChecks = false)
+        public static List<Vertices> ConvexPartition(Vertices vertices, TriangulationAlgorithm algorithm, bool discardAndFixInvalid, Fix64 tolerance, bool skipSanityChecks)
         {
             if (vertices.Count <= 3)
                 return new List<Vertices> { vertices };
@@ -146,6 +147,16 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition
             }
 
             return results;
+        }
+
+        /// <param name="skipSanityChecks">
+        /// Set this to true to skip sanity checks in the engine. This will speed up the
+        /// tools by removing the overhead of the checks, but you will need to handle checks
+        /// yourself where it is needed.
+        /// </param>
+        public static List<Vertices> ConvexPartition(Vertices vertices, TriangulationAlgorithm algorithm)
+        {
+            return ConvexPartition(vertices, algorithm, true, Fix64Constants.PointZeroZeroOne, false);
         }
 
         private static bool ValidatePolygon(Vertices polygon)

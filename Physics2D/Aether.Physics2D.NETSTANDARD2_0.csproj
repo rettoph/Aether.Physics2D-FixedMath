@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -82,8 +82,8 @@
     <Compile Include="Common\Math.cs" />
     <Compile Include="Common\Complex.cs" />
     <Compile Include="Common\Constant.cs" />
-    <Compile Include="Common\Vector2.cs" />
-    <Compile Include="Common\Vector3.cs" />
+    <Compile Include="Common\AetherVector2.cs" />
+    <Compile Include="Common\AetherVector3.cs" />
     <Compile Include="Common\Path.cs" />
     <Compile Include="Common\PathManager.cs" />
     <Compile Include="Common\PhysicsLogic\BreakableBody.cs" />
@@ -142,10 +142,15 @@
     <Compile Include="Dynamics\World.Factory.cs" />
     <Compile Include="Dynamics\WorldCallbacks.cs" />
     <Compile Include="Settings.cs" />
+    <Compile Include="Fix64Constants.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.NETSTANDARD20.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FixedMath.NET" Version="1.0.1" />
   </ItemGroup>
 
 </Project>

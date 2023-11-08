@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System.Collections.Generic;
 using System.Diagnostics;
 using tainicom.Aether.Physics2D.Collision.Shapes;
@@ -26,10 +27,10 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
         /// <param name="exitPoint">The exit point - The end point</param>
         /// <param name="first">The first collection of vertexes</param>
         /// <param name="second">The second collection of vertexes</param>
-        public static void SplitShape(Fixture fixture, Vector2 entryPoint, Vector2 exitPoint, out Vertices first, out Vertices second)
+        public static void SplitShape(Fixture fixture, AetherVector2 entryPoint, AetherVector2 exitPoint, out Vertices first, out Vertices second)
         {
-            Vector2 localEntryPoint = fixture.Body.GetLocalPoint(ref entryPoint);
-            Vector2 localExitPoint = fixture.Body.GetLocalPoint(ref exitPoint);
+            AetherVector2 localEntryPoint = fixture.Body.GetLocalPoint(ref entryPoint);
+            AetherVector2 localExitPoint = fixture.Body.GetLocalPoint(ref exitPoint);
 
             PolygonShape shape = fixture.Shape as PolygonShape;
 
@@ -42,13 +43,13 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
             }
 
             //Offset the entry and exit points if they are too close to the vertices
-            foreach (Vector2 vertex in shape.Vertices)
+            foreach (AetherVector2 vertex in shape.Vertices)
             {
                 if (vertex.Equals(localEntryPoint))
-                    localEntryPoint -= new Vector2(0, Settings.Epsilon);
+                    localEntryPoint -= new AetherVector2(Fix64.Zero, Settings.Epsilon);
 
                 if (vertex.Equals(localExitPoint))
-                    localExitPoint += new Vector2(0, Settings.Epsilon);
+                    localExitPoint += new AetherVector2(Fix64.Zero, Settings.Epsilon);
             }
 
             Vertices vertices = new Vertices(shape.Vertices);
@@ -65,7 +66,7 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
             {
                 int n;
                 //Find out if this vertex is on the old or new shape.
-                if (Vector2.Dot(MathUtils.Cross(localExitPoint - localEntryPoint, 1), vertices[i] - localEntryPoint) > Settings.Epsilon)
+                if (AetherVector2.Dot(MathUtils.Cross(localExitPoint - localEntryPoint, Fix64.One), vertices[i] - localEntryPoint) > Settings.Epsilon)
                     n = 0;
                 else
                     n = 1;
@@ -109,7 +110,7 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
 
             for (int n = 0; n < 2; n++)
             {
-                Vector2 offset;
+                AetherVector2 offset;
                 if (cutAdded[n] > 0)
                 {
                     offset = (newPolygon[n][cutAdded[n] - 1] - newPolygon[n][cutAdded[n]]);
@@ -119,9 +120,6 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
                     offset = (newPolygon[n][newPolygon[n].Count - 1] - newPolygon[n][0]);
                 }
                 offset.Normalize();
-
-                if (!offset.IsValid())
-                    offset = Vector2.One;
 
                 newPolygon[n][cutAdded[n]] += Settings.Epsilon * offset;
 
@@ -134,9 +132,6 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
                     offset = (newPolygon[n][0] - newPolygon[n][newPolygon[n].Count - 1]);
                 }
                 offset.Normalize();
-
-                if (!offset.IsValid())
-                    offset = Vector2.One;
 
                 newPolygon[n][cutAdded[n] + 1] += Settings.Epsilon * offset;
             }
@@ -153,11 +148,11 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
         /// <param name="start">The startpoint.</param>
         /// <param name="end">The endpoint.</param>
         /// <returns>True if the cut was performed.</returns>
-        public static bool Cut(World world, Vector2 start, Vector2 end)
+        public static bool Cut(World world, AetherVector2 start, AetherVector2 end)
         {
             List<Fixture> fixtures = new List<Fixture>();
-            List<Vector2> entryPoints = new List<Vector2>();
-            List<Vector2> exitPoints = new List<Vector2>();
+            List<AetherVector2> entryPoints = new List<AetherVector2>();
+            List<AetherVector2> exitPoints = new List<AetherVector2>();
 
             //We don't support cutting when the start or end is inside a shape.
             if (world.TestPoint(start) != null || world.TestPoint(end) != null)
@@ -168,14 +163,14 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
                               {
                                   fixtures.Add(f);
                                   entryPoints.Add(p);
-                                  return 1;
+                                  return Fix64.One;
                               }, start, end);
 
             //Reverse the ray to get the exitpoints
             world.RayCast((f, p, n, fr) =>
                               {
                                   exitPoints.Add(p);
-                                  return 1;
+                                  return Fix64.One;
                               }, end, start);
 
             //We only have a single point. We need at least 2
@@ -198,7 +193,7 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
                     //Delete the original shape and create two new. Retain the properties of the body.
                     if (first.CheckPolygon() == PolygonError.NoError)
                     {
-                        Body firstFixture = world.CreatePolygon(first, fixtures[i].Shape.Density, fixtures[i].Body.Position);
+                        Body firstFixture = world.CreatePolygon(first, fixtures[i].Shape.Density, fixtures[i].Body.Position, Fix64.Zero);
                         firstFixture.Rotation = fixtures[i].Body.Rotation;
                         firstFixture.LinearVelocity = fixtures[i].Body.LinearVelocity;
                         firstFixture.AngularVelocity = fixtures[i].Body.AngularVelocity;
@@ -207,7 +202,7 @@ namespace tainicom.Aether.Physics2D.Common.PolygonManipulation
 
                     if (second.CheckPolygon() == PolygonError.NoError)
                     {
-                        Body secondFixture = world.CreatePolygon(second, fixtures[i].Shape.Density, fixtures[i].Body.Position);
+                        Body secondFixture = world.CreatePolygon(second, fixtures[i].Shape.Density, fixtures[i].Body.Position, Fix64.Zero);
                         secondFixture.Rotation = fixtures[i].Body.Rotation;
                         secondFixture.LinearVelocity = fixtures[i].Body.LinearVelocity;
                         secondFixture.AngularVelocity = fixtures[i].Body.AngularVelocity;

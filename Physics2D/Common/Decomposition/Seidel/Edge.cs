@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System.Collections.Generic;
 
 namespace tainicom.Aether.Physics2D.Common.Decomposition.Seidel
@@ -11,7 +12,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.Seidel
     {
         // Pointers used for building trapezoidal map
         public Trapezoid Above;
-        public float B;
+        public Fix64 B;
         public Trapezoid Below;
 
         // Montone mountain points
@@ -20,7 +21,7 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.Seidel
         public Point Q;
 
         // Slope of the line (m)
-        public float Slope;
+        public Fix64 Slope;
 
 
         public Edge(Point p, Point q)
@@ -28,10 +29,10 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.Seidel
             P = p;
             Q = q;
 
-            if (q.X - p.X != 0)
+            if (q.X - p.X != Fix64.Zero)
                 Slope = (q.Y - p.Y) / (q.X - p.X);
             else
-                Slope = 0;
+                Slope = Fix64.Zero;
 
             B = p.Y - (p.X * Slope);
             Above = null;
@@ -43,12 +44,12 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.Seidel
 
         public bool IsAbove(Point point)
         {
-            return P.Orient2D(Q, point) < 0;
+            return P.Orient2D(Q, point) < Fix64.Zero;
         }
 
         public bool IsBelow(Point point)
         {
-            return P.Orient2D(Q, point) > 0;
+            return P.Orient2D(Q, point) > Fix64.Zero;
         }
 
         public void AddMpoint(Point point)

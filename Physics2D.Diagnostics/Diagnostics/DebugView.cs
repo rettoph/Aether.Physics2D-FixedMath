@@ -20,6 +20,8 @@ using Complex = tainicom.Aether.Physics2D.Common.Complex;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using FixedMath.NET;
+using tainicom.Aether.Physics2D.Diagnostics.Extensions;
 
 namespace tainicom.Aether.Physics2D.Diagnostics
 {
@@ -77,7 +79,7 @@ namespace tainicom.Aether.Physics2D.Diagnostics
         public bool Enabled = true;
         
         public const int CircleSegments = 32;
-        private Complex circleSegmentRotation = Complex.FromAngle((float)(Math.PI * 2.0 / CircleSegments));
+        private Complex circleSegmentRotation = Complex.FromAngle((Fix64)(Math.PI * 2.0 / CircleSegments));
 
         public DebugView(World world)
             : base(world)
@@ -113,8 +115,8 @@ namespace tainicom.Aether.Physics2D.Diagnostics
                 FixedArray2<PointState> state1, state2;
                 Collision.Collision.GetPointStates(out state1, out state2, ref oldManifold, ref manifold);
 
-                FixedArray2<Vector2> points;
-                Vector2 normal;
+                FixedArray2<AetherVector2> points;
+                AetherVector2 normal;
                 contact.GetWorldManifold(out normal, out points);
 
                 for (int i = 0; i < manifold.PointCount && _pointCount < MaxContactPoints; ++i)
@@ -123,8 +125,8 @@ namespace tainicom.Aether.Physics2D.Diagnostics
                         _points[i] = new ContactPoint();
 
                     ContactPoint cp = _points[_pointCount];
-                    cp.Position = points[i];
-                    cp.Normal = normal;
+                    cp.Position = new Vector2((float)points[i].X, (float)points[i].Y);
+                    cp.Normal = new Vector2((float)normal.X, (float)normal.Y);
                     cp.State = state2[i];
                     _points[_pointCount] = cp;
                     ++_pointCount;
@@ -195,8 +197,8 @@ namespace tainicom.Aether.Physics2D.Diagnostics
 
                             for (int i = 0; i < polygon.Vertices.Count; i++)
                             {
-                                Vector2 tmp = Transform.Multiply(polygon.Vertices[i], ref xf);
-                                DrawPoint(tmp, 0.1f, Color.Red);
+                                AetherVector2 tmp = Transform.Multiply(polygon.Vertices[i], ref xf);
+                                DrawPoint(tmp.ToXnaVector2(), 0.1f, Color.Red);
                             }
                         }
                     }
@@ -375,10 +377,10 @@ namespace tainicom.Aether.Physics2D.Diagnostics
         public void DrawAABB(ref AABB aabb, Color color)
         {
             Vector2[] verts = new Vector2[4];
-            verts[0] = new Vector2(aabb.LowerBound.X, aabb.LowerBound.Y);
-            verts[1] = new Vector2(aabb.UpperBound.X, aabb.LowerBound.Y);
-            verts[2] = new Vector2(aabb.UpperBound.X, aabb.UpperBound.Y);
-            verts[3] = new Vector2(aabb.LowerBound.X, aabb.UpperBound.Y);
+            verts[0] = new Vector2((float)aabb.LowerBound.X, (float)aabb.LowerBound.Y);
+            verts[1] = new Vector2((float)aabb.UpperBound.X, (float)aabb.LowerBound.Y);
+            verts[2] = new Vector2((float)aabb.UpperBound.X, (float)aabb.UpperBound.Y);
+            verts[3] = new Vector2((float)aabb.LowerBound.X, (float)aabb.UpperBound.Y);
 
             DrawPolygon(verts, 4, color);
         }
@@ -398,12 +400,12 @@ namespace tainicom.Aether.Physics2D.Diagnostics
             if (!joint.IsFixedType())
             {
                 Transform xf2 = b2.GetTransform();
-                x2 = xf2.p;
+                x2 = xf2.p.ToXnaVector2();
             }
 
-            Vector2 p1 = joint.WorldAnchorA;
-            Vector2 p2 = joint.WorldAnchorB;
-            Vector2 x1 = xf1.p;
+            Vector2 p1 = joint.WorldAnchorA.ToXnaVector2();
+            Vector2 p2 = joint.WorldAnchorB.ToXnaVector2();
+            Vector2 x1 = xf1.p.ToXnaVector2();
 
             Color color = new Color(0.5f, 0.8f, 0.8f);
 
@@ -414,8 +416,8 @@ namespace tainicom.Aether.Physics2D.Diagnostics
                     break;
                 case JointType.Pulley:
                     PulleyJoint pulley = (PulleyJoint)joint;
-                    Vector2 s1 = b1.GetWorldPoint(pulley.LocalAnchorA);
-                    Vector2 s2 = b2.GetWorldPoint(pulley.LocalAnchorB);
+                    Vector2 s1 = b1.GetWorldPoint(pulley.LocalAnchorA).ToXnaVector2();
+                    Vector2 s2 = b2.GetWorldPoint(pulley.LocalAnchorB).ToXnaVector2();
                     DrawSegment(p1, p2, color);
                     DrawSegment(p1, s1, color);
                     DrawSegment(p2, s2, color);
@@ -470,9 +472,9 @@ namespace tainicom.Aether.Physics2D.Diagnostics
                     {
                         CircleShape circle = (CircleShape)fixture.Shape;
 
-                        Vector2 center = Transform.Multiply(circle.Position, ref xf);
-                        float radius = circle.Radius;
-                        Vector2 axis = xf.q.ToVector2();
+                        Vector2 center = Transform.Multiply(circle.Position, ref xf).ToXnaVector2();
+                        float radius = (float)circle.Radius;
+                        Vector2 axis = xf.q.ToVector2().ToXnaVector2();
 
                         DrawSolidCircle(center, radius, axis, color);
                     }
@@ -486,7 +488,7 @@ namespace tainicom.Aether.Physics2D.Diagnostics
 
                         for (int i = 0; i < vertexCount; ++i)
                         {
-                            _tempVertices[i] = Transform.Multiply(poly.Vertices[i], ref xf);
+                            _tempVertices[i] = Transform.Multiply(poly.Vertices[i], ref xf).ToXnaVector2();
                         }
 
                         DrawSolidPolygon(_tempVertices, vertexCount, color);
@@ -497,8 +499,8 @@ namespace tainicom.Aether.Physics2D.Diagnostics
                 case ShapeType.Edge:
                     {
                         EdgeShape edge = (EdgeShape)fixture.Shape;
-                        Vector2 v1 = Transform.Multiply(edge.Vertex1, ref xf);
-                        Vector2 v2 = Transform.Multiply(edge.Vertex2, ref xf);
+                        Vector2 v1 = Transform.Multiply(edge.Vertex1, ref xf).ToXnaVector2();
+                        Vector2 v2 = Transform.Multiply(edge.Vertex2, ref xf).ToXnaVector2();
                         DrawSegment(v1, v2, color);
                     }
                     break;
@@ -509,8 +511,8 @@ namespace tainicom.Aether.Physics2D.Diagnostics
 
                         for (int i = 0; i < chain.Vertices.Count - 1; ++i)
                         {
-                            Vector2 v1 = Transform.Multiply(chain.Vertices[i], ref xf);
-                            Vector2 v2 = Transform.Multiply(chain.Vertices[i + 1], ref xf);
+                            Vector2 v1 = Transform.Multiply(chain.Vertices[i], ref xf).ToXnaVector2();
+                            Vector2 v2 = Transform.Multiply(chain.Vertices[i + 1], ref xf).ToXnaVector2();
                             DrawSegment(v1, v2, color);
                         }
                     }
@@ -569,16 +571,17 @@ namespace tainicom.Aether.Physics2D.Diagnostics
             if (!_primitiveBatch.IsReady())
                 throw new InvalidOperationException("BeginCustomDraw must be called before drawing anything.");
 
-            Vector2 v2 = new Vector2(radius, 0);
-            var center_v2 = center + v2;
+            AetherVector2 v2 = new AetherVector2((Fix64)radius, Fix64.Zero);
+            var center_v2 = center + v2.ToXnaVector2();
             var center_vS = center_v2;
 
             for (int i = 0; i < CircleSegments - 1; i++)
             {
-                Vector2 v1 = v2;
+                AetherVector2 v1 = v2;
                 var center_v1 = center_v2;
                 Complex.Multiply(ref v1, ref circleSegmentRotation, out v2);
-                Vector2.Add(ref center, ref v2, out center_v2);
+                Vector2 v2Xna = v2.ToXnaVector2();
+                Vector2.Add(ref center, ref v2Xna, out center_v2);
 
                 _primitiveBatch.AddVertex(ref center_v1, color, PrimitiveType.LineList);
                 _primitiveBatch.AddVertex(ref center_v2, color, PrimitiveType.LineList);
@@ -593,18 +596,19 @@ namespace tainicom.Aether.Physics2D.Diagnostics
             if (!_primitiveBatch.IsReady())
                 throw new InvalidOperationException("BeginCustomDraw must be called before drawing anything.");
 
-            Vector2 v2 = new Vector2(radius, 0);
-            var center_v2 = center + v2;
+            AetherVector2 v2 = new AetherVector2((Fix64)radius, Fix64.Zero);
+            var center_v2 = center + v2.ToXnaVector2();
             var center_vS = center_v2;
 
             Color colorFill = color * 0.5f;
 
             for (int i = 0; i < CircleSegments-1; i++)
             {
-                Vector2 v1 = v2;
+                AetherVector2 v1 = v2;
                 var center_v1 = center_v2;
                 Complex.Multiply(ref v1, ref circleSegmentRotation, out v2);
-                Vector2.Add(ref center, ref v2, out center_v2);
+                Vector2 v2Xna = v2.ToXnaVector2();
+                Vector2.Add(ref center, ref v2Xna, out center_v2);
 
                 // Draw Circle
                 _primitiveBatch.AddVertex(ref center_v1, color, PrimitiveType.LineList);
@@ -637,13 +641,13 @@ namespace tainicom.Aether.Physics2D.Diagnostics
         public override void DrawTransform(ref Transform transform)
         {
             const float axisScale = 0.4f;
-            Vector2 p1 = transform.p;
+            Vector2 p1 = transform.p.ToXnaVector2();
 
             var xAxis = transform.q.ToVector2();
-            Vector2 p2 = p1 + axisScale * xAxis;
+            Vector2 p2 = p1 + axisScale * xAxis.ToXnaVector2();
             DrawSegment(p1, p2, Color.Red);
             
-            var yAxis = new Vector2(-transform.q.i, transform.q.R);
+            var yAxis = new Vector2(-(float)transform.q.i, (float)transform.q.R);
             p2 = p1 + axisScale * yAxis;
             DrawSegment(p1, p2, Color.Green);
         }

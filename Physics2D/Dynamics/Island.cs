@@ -27,6 +27,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using System;
 using System.Diagnostics;
 using tainicom.Aether.Physics2D.Common;
@@ -48,8 +49,8 @@ namespace tainicom.Aether.Physics2D.Dynamics
         private Contact[] _contacts;
         private Joint[] _joints;
 
-        private const float LinTolSqr = Settings.LinearSleepTolerance * Settings.LinearSleepTolerance;
-        private const float AngTolSqr = Settings.AngularSleepTolerance * Settings.AngularSleepTolerance;
+        private static readonly Fix64 LinTolSqr = Settings.LinearSleepTolerance * Settings.LinearSleepTolerance;
+        private static readonly Fix64 AngTolSqr = Settings.AngularSleepTolerance * Settings.AngularSleepTolerance;
         private Stopwatch _watch = new Stopwatch();
 
         public Body[] Bodies;
@@ -110,19 +111,19 @@ namespace tainicom.Aether.Physics2D.Dynamics
             JointCount = 0;
         }
 
-        internal void Solve(ref TimeStep step, ref Vector2 gravity)
+        internal void Solve(ref TimeStep step, ref AetherVector2 gravity)
         {
-            float h = step.dt;
+            Fix64 h = step.dt;
 
             // Integrate velocities and apply damping. Initialize the body state.
             for (int i = 0; i < BodyCount; ++i)
             {
                 Body b = Bodies[i];
 
-                Vector2 c = b._sweep.C;
-                float a = b._sweep.A;
-                Vector2 v = b._linearVelocity;
-                float w = b._angularVelocity;
+                AetherVector2 c = b._sweep.C;
+                Fix64 a = b._sweep.A;
+                AetherVector2 v = b._linearVelocity;
+                Fix64 w = b._angularVelocity;
 
                 // Store positions for continuous collision.
                 b._sweep.C0 = b._sweep.C;
@@ -146,9 +147,9 @@ namespace tainicom.Aether.Physics2D.Dynamics
                     // Time step: v(t + dt) = v0 * exp(-c * (t + dt)) = v0 * exp(-c * t) * exp(-c * dt) = v * exp(-c * dt)
                     // v2 = exp(-c * dt) * v1
                     // Taylor expansion:
-                    // v2 = (1.0f - c * dt) * v1
-                    v *= MathUtils.Clamp(1.0f - h * b.LinearDamping, 0.0f, 1.0f);
-                    w *= MathUtils.Clamp(1.0f - h * b.AngularDamping, 0.0f, 1.0f);
+                    // v2 = (Fix64.One - c * dt) * v1
+                    v *= MathUtils.Clamp(Fix64.One - h * b.LinearDamping, Fix64.Zero, Fix64.One);
+                    w *= MathUtils.Clamp(Fix64.One - h * b.AngularDamping, Fix64.Zero, Fix64.One);
                 }
 
                 _positions[i].c = c;
@@ -214,23 +215,23 @@ namespace tainicom.Aether.Physics2D.Dynamics
             // Integrate positions
             for (int i = 0; i < BodyCount; ++i)
             {
-                Vector2 c = _positions[i].c;
-                float a = _positions[i].a;
-                Vector2 v = _velocities[i].v;
-                float w = _velocities[i].w;
+                AetherVector2 c = _positions[i].c;
+                Fix64 a = _positions[i].a;
+                AetherVector2 v = _velocities[i].v;
+                Fix64 w = _velocities[i].w;
 
                 // Check for large velocities
-                Vector2 translation = h * v;
-                if (Vector2.Dot(translation, translation) > Settings.MaxTranslationSquared)
+                AetherVector2 translation = h * v;
+                if (AetherVector2.Dot(translation, translation) > Settings.MaxTranslationSquared)
                 {
-                    float ratio = Settings.MaxTranslation / translation.Length();
+                    Fix64 ratio = Settings.MaxTranslation / translation.Length();
                     v *= ratio;
                 }
 
-                float rotation = h * w;
+                Fix64 rotation = h * w;
                 if (rotation * rotation > Settings.MaxRotationSquared)
                 {
-                    float ratio = Settings.MaxRotation / Math.Abs(rotation);
+                    Fix64 ratio = Settings.MaxRotation /  Fix64.Abs(rotation);
                     w *= ratio;
                 }
 
@@ -299,7 +300,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
 
             if (Settings.AllowSleep)
             {
-                float minSleepTime = Settings.MaxFloat;
+                Fix64 minSleepTime = Settings.MaxFloat;
 
                 for (int i = 0; i < BodyCount; ++i)
                 {
@@ -308,15 +309,15 @@ namespace tainicom.Aether.Physics2D.Dynamics
                     if (b.BodyType == BodyType.Static)
                         continue;
 
-                    if (!b.SleepingAllowed || b._angularVelocity * b._angularVelocity > AngTolSqr || Vector2.Dot(b._linearVelocity, b._linearVelocity) > LinTolSqr)
+                    if (!b.SleepingAllowed || b._angularVelocity * b._angularVelocity > AngTolSqr || AetherVector2.Dot(b._linearVelocity, b._linearVelocity) > LinTolSqr)
                     {
-                        b._sleepTime = 0.0f;
-                        minSleepTime = 0.0f;
+                        b._sleepTime = Fix64.Zero;
+                        minSleepTime = Fix64.Zero;
                     }
                     else
                     {
                         b._sleepTime += h;
-                        minSleepTime = Math.Min(minSleepTime, b._sleepTime);
+                        minSleepTime = MathUtils.Min(minSleepTime, b._sleepTime);
                     }
                 }
 
@@ -378,28 +379,28 @@ namespace tainicom.Aether.Physics2D.Dynamics
             // Don't store the TOI contact forces for warm starting
             // because they can be quite large.
 
-            float h = subStep.dt;
+            Fix64 h = subStep.dt;
 
             // Integrate positions.
             for (int i = 0; i < BodyCount; ++i)
             {
-                Vector2 c = _positions[i].c;
-                float a = _positions[i].a;
-                Vector2 v = _velocities[i].v;
-                float w = _velocities[i].w;
+                AetherVector2 c = _positions[i].c;
+                Fix64 a = _positions[i].a;
+                AetherVector2 v = _velocities[i].v;
+                Fix64 w = _velocities[i].w;
 
                 // Check for large velocities
-                Vector2 translation = h * v;
-                if (Vector2.Dot(translation, translation) > Settings.MaxTranslationSquared)
+                AetherVector2 translation = h * v;
+                if (AetherVector2.Dot(translation, translation) > Settings.MaxTranslationSquared)
                 {
-                    float ratio = Settings.MaxTranslation / translation.Length();
+                    Fix64 ratio = Settings.MaxTranslation / translation.Length();
                     v *= ratio;
                 }
 
-                float rotation = h * w;
+                Fix64 rotation = h * w;
                 if (rotation * rotation > Settings.MaxRotationSquared)
                 {
-                    float ratio = Settings.MaxRotation / Math.Abs(rotation);
+                    Fix64 ratio = Settings.MaxRotation /  Fix64.Abs(rotation);
                     w *= ratio;
                 }
 

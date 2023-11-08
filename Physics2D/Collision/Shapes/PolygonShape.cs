@@ -25,6 +25,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using System.Diagnostics;
 using tainicom.Aether.Physics2D.Common;
 using tainicom.Aether.Physics2D.Common.ConvexHull;
@@ -49,7 +50,7 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         /// </summary>
         /// <param name="vertices">The vertices.</param>
         /// <param name="density">The density.</param>
-        public PolygonShape(Vertices vertices, float density)
+        public PolygonShape(Vertices vertices, Fix64 density)
             : base(density)
         {
             ShapeType = ShapeType.Polygon;
@@ -62,10 +63,10 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         /// Create a new PolygonShape with the specified density.
         /// </summary>
         /// <param name="density">The density.</param>
-        public PolygonShape(float density)
+        public PolygonShape(Fix64 density)
             : base(density)
         {
-            Debug.Assert(density >= 0f);
+            Debug.Assert(density >= Fix64.Zero);
 
             ShapeType = ShapeType.Polygon;
             _radius = Settings.PolygonRadius;
@@ -74,7 +75,7 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
         }
 
         internal PolygonShape()
-            : base(0)
+            : base(Fix64.Zero)
         {
             ShapeType = ShapeType.Polygon;
             _radius = Settings.PolygonRadius;
@@ -113,11 +114,11 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
                 for (int i = 0; i < _vertices.Count; ++i)
                 {
                     int next = i + 1 < _vertices.Count ? i + 1 : 0;
-                    Vector2 edge = _vertices[next] - _vertices[i];
+                    AetherVector2 edge = _vertices[next] - _vertices[i];
                     Debug.Assert(edge.LengthSquared() > Settings.Epsilon * Settings.Epsilon);
 
-                    //FPE optimization: Normals.Add(MathUtils.Cross(edge, 1.0f));
-                    Vector2 temp = new Vector2(edge.Y, -edge.X);
+                    //FPE optimization: Normals.Add(MathUtils.Cross(edge, Fix64.One));
+                    AetherVector2 temp = new AetherVector2(edge.Y, -edge.X);
                     temp.Normalize();
                     _normals.Add(temp);
                 }
@@ -160,48 +161,46 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
             Debug.Assert(Vertices.Count >= 3);
 
             //FPE optimization: Early exit as polygons with 0 density does not have any properties.
-            if (_density <= 0)
+            if (_density <= Fix64.Zero)
                 return;
 
             //FPE optimization: Consolidated the calculate centroid and mass code to a single method.
-            Vector2 center = Vector2.Zero;
-            float area = 0.0f;
-            float I = 0.0f;
+            AetherVector2 center = AetherVector2.Zero;
+            Fix64 area = Fix64.Zero;
+            Fix64 I = Fix64.Zero;
 
             // pRef is the reference point for forming triangles.
             // It's location doesn't change the result (except for rounding error).
-            Vector2 s = Vector2.Zero;
+            AetherVector2 s = AetherVector2.Zero;
 
             // This code would put the reference point inside the polygon.
             for (int i = 0; i < Vertices.Count; ++i)
             {
                 s += Vertices[i];
             }
-            s *= 1.0f / Vertices.Count;
-
-            const float k_inv3 = 1.0f / 3.0f;
+            s *= Fix64.One / (Fix64)Vertices.Count;
 
             for (int i = 0; i < Vertices.Count; ++i)
             {
                 // Triangle vertices.
-                Vector2 e1 = Vertices[i] - s;
-                Vector2 e2 = i + 1 < Vertices.Count ? Vertices[i + 1] - s : Vertices[0] - s;
+                AetherVector2 e1 = Vertices[i] - s;
+                AetherVector2 e2 = i + 1 < Vertices.Count ? Vertices[i + 1] - s : Vertices[0] - s;
 
-                float D = MathUtils.Cross(ref e1, ref e2);
+                Fix64 D = MathUtils.Cross(ref e1, ref e2);
 
-                float triangleArea = 0.5f * D;
+                Fix64 triangleArea = Fix64Constants.PointFive * D;
                 area += triangleArea;
 
                 // Area weighted centroid
-                center += triangleArea * k_inv3 * (e1 + e2);
+                center += triangleArea * Fix64Constants.k_inv3 * (e1 + e2);
 
-                float ex1 = e1.X, ey1 = e1.Y;
-                float ex2 = e2.X, ey2 = e2.Y;
+                Fix64 ex1 = e1.X, ey1 = e1.Y;
+                Fix64 ex2 = e2.X, ey2 = e2.Y;
 
-                float intx2 = ex1 * ex1 + ex2 * ex1 + ex2 * ex2;
-                float inty2 = ey1 * ey1 + ey2 * ey1 + ey2 * ey2;
+                Fix64 intx2 = ex1 * ex1 + ex2 * ex1 + ex2 * ex2;
+                Fix64 inty2 = ey1 * ey1 + ey2 * ey1 + ey2 * ey2;
 
-                I += (0.25f * k_inv3 * D) * (intx2 + inty2);
+                I += (Fix64Constants.PointTwoFive * Fix64Constants.k_inv3 * D) * (intx2 + inty2);
             }
 
             //The area is too small for the engine to handle.
@@ -214,24 +213,24 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
             MassData.Mass = _density * area;
 
             // Center of mass
-            center *= 1.0f / area;
+            center *= Fix64.One / area;
             MassData.Centroid = center + s;
 
             // Inertia tensor relative to the local origin (point s).
             MassData.Inertia = _density * I;
 
             // Shift to center of mass then to original body origin.
-            MassData.Inertia += MassData.Mass * (Vector2.Dot(MassData.Centroid, MassData.Centroid) - Vector2.Dot(center, center));
+            MassData.Inertia += MassData.Mass * (AetherVector2.Dot(MassData.Centroid, MassData.Centroid) - AetherVector2.Dot(center, center));
         }
 
-        public override bool TestPoint(ref Transform transform, ref Vector2 point)
+        public override bool TestPoint(ref Transform transform, ref AetherVector2 point)
         {
-            Vector2 pLocal = Complex.Divide(point - transform.p, ref transform.q);
+            AetherVector2 pLocal = Complex.Divide(point - transform.p, ref transform.q);
 
             for (int i = 0; i < Vertices.Count; ++i)
             {
-                float dot = Vector2.Dot(Normals[i], pLocal - Vertices[i]);
-                if (dot > 0.0f)
+                Fix64 dot = AetherVector2.Dot(Normals[i], pLocal - Vertices[i]);
+                if (dot > Fix64.Zero)
                 {
                     return false;
                 }
@@ -245,11 +244,11 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
             output = new RayCastOutput();
 
             // Put the ray into the polygon's frame of reference.
-            Vector2 p1 = Complex.Divide(input.Point1 - transform.p, ref transform.q);
-            Vector2 p2 = Complex.Divide(input.Point2 - transform.p, ref transform.q);
-            Vector2 d = p2 - p1;
+            AetherVector2 p1 = Complex.Divide(input.Point1 - transform.p, ref transform.q);
+            AetherVector2 p2 = Complex.Divide(input.Point2 - transform.p, ref transform.q);
+            AetherVector2 d = p2 - p1;
 
-            float lower = 0.0f, upper = input.MaxFraction;
+            Fix64 lower = Fix64.Zero, upper = input.MaxFraction;
 
             int index = -1;
 
@@ -258,12 +257,12 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
                 // p = p1 + a * d
                 // dot(normal, p - v) = 0
                 // dot(normal, p1 - v) + a * dot(normal, d) = 0
-                float numerator = Vector2.Dot(Normals[i], Vertices[i] - p1);
-                float denominator = Vector2.Dot(Normals[i], d);
+                Fix64 numerator = AetherVector2.Dot(Normals[i], Vertices[i] - p1);
+                Fix64 denominator = AetherVector2.Dot(Normals[i], d);
 
-                if (denominator == 0.0f)
+                if (denominator == Fix64.Zero)
                 {
-                    if (numerator < 0.0f)
+                    if (numerator < Fix64.Zero)
                     {
                         return false;
                     }
@@ -274,14 +273,14 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
                     // lower < numerator / denominator, where denominator < 0
                     // Since denominator < 0, we have to flip the inequality:
                     // lower < numerator / denominator <==> denominator * lower > numerator.
-                    if (denominator < 0.0f && numerator < lower * denominator)
+                    if (denominator < Fix64.Zero && numerator < lower * denominator)
                     {
                         // Increase lower.
                         // The segment enters this half-space.
                         lower = numerator / denominator;
                         index = i;
                     }
-                    else if (denominator > 0.0f && numerator < upper * denominator)
+                    else if (denominator > Fix64.Zero && numerator < upper * denominator)
                     {
                         // Decrease upper.
                         // The segment exits this half-space.
@@ -299,7 +298,7 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
                 }
             }
 
-            Debug.Assert(0.0f <= lower && lower <= input.MaxFraction);
+            Debug.Assert(Fix64.Zero <= lower && lower <= input.MaxFraction);
 
             if (index >= 0)
             {
@@ -329,8 +328,8 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
             {
                 // OPT: Vector2 v = Transform.Multiply(Vertices[i], ref transform);
                 vert = Vertices[i];
-                float vX = (vert.X * transform.q.R - vert.Y * transform.q.i) + transform.p.X;
-                float vY = (vert.Y * transform.q.R + vert.X * transform.q.i) + transform.p.Y;
+                Fix64 vX = (vert.X * transform.q.R - vert.Y * transform.q.i) + transform.p.X;
+                Fix64 vY = (vert.Y * transform.q.R + vert.X * transform.q.i) + transform.p.Y;
 
                 // OPT: Vector2.Min(ref aabb.LowerBound, ref v, out aabb.LowerBound);
                 // OPT: Vector2.Max(ref aabb.UpperBound, ref v, out aabb.UpperBound);
@@ -351,15 +350,15 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
             aabb.UpperBound.Y += Radius;
         }
 
-        public override float ComputeSubmergedArea(ref Vector2 normal, float offset, ref Transform xf, out Vector2 sc)
+        public override Fix64 ComputeSubmergedArea(ref AetherVector2 normal, Fix64 offset, ref Transform xf, out AetherVector2 sc)
         {
-            sc = Vector2.Zero;
+            sc = AetherVector2.Zero;
 
             //Transform plane into shape co-ordinates
-            Vector2 normalL = Complex.Divide(ref normal, ref xf.q);
-            float offsetL = offset - Vector2.Dot(normal, xf.p);
+            AetherVector2 normalL = Complex.Divide(ref normal, ref xf.q);
+            Fix64 offsetL = offset - AetherVector2.Dot(normal, xf.p);
 
-            float[] depths = new float[Settings.MaxPolygonVertices];
+            Fix64[] depths = new Fix64[Settings.MaxPolygonVertices];
             int diveCount = 0;
             int intoIndex = -1;
             int outoIndex = -1;
@@ -368,7 +367,7 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
             int i;
             for (i = 0; i < Vertices.Count; i++)
             {
-                depths[i] = Vector2.Dot(normalL, Vertices[i]) - offsetL;
+                depths[i] = AetherVector2.Dot(normalL, Vertices[i]) - offsetL;
                 bool isSubmerged = depths[i] < -Settings.Epsilon;
                 if (i > 0)
                 {
@@ -402,7 +401,7 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
                     }
 
                     //Completely dry
-                    return 0;
+                    return Fix64.Zero;
                 case 1:
                     if (intoIndex == -1)
                     {
@@ -418,49 +417,47 @@ namespace tainicom.Aether.Physics2D.Collision.Shapes
             int intoIndex2 = (intoIndex + 1) % Vertices.Count;
             int outoIndex2 = (outoIndex + 1) % Vertices.Count;
 
-            float intoLambda = (0 - depths[intoIndex]) / (depths[intoIndex2] - depths[intoIndex]);
-            float outoLambda = (0 - depths[outoIndex]) / (depths[outoIndex2] - depths[outoIndex]);
+            Fix64 intoLambda = (Fix64.Zero - depths[intoIndex]) / (depths[intoIndex2] - depths[intoIndex]);
+            Fix64 outoLambda = (Fix64.Zero - depths[outoIndex]) / (depths[outoIndex2] - depths[outoIndex]);
 
-            Vector2 intoVec = new Vector2(Vertices[intoIndex].X * (1 - intoLambda) + Vertices[intoIndex2].X * intoLambda, Vertices[intoIndex].Y * (1 - intoLambda) + Vertices[intoIndex2].Y * intoLambda);
-            Vector2 outoVec = new Vector2(Vertices[outoIndex].X * (1 - outoLambda) + Vertices[outoIndex2].X * outoLambda, Vertices[outoIndex].Y * (1 - outoLambda) + Vertices[outoIndex2].Y * outoLambda);
+            AetherVector2 intoVec = new AetherVector2(Vertices[intoIndex].X * (Fix64.One - intoLambda) + Vertices[intoIndex2].X * intoLambda, Vertices[intoIndex].Y * (Fix64.One - intoLambda) + Vertices[intoIndex2].Y * intoLambda);
+            AetherVector2 outoVec = new AetherVector2(Vertices[outoIndex].X * (Fix64.One - outoLambda) + Vertices[outoIndex2].X * outoLambda, Vertices[outoIndex].Y * (Fix64.One - outoLambda) + Vertices[outoIndex2].Y * outoLambda);
 
             //Initialize accumulator
-            float area = 0;
-            Vector2 center = new Vector2(0, 0);
-            Vector2 p2 = Vertices[intoIndex2];
-
-            const float k_inv3 = 1.0f / 3.0f;
+            Fix64 area = Fix64.Zero;
+            AetherVector2 center = new AetherVector2(Fix64.Zero, Fix64.Zero);
+            AetherVector2 p2 = Vertices[intoIndex2];
 
             //An awkward loop from intoIndex2+1 to outIndex2
             i = intoIndex2;
             while (i != outoIndex2)
             {
                 i = (i + 1) % Vertices.Count;
-                Vector2 p3;
+                AetherVector2 p3;
                 if (i == outoIndex2)
                     p3 = outoVec;
                 else
                     p3 = Vertices[i];
                 //Add the triangle formed by intoVec,p2,p3
                 {
-                    Vector2 e1 = p2 - intoVec;
-                    Vector2 e2 = p3 - intoVec;
+                    AetherVector2 e1 = p2 - intoVec;
+                    AetherVector2 e2 = p3 - intoVec;
 
-                    float D = MathUtils.Cross(ref e1, ref e2);
+                    Fix64 D = MathUtils.Cross(ref e1, ref e2);
 
-                    float triangleArea = 0.5f * D;
+                    Fix64 triangleArea = Fix64Constants.PointFive * D;
 
                     area += triangleArea;
 
                     // Area weighted centroid
-                    center += triangleArea * k_inv3 * (intoVec + p2 + p3);
+                    center += triangleArea * Fix64Constants.k_inv3 * (intoVec + p2 + p3);
                 }
 
                 p2 = p3;
             }
 
             //Normalize and transform centroid
-            center *= 1.0f / area;
+            center *= Fix64.One / area;
 
             sc = Transform.Multiply(ref center, ref xf);
 

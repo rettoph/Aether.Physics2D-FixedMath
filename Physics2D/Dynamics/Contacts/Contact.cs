@@ -27,6 +27,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using System.Collections.Generic;
 using System.Diagnostics;
 using tainicom.Aether.Physics2D.Collision;
@@ -114,13 +115,13 @@ namespace tainicom.Aether.Physics2D.Dynamics.Contacts
         internal ContactEdge _nodeA = new ContactEdge();
         internal ContactEdge _nodeB = new ContactEdge();
         internal int _toiCount;
-        internal float _toi;
+        internal Fix64 _toi;
 
         public Fixture FixtureA { get; internal set; }
         public Fixture FixtureB { get; internal set; }
 
-        public float Friction { get; set; }
-        public float Restitution { get; set; }
+        public Fix64 Friction { get; set; }
+        public Fix64 Restitution { get; set; }
 
         /// <summary>
         /// Get the contact manifold. Do not modify the manifold unless you understand the
@@ -129,7 +130,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Contacts
         public Manifold Manifold;
 
         /// Get or set the desired tangent speed for a conveyor belt behavior. In meters per second.
-        public float TangentSpeed { get; set; }
+        public Fix64 TangentSpeed { get; set; }
 
         /// Enable/disable this contact. This can be used inside the pre-solve
         /// contact listener. The contact is only disabled for the current
@@ -193,7 +194,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Contacts
         /// <summary>
         /// Gets the world manifold.
         /// </summary>
-        public void GetWorldManifold(out Vector2 normal, out FixedArray2<Vector2> points)
+        public void GetWorldManifold(out AetherVector2 normal, out FixedArray2<AetherVector2> points)
         {
             Body bodyA = FixtureA.Body;
             Body bodyB = FixtureB.Body;
@@ -241,7 +242,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Contacts
                 Restitution = Settings.MixRestitution(FixtureA.Restitution, FixtureB.Restitution);
             }
 
-            TangentSpeed = 0;
+            TangentSpeed = Fix64.Zero;
         }
 
         /// <summary>
@@ -284,8 +285,8 @@ namespace tainicom.Aether.Physics2D.Dynamics.Contacts
                 for (int i = 0; i < Manifold.PointCount; ++i)
                 {
                     ManifoldPoint mp2 = Manifold.Points[i];
-                    mp2.NormalImpulse = 0.0f;
-                    mp2.TangentImpulse = 0.0f;
+                    mp2.NormalImpulse = Fix64.Zero;
+                    mp2.TangentImpulse = Fix64.Zero;
                     ContactID id2 = mp2.Id;
 
                     for (int j = 0; j < oldManifold.PointCount; ++j)

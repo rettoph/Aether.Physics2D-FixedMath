@@ -25,6 +25,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using System;
 using tainicom.Aether.Physics2D.Common;
 #if XNAAPI
@@ -46,31 +47,31 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
     public class RevoluteJoint : Joint
     {
         // Solver shared
-        private Vector3 _impulse;
-        private float _motorImpulse;
+        private AetherVector3 _impulse;
+        private Fix64 _motorImpulse;
 
         private bool _enableMotor;
-        private float _maxMotorTorque;
-        private float _motorSpeed;
+        private Fix64 _maxMotorTorque;
+        private Fix64 _motorSpeed;
 
         private bool _enableLimit;
-        private float _referenceAngle;
-        private float _lowerAngle;
-        private float _upperAngle;
+        private Fix64 _referenceAngle;
+        private Fix64 _lowerAngle;
+        private Fix64 _upperAngle;
 
         // Solver temp
         private int _indexA;
         private int _indexB;
-        private Vector2 _rA;
-        private Vector2 _rB;
-        private Vector2 _localCenterA;
-        private Vector2 _localCenterB;
-        private float _invMassA;
-        private float _invMassB;
-        private float _invIA;
-        private float _invIB;
+        private AetherVector2 _rA;
+        private AetherVector2 _rB;
+        private AetherVector2 _localCenterA;
+        private AetherVector2 _localCenterB;
+        private Fix64 _invMassA;
+        private Fix64 _invMassB;
+        private Fix64 _invIA;
+        private Fix64 _invIB;
         private Mat33 _mass;			// effective mass for point-to-point constraint.
-        private float _motorMass;	    // effective mass for motor/limit angular constraint.
+        private Fix64 _motorMass;	    // effective mass for motor/limit angular constraint.
         private LimitState _limitState;
 
         internal RevoluteJoint()
@@ -86,7 +87,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <param name="anchorA">The first body anchor.</param>
         /// <param name="anchorB">The second anchor.</param>
         /// <param name="useWorldCoordinates">Set to true if you are using world coordinates as anchors.</param>
-        public RevoluteJoint(Body bodyA, Body bodyB, Vector2 anchorA, Vector2 anchorB, bool useWorldCoordinates = false)
+        public RevoluteJoint(Body bodyA, Body bodyB, AetherVector2 anchorA, AetherVector2 anchorB, bool useWorldCoordinates = false)
             : base(bodyA, bodyB)
         {
             JointType = JointType.Revolute;
@@ -104,7 +105,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
 
             ReferenceAngle = BodyB.Rotation - BodyA.Rotation;
 
-            _impulse = Vector3.Zero;
+            _impulse = AetherVector3.Zero;
             _limitState = LimitState.Inactive;
         }
 
@@ -115,7 +116,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <param name="bodyB">The second body.</param>
         /// <param name="anchor">The shared anchor.</param>
         /// <param name="useWorldCoordinates"></param>
-        public RevoluteJoint(Body bodyA, Body bodyB, Vector2 anchor, bool useWorldCoordinates = false)
+        public RevoluteJoint(Body bodyA, Body bodyB, AetherVector2 anchor, bool useWorldCoordinates = false)
             : this(bodyA, bodyB, anchor, anchor, useWorldCoordinates)
         {
         }
@@ -123,20 +124,20 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <summary>
         /// The local anchor point on BodyA
         /// </summary>
-        public Vector2 LocalAnchorA { get; set; }
+        public AetherVector2 LocalAnchorA { get; set; }
 
         /// <summary>
         /// The local anchor point on BodyB
         /// </summary>
-        public Vector2 LocalAnchorB { get; set; }
+        public AetherVector2 LocalAnchorB { get; set; }
 
-        public override Vector2 WorldAnchorA
+        public override AetherVector2 WorldAnchorA
         {
             get { return BodyA.GetWorldPoint(LocalAnchorA); }
             set { LocalAnchorA = BodyA.GetLocalPoint(value); }
         }
 
-        public override Vector2 WorldAnchorB
+        public override AetherVector2 WorldAnchorB
         {
             get { return BodyB.GetWorldPoint(LocalAnchorB); }
             set { LocalAnchorB = BodyB.GetLocalPoint(value); }
@@ -145,7 +146,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <summary>
         /// The referance angle computed as BodyB angle minus BodyA angle.
         /// </summary>
-        public float ReferenceAngle
+        public Fix64 ReferenceAngle
         {
             get { return _referenceAngle; }
             set
@@ -158,7 +159,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <summary>
         /// Get the current joint angle in radians.
         /// </summary>
-        public float JointAngle
+        public Fix64 JointAngle
         {
             get { return BodyB._sweep.A - BodyA._sweep.A - ReferenceAngle; }
         }
@@ -166,7 +167,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <summary>
         /// Get the current joint angle speed in radians per second.
         /// </summary>
-        public float JointSpeed
+        public Fix64 JointSpeed
         {
             get { return BodyB._angularVelocity - BodyA._angularVelocity; }
         }
@@ -184,7 +185,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
                 {
                     WakeBodies();
                     _enableLimit = value;
-                    _impulse.Z = 0.0f;
+                    _impulse.Z = Fix64.Zero;
                 }
             }
         }
@@ -192,7 +193,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <summary>
         /// Get the lower joint limit in radians.
         /// </summary>
-        public float LowerLimit
+        public Fix64 LowerLimit
         {
             get { return _lowerAngle; }
             set
@@ -201,7 +202,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
                 {
                     WakeBodies();
                     _lowerAngle = value;
-                    _impulse.Z = 0.0f;
+                    _impulse.Z = Fix64.Zero;
                 }
             }
         }
@@ -209,7 +210,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <summary>
         /// Get the upper joint limit in radians.
         /// </summary>
-        public float UpperLimit
+        public Fix64 UpperLimit
         {
             get { return _upperAngle; }
             set
@@ -218,7 +219,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
                 {
                     WakeBodies();
                     _upperAngle = value;
-                    _impulse.Z = 0.0f;
+                    _impulse.Z = Fix64.Zero;
                 }
             }
         }
@@ -228,14 +229,14 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// </summary>
         /// <param name="lower">The lower limit</param>
         /// <param name="upper">The upper limit</param>
-        public void SetLimits(float lower, float upper)
+        public void SetLimits(Fix64 lower, Fix64 upper)
         {
             if (lower != _lowerAngle || upper != _upperAngle)
             {
                 WakeBodies();
                 _upperAngle = upper;
                 _lowerAngle = lower;
-                _impulse.Z = 0.0f;
+                _impulse.Z = Fix64.Zero;
             }
         }
 
@@ -256,7 +257,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <summary>
         /// Get or set the motor speed in radians per second.
         /// </summary>
-        public float MotorSpeed
+        public Fix64 MotorSpeed
         {
             set
             {
@@ -269,7 +270,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <summary>
         /// Get or set the maximum motor torque, usually in N-m.
         /// </summary>
-        public float MaxMotorTorque
+        public Fix64 MaxMotorTorque
         {
             set
             {
@@ -282,7 +283,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <summary>
         /// Get or set the current motor impulse, usually in N-m.
         /// </summary>
-        public float MotorImpulse
+        public Fix64 MotorImpulse
         {
             get { return _motorImpulse; }
             set
@@ -296,18 +297,18 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// Gets the motor torque in N-m.
         /// </summary>
         /// <param name="invDt">The inverse delta time</param>
-        public float GetMotorTorque(float invDt)
+        public Fix64 GetMotorTorque(Fix64 invDt)
         {
             return invDt * _motorImpulse;
         }
 
-        public override Vector2 GetReactionForce(float invDt)
+        public override AetherVector2 GetReactionForce(Fix64 invDt)
         {
-            Vector2 p = new Vector2(_impulse.X, _impulse.Y);
+            AetherVector2 p = new AetherVector2(_impulse.X, _impulse.Y);
             return invDt * p;
         }
 
-        public override float GetReactionTorque(float invDt)
+        public override Fix64 GetReactionTorque(Fix64 invDt)
         {
             return invDt * _impulse.Z;
         }
@@ -323,13 +324,13 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             _invIA = BodyA._invI;
             _invIB = BodyB._invI;
 
-            float aA = data.positions[_indexA].a;
-            Vector2 vA = data.velocities[_indexA].v;
-            float wA = data.velocities[_indexA].w;
+            Fix64 aA = data.positions[_indexA].a;
+            AetherVector2 vA = data.velocities[_indexA].v;
+            Fix64 wA = data.velocities[_indexA].w;
 
-            float aB = data.positions[_indexB].a;
-            Vector2 vB = data.velocities[_indexB].v;
-            float wB = data.velocities[_indexB].w;
+            Fix64 aB = data.positions[_indexB].a;
+            AetherVector2 vB = data.velocities[_indexB].v;
+            Fix64 wB = data.velocities[_indexB].w;
 
             Complex qA = Complex.FromAngle(aA);
             Complex qB = Complex.FromAngle(aB);
@@ -346,10 +347,10 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             //     [  -r1y*iA*r1x-r2y*iB*r2x, mA+r1x^2*iA+mB+r2x^2*iB,           r1x*iA+r2x*iB]
             //     [          -r1y*iA-r2y*iB,           r1x*iA+r2x*iB,                   iA+iB]
 
-            float mA = _invMassA, mB = _invMassB;
-            float iA = _invIA, iB = _invIB;
+            Fix64 mA = _invMassA, mB = _invMassB;
+            Fix64 iA = _invIA, iB = _invIB;
 
-            bool fixedRotation = (iA + iB == 0.0f);
+            bool fixedRotation = (iA + iB == Fix64.Zero);
 
             _mass.ex.X = mA + mB + _rA.Y * _rA.Y * iA + _rB.Y * _rB.Y * iB;
             _mass.ey.X = -_rA.Y * _rA.X * iA - _rB.Y * _rB.X * iB;
@@ -362,20 +363,20 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             _mass.ez.Z = iA + iB;
 
             _motorMass = iA + iB;
-            if (_motorMass > 0.0f)
+            if (_motorMass > Fix64.Zero)
             {
-                _motorMass = 1.0f / _motorMass;
+                _motorMass = Fix64.One / _motorMass;
             }
 
             if (_enableMotor == false || fixedRotation)
             {
-                _motorImpulse = 0.0f;
+                _motorImpulse = Fix64.Zero;
             }
 
             if (_enableLimit && fixedRotation == false)
             {
-                float jointAngle = aB - aA - ReferenceAngle;
-                if (Math.Abs(_upperAngle - _lowerAngle) < 2.0f * Settings.AngularSlop)
+                Fix64 jointAngle = aB - aA - ReferenceAngle;
+                if ( Fix64.Abs(_upperAngle - _lowerAngle) < Fix64Constants.Two * Settings.AngularSlop)
                 {
                     _limitState = LimitState.Equal;
                 }
@@ -383,7 +384,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
                 {
                     if (_limitState != LimitState.AtLower)
                     {
-                        _impulse.Z = 0.0f;
+                        _impulse.Z = Fix64.Zero;
                     }
                     _limitState = LimitState.AtLower;
                 }
@@ -391,14 +392,14 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
                 {
                     if (_limitState != LimitState.AtUpper)
                     {
-                        _impulse.Z = 0.0f;
+                        _impulse.Z = Fix64.Zero;
                     }
                     _limitState = LimitState.AtUpper;
                 }
                 else
                 {
                     _limitState = LimitState.Inactive;
-                    _impulse.Z = 0.0f;
+                    _impulse.Z = Fix64.Zero;
                 }
             }
             else
@@ -412,7 +413,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
                 _impulse *= data.step.dtRatio;
                 _motorImpulse *= data.step.dtRatio;
 
-                Vector2 P = new Vector2(_impulse.X, _impulse.Y);
+                AetherVector2 P = new AetherVector2(_impulse.X, _impulse.Y);
 
                 vA -= mA * P;
                 wA -= iA * (MathUtils.Cross(ref _rA, ref P) + MotorImpulse + _impulse.Z);
@@ -422,8 +423,8 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             }
             else
             {
-                _impulse = Vector3.Zero;
-                _motorImpulse = 0.0f;
+                _impulse = AetherVector3.Zero;
+                _motorImpulse = Fix64.Zero;
             }
 
             data.velocities[_indexA].v = vA;
@@ -434,23 +435,23 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
 
         internal override void SolveVelocityConstraints(ref SolverData data)
         {
-            Vector2 vA = data.velocities[_indexA].v;
-            float wA = data.velocities[_indexA].w;
-            Vector2 vB = data.velocities[_indexB].v;
-            float wB = data.velocities[_indexB].w;
+            AetherVector2 vA = data.velocities[_indexA].v;
+            Fix64 wA = data.velocities[_indexA].w;
+            AetherVector2 vB = data.velocities[_indexB].v;
+            Fix64 wB = data.velocities[_indexB].w;
 
-            float mA = _invMassA, mB = _invMassB;
-            float iA = _invIA, iB = _invIB;
+            Fix64 mA = _invMassA, mB = _invMassB;
+            Fix64 iA = _invIA, iB = _invIB;
 
-            bool fixedRotation = (iA + iB == 0.0f);
+            bool fixedRotation = (iA + iB == Fix64.Zero);
 
             // Solve motor constraint.
             if (_enableMotor && _limitState != LimitState.Equal && fixedRotation == false)
             {
-                float Cdot = wB - wA - _motorSpeed;
-                float impulse = _motorMass * (-Cdot);
-                float oldImpulse = _motorImpulse;
-                float maxImpulse = data.step.dt * _maxMotorTorque;
+                Fix64 Cdot = wB - wA - _motorSpeed;
+                Fix64 impulse = _motorMass * (-Cdot);
+                Fix64 oldImpulse = _motorImpulse;
+                Fix64 maxImpulse = data.step.dt * _maxMotorTorque;
                 _motorImpulse = MathUtils.Clamp(_motorImpulse + impulse, -maxImpulse, maxImpulse);
                 impulse = _motorImpulse - oldImpulse;
 
@@ -461,11 +462,11 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             // Solve limit constraint.
             if (_enableLimit && _limitState != LimitState.Inactive && fixedRotation == false)
             {
-                Vector2 Cdot1 = vB + MathUtils.Cross(wB, ref _rB) - vA - MathUtils.Cross(wA, ref _rA);
-                float Cdot2 = wB - wA;
-                Vector3 Cdot = new Vector3(Cdot1.X, Cdot1.Y, Cdot2);
+                AetherVector2 Cdot1 = vB + MathUtils.Cross(wB, ref _rB) - vA - MathUtils.Cross(wA, ref _rA);
+                Fix64 Cdot2 = wB - wA;
+                AetherVector3 Cdot = new AetherVector3(Cdot1.X, Cdot1.Y, Cdot2);
 
-                Vector3 impulse = -_mass.Solve33(Cdot);
+                AetherVector3 impulse = -_mass.Solve33(Cdot);
 
                 if (_limitState == LimitState.Equal)
                 {
@@ -473,17 +474,17 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
                 }
                 else if (_limitState == LimitState.AtLower)
                 {
-                    float newImpulse = _impulse.Z + impulse.Z;
-                    if (newImpulse < 0.0f)
+                    Fix64 newImpulse = _impulse.Z + impulse.Z;
+                    if (newImpulse < Fix64.Zero)
                     {
-                        Vector2 rhs = -Cdot1 + _impulse.Z * new Vector2(_mass.ez.X, _mass.ez.Y);
-                        Vector2 reduced = _mass.Solve22(rhs);
+                        AetherVector2 rhs = -Cdot1 + _impulse.Z * new AetherVector2(_mass.ez.X, _mass.ez.Y);
+                        AetherVector2 reduced = _mass.Solve22(rhs);
                         impulse.X = reduced.X;
                         impulse.Y = reduced.Y;
                         impulse.Z = -_impulse.Z;
                         _impulse.X += reduced.X;
                         _impulse.Y += reduced.Y;
-                        _impulse.Z = 0.0f;
+                        _impulse.Z = Fix64.Zero;
                     }
                     else
                     {
@@ -492,17 +493,17 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
                 }
                 else if (_limitState == LimitState.AtUpper)
                 {
-                    float newImpulse = _impulse.Z + impulse.Z;
-                    if (newImpulse > 0.0f)
+                    Fix64 newImpulse = _impulse.Z + impulse.Z;
+                    if (newImpulse > Fix64.Zero)
                     {
-                        Vector2 rhs = -Cdot1 + _impulse.Z * new Vector2(_mass.ez.X, _mass.ez.Y);
-                        Vector2 reduced = _mass.Solve22(rhs);
+                        AetherVector2 rhs = -Cdot1 + _impulse.Z * new AetherVector2(_mass.ez.X, _mass.ez.Y);
+                        AetherVector2 reduced = _mass.Solve22(rhs);
                         impulse.X = reduced.X;
                         impulse.Y = reduced.Y;
                         impulse.Z = -_impulse.Z;
                         _impulse.X += reduced.X;
                         _impulse.Y += reduced.Y;
-                        _impulse.Z = 0.0f;
+                        _impulse.Z = Fix64.Zero;
                     }
                     else
                     {
@@ -510,7 +511,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
                     }
                 }
 
-                Vector2 P = new Vector2(impulse.X, impulse.Y);
+                AetherVector2 P = new AetherVector2(impulse.X, impulse.Y);
 
                 vA -= mA * P;
                 wA -= iA * (MathUtils.Cross(ref _rA, ref P) + impulse.Z);
@@ -521,8 +522,8 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             else
             {
                 // Solve point-to-point constraint
-                Vector2 Cdot = vB + MathUtils.Cross(wB, ref _rB) - vA - MathUtils.Cross(wA, ref _rA);
-                Vector2 impulse = _mass.Solve22(-Cdot);
+                AetherVector2 Cdot = vB + MathUtils.Cross(wB, ref _rB) - vA - MathUtils.Cross(wA, ref _rA);
+                AetherVector2 impulse = _mass.Solve22(-Cdot);
 
                 _impulse.X += impulse.X;
                 _impulse.Y += impulse.Y;
@@ -542,46 +543,46 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
 
         internal override bool SolvePositionConstraints(ref SolverData data)
         {
-            Vector2 cA = data.positions[_indexA].c;
-            float aA = data.positions[_indexA].a;
-            Vector2 cB = data.positions[_indexB].c;
-            float aB = data.positions[_indexB].a;
+            AetherVector2 cA = data.positions[_indexA].c;
+            Fix64 aA = data.positions[_indexA].a;
+            AetherVector2 cB = data.positions[_indexB].c;
+            Fix64 aB = data.positions[_indexB].a;
 
 
-            float angularError = 0.0f;
-            float positionError;
+            Fix64 angularError = Fix64.Zero;
+            Fix64 positionError;
 
-            bool fixedRotation = (_invIA + _invIB == 0.0f);
+            bool fixedRotation = (_invIA + _invIB == Fix64.Zero);
 
             // Solve angular limit constraint.
             if (_enableLimit && _limitState != LimitState.Inactive && fixedRotation == false)
             {
-                float angle = aB - aA - ReferenceAngle;
-                float limitImpulse = 0.0f;
+                Fix64 angle = aB - aA - ReferenceAngle;
+                Fix64 limitImpulse = Fix64.Zero;
 
                 if (_limitState == LimitState.Equal)
                 {
                     // Prevent large angular corrections
-                    float C = MathUtils.Clamp(angle - _lowerAngle, -Settings.MaxAngularCorrection, Settings.MaxAngularCorrection);
+                    Fix64 C = MathUtils.Clamp(angle - _lowerAngle, -Settings.MaxAngularCorrection, Settings.MaxAngularCorrection);
                     limitImpulse = -_motorMass * C;
-                    angularError = Math.Abs(C);
+                    angularError =  Fix64.Abs(C);
                 }
                 else if (_limitState == LimitState.AtLower)
                 {
-                    float C = angle - _lowerAngle;
+                    Fix64 C = angle - _lowerAngle;
                     angularError = -C;
 
                     // Prevent large angular corrections and allow some slop.
-                    C = MathUtils.Clamp(C + Settings.AngularSlop, -Settings.MaxAngularCorrection, 0.0f);
+                    C = MathUtils.Clamp(C + Settings.AngularSlop, -Settings.MaxAngularCorrection, Fix64.Zero);
                     limitImpulse = -_motorMass * C;
                 }
                 else if (_limitState == LimitState.AtUpper)
                 {
-                    float C = angle - _upperAngle;
+                    Fix64 C = angle - _upperAngle;
                     angularError = C;
 
                     // Prevent large angular corrections and allow some slop.
-                    C = MathUtils.Clamp(C - Settings.AngularSlop, 0.0f, Settings.MaxAngularCorrection);
+                    C = MathUtils.Clamp(C - Settings.AngularSlop, Fix64.Zero, Settings.MaxAngularCorrection);
                     limitImpulse = -_motorMass * C;
                 }
 
@@ -593,14 +594,14 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             {
                 Complex qA = Complex.FromAngle(aA);
                 Complex qB = Complex.FromAngle(aB);
-                Vector2 rA = Complex.Multiply(LocalAnchorA - _localCenterA, ref qA);
-                Vector2 rB = Complex.Multiply(LocalAnchorB - _localCenterB, ref qB);
+                AetherVector2 rA = Complex.Multiply(LocalAnchorA - _localCenterA, ref qA);
+                AetherVector2 rB = Complex.Multiply(LocalAnchorB - _localCenterB, ref qB);
 
-                Vector2 C = cB + rB - cA - rA;
+                AetherVector2 C = cB + rB - cA - rA;
                 positionError = C.Length();
 
-                float mA = _invMassA, mB = _invMassB;
-                float iA = _invIA, iB = _invIB;
+                Fix64 mA = _invMassA, mB = _invMassB;
+                Fix64 iA = _invIA, iB = _invIB;
 
                 Mat22 K = new Mat22();
                 K.ex.X = mA + mB + iA * rA.Y * rA.Y + iB * rB.Y * rB.Y;
@@ -608,7 +609,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
                 K.ey.X = K.ex.Y;
                 K.ey.Y = mA + mB + iA * rA.X * rA.X + iB * rB.X * rB.X;
 
-                Vector2 impulse = -K.Solve(C);
+                AetherVector2 impulse = -K.Solve(C);
 
                 cA -= mA * impulse;
                 aA -= iA * MathUtils.Cross(ref rA, ref impulse);

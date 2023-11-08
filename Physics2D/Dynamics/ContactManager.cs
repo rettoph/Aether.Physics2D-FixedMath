@@ -27,6 +27,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using System.Collections.Generic;
 using tainicom.Aether.Physics2D.Collision;
 using tainicom.Aether.Physics2D.Dynamics.Contacts;

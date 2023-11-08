@@ -28,6 +28,7 @@
 */
 
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -47,24 +48,24 @@ namespace tainicom.Aether.Physics2D.Dynamics
 {
     public partial class Body
     {
-        private float _angularDamping;
+        private Fix64 _angularDamping;
         private BodyType _bodyType;
-        private float _inertia;
-        private float _linearDamping;
-        private float _mass;
+        private Fix64 _inertia;
+        private Fix64 _linearDamping;
+        private Fix64 _mass;
         private bool _sleepingAllowed;
         private bool _awake;
         private bool _fixedRotation;
 
         internal bool _enabled;
-        internal float _angularVelocity;
-        internal Vector2 _linearVelocity;
-        internal Vector2 _force;
-        internal float _invI;
-        internal float _invMass;
-        internal float _sleepTime;
+        internal Fix64 _angularVelocity;
+        internal AetherVector2 _linearVelocity;
+        internal AetherVector2 _force;
+        internal Fix64 _invI;
+        internal Fix64 _invMass;
+        internal Fix64 _sleepTime;
         internal Sweep _sweep; // the swept motion for CCD
-        internal float _torque;
+        internal Fix64 _torque;
         internal World _world;
         internal Transform _xf; // the body origin transform
         internal bool _island;
@@ -104,9 +105,9 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// Gets the total number revolutions the body has made.
         /// </summary>
         /// <value>The revolutions.</value>
-        public float Revolutions
+        public Fix64 Revolutions
         {
-            get { return Rotation / (2 * (float)Math.PI); }
+            get { return Rotation / Fix64.PiTimes2; }
         }
 
         /// <summary>
@@ -132,8 +133,8 @@ namespace tainicom.Aether.Physics2D.Dynamics
 
                 if (_bodyType == BodyType.Static)
                 {
-                    _linearVelocity = Vector2.Zero;
-                    _angularVelocity = 0.0f;
+                    _linearVelocity = AetherVector2.Zero;
+                    _angularVelocity = Fix64.Zero;
                     _sweep.A0 = _sweep.A;
                     _sweep.C0 = _sweep.C;
                     SynchronizeFixtures();
@@ -141,8 +142,8 @@ namespace tainicom.Aether.Physics2D.Dynamics
 
                 Awake = true;
 
-                _force = Vector2.Zero;
-                _torque = 0.0f;
+                _force = AetherVector2.Zero;
+                _torque = Fix64.Zero;
 
                 // Delete the attached contacts.
                 ContactEdge ce = ContactList;
@@ -168,16 +169,14 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// Get or sets the linear velocity of the center of mass. Property has no effect on <see cref="BodyType.Static"/> bodies.
         /// </summary>
         /// <value>The linear velocity.</value>
-        public Vector2 LinearVelocity
+        public AetherVector2 LinearVelocity
         {
             set
             {
-                Debug.Assert(!float.IsNaN(value.X) && !float.IsNaN(value.Y));
-
                 if (_bodyType == BodyType.Static)
                     return;
 
-                if (Vector2.Dot(value, value) > 0.0f)
+                if (AetherVector2.Dot(value, value) > Fix64.Zero)
                     Awake = true;
 
                 _linearVelocity = value;
@@ -189,16 +188,14 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// Gets or sets the angular velocity. Radians/second.
         /// </summary>
         /// <value>The angular velocity.</value>
-        public float AngularVelocity
+        public Fix64 AngularVelocity
         {
             set
             {
-                Debug.Assert(!float.IsNaN(value));
-
                 if (_bodyType == BodyType.Static)
                     return;
 
-                if (value * value > 0.0f)
+                if (value * value > Fix64.Zero)
                     Awake = true;
 
                 _angularVelocity = value;
@@ -210,13 +207,11 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// Gets or sets the linear damping.
         /// </summary>
         /// <value>The linear damping.</value>
-        public float LinearDamping
+        public Fix64 LinearDamping
         {
             get { return _linearDamping; }
             set
             {
-                Debug.Assert(!float.IsNaN(value));
-
                 _linearDamping = value;
             }
         }
@@ -225,13 +220,11 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// Gets or sets the angular damping.
         /// </summary>
         /// <value>The angular damping.</value>
-        public float AngularDamping
+        public Fix64 AngularDamping
         {
             get { return _angularDamping; }
             set
             {
-                Debug.Assert(!float.IsNaN(value));
-
                 _angularDamping = value;
             }
         }
@@ -268,11 +261,16 @@ namespace tainicom.Aether.Physics2D.Dynamics
         {
             set
             {
+                if(_awake == value)
+                {
+                    return;
+                }
+
                 if (value)
                 {
                     if (!_awake)
                     {
-                        _sleepTime = 0.0f;
+                        _sleepTime = Fix64.Zero;
                         
 #if USE_ACTIVE_CONTACT_SET
                         World.ContactManager.UpdateActiveContacts(ContactList, true);
@@ -293,7 +291,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
 						World.AwakeBodySet.Remove(this);
 #endif
                     ResetDynamics();
-                    _sleepTime = 0.0f;
+                    _sleepTime = Fix64.Zero;
                     
 #if USE_ACTIVE_CONTACT_SET
                     World.ContactManager.UpdateActiveContacts(ContactList, false);
@@ -301,6 +299,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
                 }
 
                 _awake = value;
+                _world.BodyAwakeChanged(_world, this);
             }
             get { return _awake; }
         }
@@ -404,7 +403,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
 
                 _fixedRotation = value;
 
-                _angularVelocity = 0f;
+                _angularVelocity = Fix64.Zero;
                 ResetMassData();
             }
             get { return _fixedRotation; }
@@ -434,13 +433,11 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// Get the world body origin position.
         /// </summary>
         /// <returns>Return the world position of the body's origin.</returns>
-        public Vector2 Position
+        public AetherVector2 Position
         {
             get { return _xf.p; }
             set
             {
-                Debug.Assert(!float.IsNaN(value.X) && !float.IsNaN(value.Y));
-
                 if (World == null)
                     _xf.p = value;
                 else
@@ -452,13 +449,11 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// Get the angle in radians.
         /// </summary>
         /// <returns>Return the current world rotation angle in radians.</returns>
-        public float Rotation
+        public Fix64 Rotation
         {
             get { return _sweep.A; }
             set
             {
-                Debug.Assert(!float.IsNaN(value));
-
                 if (World == null)
                     _sweep.A = value;
                 else
@@ -476,7 +471,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// Get the world position of the center of mass.
         /// </summary>
         /// <value>The world position.</value>
-        public Vector2 WorldCenter
+        public AetherVector2 WorldCenter
         {
             get { return _sweep.C; }
         }
@@ -487,7 +482,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <value>The local position.</value>
         /// <exception cref="System.InvalidOperationException">Thrown when the world is Locked/Stepping.</exception>
-        public Vector2 LocalCenter
+        public AetherVector2 LocalCenter
         {
             get { return _sweep.LocalCenter; }
             set
@@ -499,13 +494,13 @@ namespace tainicom.Aether.Physics2D.Dynamics
                     return;
 
                 // Move center of mass.
-                Vector2 oldCenter = _sweep.C;
+                AetherVector2 oldCenter = _sweep.C;
                 _sweep.LocalCenter = value;
                 _sweep.C0 = _sweep.C = Transform.Multiply(ref _sweep.LocalCenter, ref _xf);
 
                 // Update center of mass velocity.
-                Vector2 a = _sweep.C - oldCenter;
-                _linearVelocity += new Vector2(-_angularVelocity * a.Y, _angularVelocity * a.X);
+                AetherVector2 a = _sweep.C - oldCenter;
+                _linearVelocity += new AetherVector2(-_angularVelocity * a.Y, _angularVelocity * a.X);
             }
         }
 
@@ -515,7 +510,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <value>The mass.</value>
         /// <exception cref="System.InvalidOperationException">Thrown when the world is Locked/Stepping.</exception>
-        public float Mass
+        public Fix64 Mass
         {
             get { return _mass; }
             set
@@ -523,17 +518,15 @@ namespace tainicom.Aether.Physics2D.Dynamics
                 if (World != null && World.IsLocked)
                     throw new InvalidOperationException("The World is locked.");
 
-                Debug.Assert(!float.IsNaN(value));
-
                 if (_bodyType != BodyType.Dynamic) //Make an assert
                     return;
 
                 _mass = value;
 
-                if (_mass <= 0.0f)
-                    _mass = 1.0f;
+                if (_mass <= Fix64.Zero)
+                    _mass = Fix64.One;
 
-                _invMass = 1.0f / _mass;
+                _invMass = Fix64.One / _mass;
             }
         }
 
@@ -543,24 +536,22 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <value>The inertia.</value>
         /// <exception cref="System.InvalidOperationException">Thrown when the world is Locked/Stepping.</exception>
-        public float Inertia
+        public Fix64 Inertia
         {
-            get { return _inertia + Mass * Vector2.Dot(_sweep.LocalCenter, _sweep.LocalCenter); }
+            get { return _inertia + Mass * AetherVector2.Dot(_sweep.LocalCenter, _sweep.LocalCenter); }
             set
             {
                 if (World != null && World.IsLocked)
                     throw new InvalidOperationException("The World is locked.");
 
-                Debug.Assert(!float.IsNaN(value));
-
                 if (_bodyType != BodyType.Dynamic) //Make an assert
                     return;
 
-                if (value > 0.0f && !_fixedRotation) //Make an assert
+                if (value > Fix64.Zero && !_fixedRotation) //Make an assert
                 {
-                    _inertia = value - Mass * Vector2.Dot(LocalCenter, LocalCenter);
-                    Debug.Assert(_inertia > 0.0f);
-                    _invI = 1.0f / _inertia;
+                    _inertia = value - Mass * AetherVector2.Dot(LocalCenter, LocalCenter);
+                    Debug.Assert(_inertia > Fix64.Zero);
+                    _invI = Fix64.One / _inertia;
                 }
             }
         }
@@ -573,10 +564,10 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         public void ResetDynamics()
         {
-            _torque = 0;
-            _angularVelocity = 0;
-            _force = Vector2.Zero;
-            _linearVelocity = Vector2.Zero;
+            _torque = Fix64.Zero;
+            _angularVelocity = Fix64.Zero;
+            _force = AetherVector2.Zero;
+            _linearVelocity = AetherVector2.Zero;
         }
 
         ///<summary>
@@ -606,7 +597,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
 #endif
 
             // Adjust mass properties if needed.
-            if (fixture.Shape._density > 0.0f)
+            if (fixture.Shape._density > Fix64.Zero)
                 ResetMassData();
 
             if (World != null)
@@ -694,7 +685,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// <param name="position">The world position of the body's local origin.</param>
         /// <param name="rotation">The world rotation in radians.</param>
         /// <exception cref="System.InvalidOperationException">Thrown when the world is Locked/Stepping.</exception>
-        public void SetTransform(ref Vector2 position, float rotation)
+        public void SetTransform(ref AetherVector2 position, Fix64 rotation)
         {
             SetTransformIgnoreContacts(ref position, rotation);
 
@@ -710,7 +701,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// <param name="position">The world position of the body's local origin.</param>
         /// <param name="rotation">The world rotation in radians.</param>
         /// <exception cref="System.InvalidOperationException">Thrown when the world is Locked/Stepping.</exception>
-        public void SetTransform(Vector2 position, float rotation)
+        public void SetTransform(AetherVector2 position, Fix64 rotation)
         {
             SetTransform(ref position, rotation);
         }
@@ -722,7 +713,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// <param name="position">The position.</param>
         /// <param name="angle">The angle.</param>
         /// <exception cref="System.InvalidOperationException">Thrown when the world is Locked/Stepping.</exception>
-        public void SetTransformIgnoreContacts(ref Vector2 position, float angle)
+        public void SetTransformIgnoreContacts(ref AetherVector2 position, Fix64 angle)
         {
             Debug.Assert(World != null);
             if (World.IsLocked)
@@ -767,7 +758,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <param name="force">The world force vector, usually in Newtons (N).</param>
         /// <param name="point">The world position of the point of application.</param>
-        public void ApplyForce(Vector2 force, Vector2 point)
+        public void ApplyForce(AetherVector2 force, AetherVector2 point)
         {
             ApplyForce(ref force, ref point);
         }
@@ -776,7 +767,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// Applies a force at the center of mass.
         /// </summary>
         /// <param name="force">The force.</param>
-        public void ApplyForce(ref Vector2 force)
+        public void ApplyForce(ref AetherVector2 force)
         {
             ApplyForce(ref force, ref _xf.p);
         }
@@ -785,7 +776,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// Applies a force at the center of mass.
         /// </summary>
         /// <param name="force">The force.</param>
-        public void ApplyForce(Vector2 force)
+        public void ApplyForce(AetherVector2 force)
         {
             ApplyForce(ref force, ref _xf.p);
         }
@@ -797,13 +788,8 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <param name="force">The world force vector, usually in Newtons (N).</param>
         /// <param name="point">The world position of the point of application.</param>
-        public void ApplyForce(ref Vector2 force, ref Vector2 point)
+        public void ApplyForce(ref AetherVector2 force, ref AetherVector2 point)
         {
-            Debug.Assert(!float.IsNaN(force.X));
-            Debug.Assert(!float.IsNaN(force.Y));
-            Debug.Assert(!float.IsNaN(point.X));
-            Debug.Assert(!float.IsNaN(point.Y));
-
             if (_bodyType == BodyType.Dynamic)
             {
                 if (Awake == false)
@@ -820,10 +806,8 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// This wakes up the body.
         /// </summary>
         /// <param name="torque">The torque about the z-axis (out of the screen), usually in N-m.</param>
-        public void ApplyTorque(float torque)
+        public void ApplyTorque(Fix64 torque)
         {
-            Debug.Assert(!float.IsNaN(torque));
-
             if (_bodyType == BodyType.Dynamic)
             {
                 if (Awake == false)
@@ -838,7 +822,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// This wakes up the body.
         /// </summary>
         /// <param name="impulse">The world impulse vector, usually in N-seconds or kg-m/s.</param>
-        public void ApplyLinearImpulse(Vector2 impulse)
+        public void ApplyLinearImpulse(AetherVector2 impulse)
         {
             ApplyLinearImpulse(ref impulse);
         }
@@ -851,7 +835,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <param name="impulse">The world impulse vector, usually in N-seconds or kg-m/s.</param>
         /// <param name="point">The world position of the point of application.</param>
-        public void ApplyLinearImpulse(Vector2 impulse, Vector2 point)
+        public void ApplyLinearImpulse(AetherVector2 impulse, AetherVector2 point)
         {
             ApplyLinearImpulse(ref impulse, ref point);
         }
@@ -861,7 +845,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// This wakes up the body.
         /// </summary>
         /// <param name="impulse">The world impulse vector, usually in N-seconds or kg-m/s.</param>
-        public void ApplyLinearImpulse(ref Vector2 impulse)
+        public void ApplyLinearImpulse(ref AetherVector2 impulse)
         {
             if (_bodyType != BodyType.Dynamic)
             {
@@ -882,7 +866,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <param name="impulse">The world impulse vector, usually in N-seconds or kg-m/s.</param>
         /// <param name="point">The world position of the point of application.</param>
-        public void ApplyLinearImpulse(ref Vector2 impulse, ref Vector2 point)
+        public void ApplyLinearImpulse(ref AetherVector2 impulse, ref AetherVector2 point)
         {
             if (_bodyType != BodyType.Dynamic)
                 return;
@@ -898,7 +882,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// Apply an angular impulse.
         /// </summary>
         /// <param name="impulse">The angular impulse in units of kg*m*m/s.</param>
-        public void ApplyAngularImpulse(float impulse)
+        public void ApplyAngularImpulse(Fix64 impulse)
         {
             if (_bodyType != BodyType.Dynamic)
             {
@@ -921,11 +905,11 @@ namespace tainicom.Aether.Physics2D.Dynamics
         public void ResetMassData()
         {
             // Compute mass data from shapes. Each shape has its own density.
-            _mass = 0.0f;
-            _invMass = 0.0f;
-            _inertia = 0.0f;
-            _invI = 0.0f;
-            _sweep.LocalCenter = Vector2.Zero;
+            _mass = Fix64.Zero;
+            _invMass = Fix64.Zero;
+            _inertia = Fix64.Zero;
+            _invI = Fix64.Zero;
+            _sweep.LocalCenter = AetherVector2.Zero;
 
             // Kinematic bodies have zero mass.
             if (BodyType == BodyType.Kinematic)
@@ -939,10 +923,10 @@ namespace tainicom.Aether.Physics2D.Dynamics
             Debug.Assert(BodyType == BodyType.Dynamic || BodyType == BodyType.Static);
 
             // Accumulate mass over all fixtures.
-            Vector2 localCenter = Vector2.Zero;
+            AetherVector2 localCenter = AetherVector2.Zero;
             foreach (Fixture f in FixtureList)
             {
-                if (f.Shape._density == 0)
+                if (f.Shape._density == Fix64.Zero)
                 {
                     continue;
                 }
@@ -961,40 +945,40 @@ namespace tainicom.Aether.Physics2D.Dynamics
             }
 
             // Compute center of mass.
-            if (_mass > 0.0f)
+            if (_mass > Fix64.Zero)
             {
-                _invMass = 1.0f / _mass;
+                _invMass = Fix64.One / _mass;
                 localCenter *= _invMass;
             }
             else
             {
                 // Force all dynamic bodies to have a positive mass.
-                _mass = 1.0f;
-                _invMass = 1.0f;
+                _mass = Fix64.One;
+                _invMass = Fix64.One;
             }
 
-            if (_inertia > 0.0f && !_fixedRotation)
+            if (_inertia > Fix64.Zero && !_fixedRotation)
             {
                 // Center the inertia about the center of mass.
-                _inertia -= _mass * Vector2.Dot(localCenter, localCenter);
+                _inertia -= _mass * AetherVector2.Dot(localCenter, localCenter);
 
-                Debug.Assert(_inertia > 0.0f);
-                _invI = 1.0f / _inertia;
+                Debug.Assert(_inertia > Fix64.Zero);
+                _invI = Fix64.One / _inertia;
             }
             else
             {
-                _inertia = 0.0f;
-                _invI = 0.0f;
+                _inertia = Fix64.Zero;
+                _invI = Fix64.Zero;
             }
 
             // Move center of mass.
-            Vector2 oldCenter = _sweep.C;
+            AetherVector2 oldCenter = _sweep.C;
             _sweep.LocalCenter = localCenter;
             _sweep.C0 = _sweep.C = Transform.Multiply(ref _sweep.LocalCenter, ref _xf);
 
             // Update center of mass velocity.
-            Vector2 a = _sweep.C - oldCenter;
-            _linearVelocity += new Vector2(-_angularVelocity * a.Y, _angularVelocity * a.X);
+            AetherVector2 a = _sweep.C - oldCenter;
+            _linearVelocity += new AetherVector2(-_angularVelocity * a.Y, _angularVelocity * a.X);
         }
 
         /// <summary>
@@ -1002,7 +986,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <param name="localPoint">A point on the body measured relative the the body's origin.</param>
         /// <returns>The same point expressed in world coordinates.</returns>
-        public Vector2 GetWorldPoint(ref Vector2 localPoint)
+        public AetherVector2 GetWorldPoint(ref AetherVector2 localPoint)
         {
             return Transform.Multiply(ref localPoint, ref _xf);
         }
@@ -1012,7 +996,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <param name="localPoint">A point on the body measured relative the the body's origin.</param>
         /// <returns>The same point expressed in world coordinates.</returns>
-        public Vector2 GetWorldPoint(Vector2 localPoint)
+        public AetherVector2 GetWorldPoint(AetherVector2 localPoint)
         {
             return GetWorldPoint(ref localPoint);
         }
@@ -1023,7 +1007,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <param name="localVector">A vector fixed in the body.</param>
         /// <returns>The same vector expressed in world coordinates.</returns>
-        public Vector2 GetWorldVector(ref Vector2 localVector)
+        public AetherVector2 GetWorldVector(ref AetherVector2 localVector)
         {
             return Complex.Multiply(ref localVector, ref _xf.q);
         }
@@ -1033,7 +1017,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <param name="localVector">A vector fixed in the body.</param>
         /// <returns>The same vector expressed in world coordinates.</returns>
-        public Vector2 GetWorldVector(Vector2 localVector)
+        public AetherVector2 GetWorldVector(AetherVector2 localVector)
         {
             return GetWorldVector(ref localVector);
         }
@@ -1044,7 +1028,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <param name="worldPoint">A point in world coordinates.</param>
         /// <returns>The corresponding local point relative to the body's origin.</returns>
-        public Vector2 GetLocalPoint(ref Vector2 worldPoint)
+        public AetherVector2 GetLocalPoint(ref AetherVector2 worldPoint)
         {
             return Transform.Divide(ref worldPoint, ref _xf);
         }
@@ -1054,7 +1038,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <param name="worldPoint">A point in world coordinates.</param>
         /// <returns>The corresponding local point relative to the body's origin.</returns>
-        public Vector2 GetLocalPoint(Vector2 worldPoint)
+        public AetherVector2 GetLocalPoint(AetherVector2 worldPoint)
         {
             return GetLocalPoint(ref worldPoint);
         }
@@ -1065,7 +1049,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <param name="worldVector">A vector in world coordinates.</param>
         /// <returns>The corresponding local vector.</returns>
-        public Vector2 GetLocalVector(ref Vector2 worldVector)
+        public AetherVector2 GetLocalVector(ref AetherVector2 worldVector)
         {
             return Complex.Divide(ref worldVector, ref _xf.q);
         }
@@ -1076,7 +1060,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <param name="worldVector">A vector in world coordinates.</param>
         /// <returns>The corresponding local vector.</returns>
-        public Vector2 GetLocalVector(Vector2 worldVector)
+        public AetherVector2 GetLocalVector(AetherVector2 worldVector)
         {
             return GetLocalVector(ref worldVector);
         }
@@ -1086,7 +1070,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <param name="worldPoint">A point in world coordinates.</param>
         /// <returns>The world velocity of a point.</returns>
-        public Vector2 GetLinearVelocityFromWorldPoint(Vector2 worldPoint)
+        public AetherVector2 GetLinearVelocityFromWorldPoint(AetherVector2 worldPoint)
         {
             return GetLinearVelocityFromWorldPoint(ref worldPoint);
         }
@@ -1096,10 +1080,10 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <param name="worldPoint">A point in world coordinates.</param>
         /// <returns>The world velocity of a point.</returns>
-        public Vector2 GetLinearVelocityFromWorldPoint(ref Vector2 worldPoint)
+        public AetherVector2 GetLinearVelocityFromWorldPoint(ref AetherVector2 worldPoint)
         {
             return _linearVelocity +
-                   new Vector2(-_angularVelocity * (worldPoint.Y - _sweep.C.Y),
+                   new AetherVector2(-_angularVelocity * (worldPoint.Y - _sweep.C.Y),
                                _angularVelocity * (worldPoint.X - _sweep.C.X));
         }
 
@@ -1108,7 +1092,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <param name="localPoint">A point in local coordinates.</param>
         /// <returns>The world velocity of a point.</returns>
-        public Vector2 GetLinearVelocityFromLocalPoint(Vector2 localPoint)
+        public AetherVector2 GetLinearVelocityFromLocalPoint(AetherVector2 localPoint)
         {
             return GetLinearVelocityFromLocalPoint(ref localPoint);
         }
@@ -1118,14 +1102,14 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// </summary>
         /// <param name="localPoint">A point in local coordinates.</param>
         /// <returns>The world velocity of a point.</returns>
-        public Vector2 GetLinearVelocityFromLocalPoint(ref Vector2 localPoint)
+        public AetherVector2 GetLinearVelocityFromLocalPoint(ref AetherVector2 localPoint)
         {
             return GetLinearVelocityFromWorldPoint(GetWorldPoint(ref localPoint));
         }
 
         internal void SynchronizeFixtures()
         {
-            Transform xf1 = new Transform(Vector2.Zero, _sweep.A0);
+            Transform xf1 = new Transform(AetherVector2.Zero, _sweep.A0);
             xf1.p = _sweep.C0 - Complex.Multiply(ref _sweep.LocalCenter, ref xf1.q);
 
             IBroadPhase broadPhase = World.ContactManager.BroadPhase;
@@ -1170,7 +1154,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
             return true;
         }
 
-        internal void Advance(float alpha)
+        internal void Advance(Fix64 alpha)
         {
             // Advance to the new safe time. This doesn't sync the broad-phase.
             _sweep.Advance(alpha);
@@ -1202,7 +1186,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// <param name="restitution"></param>
         /// <remarks>Deprecated in version 1.6</remarks>
         [Obsolete]
-        public void SetRestitution(float restitution)
+        public void SetRestitution(Fix64 restitution)
         {
             for (int i = 0; i < FixtureList._list.Count; i++)
                 FixtureList._list[i].Restitution = restitution;
@@ -1215,7 +1199,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// <param name="friction"></param>
         /// <remarks>Deprecated in version 1.6</remarks>
         [Obsolete]
-        public void SetFriction(float friction)
+        public void SetFriction(Fix64 friction)
         {
             for (int i = 0; i < FixtureList._list.Count; i++)
                 FixtureList._list[i].Friction = friction;

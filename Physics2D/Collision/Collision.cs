@@ -27,6 +27,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -114,17 +115,17 @@ namespace tainicom.Aether.Physics2D.Collision
         /// <summary>
         /// Usage depends on manifold type
         /// </summary>
-        public Vector2 LocalPoint;
+        public AetherVector2 LocalPoint;
 
         /// <summary>
         /// The non-penetration impulse
         /// </summary>
-        public float NormalImpulse;
+        public Fix64 NormalImpulse;
 
         /// <summary>
         /// The friction impulse
         /// </summary>
-        public float TangentImpulse;
+        public Fix64 TangentImpulse;
     }
 
     public enum ManifoldType
@@ -157,12 +158,12 @@ namespace tainicom.Aether.Physics2D.Collision
         /// <summary>
         /// Not use for Type.SeparationFunction.Points
         /// </summary>
-        public Vector2 LocalNormal;
+        public AetherVector2 LocalNormal;
 
         /// <summary>
         /// Usage depends on manifold type
         /// </summary>
-        public Vector2 LocalPoint;
+        public AetherVector2 LocalPoint;
 
         /// <summary>
         /// The number of manifold points
@@ -209,7 +210,7 @@ namespace tainicom.Aether.Physics2D.Collision
     public struct ClipVertex
     {
         public ContactID ID;
-        public Vector2 V;
+        public AetherVector2 V;
     }
 
     /// <summary>
@@ -222,17 +223,17 @@ namespace tainicom.Aether.Physics2D.Collision
         /// If you supply a max fraction of 1, the ray extends from p1 to p2.
         /// A max fraction of 0.5 makes the ray go from p1 and half way to p2.
         /// </summary>
-        public float MaxFraction;
+        public Fix64 MaxFraction;
 
         /// <summary>
         /// The starting point of the ray.
         /// </summary>
-        public Vector2 Point1;
+        public AetherVector2 Point1;
 
         /// <summary>
         /// The ending point of the ray.
         /// </summary>
-        public Vector2 Point2;
+        public AetherVector2 Point2;
     }
 
     /// <summary>
@@ -244,12 +245,12 @@ namespace tainicom.Aether.Physics2D.Collision
         /// The ray hits at p1 + fraction * (p2 - p1), where p1 and p2 come from RayCastInput.
         /// Contains the actual fraction of the ray where it has the intersection point.
         /// </summary>
-        public float Fraction;
+        public Fix64 Fraction;
 
         /// <summary>
         /// The normal of the face of the shape the ray has hit.
         /// </summary>
-        public Vector2 Normal;
+        public AetherVector2 Normal;
     }
 
     /// <summary>
@@ -260,36 +261,36 @@ namespace tainicom.Aether.Physics2D.Collision
         /// <summary>
         /// The lower vertex
         /// </summary>
-        public Vector2 LowerBound;
+        public AetherVector2 LowerBound;
 
         /// <summary>
         /// The upper vertex
         /// </summary>
-        public Vector2 UpperBound;
+        public AetherVector2 UpperBound;
 
-        public AABB(Vector2 min, Vector2 max)
+        public AABB(AetherVector2 min, AetherVector2 max)
             : this(ref min, ref max)
         {
         }
 
-        public AABB(ref Vector2 min, ref Vector2 max)
+        public AABB(ref AetherVector2 min, ref AetherVector2 max)
         {
             LowerBound = min;
             UpperBound = max;
         }
 
-        public AABB(Vector2 center, float width, float height)
+        public AABB(AetherVector2 center, Fix64 width, Fix64 height)
         {
-            LowerBound = center - new Vector2(width / 2, height / 2);
-            UpperBound = center + new Vector2(width / 2, height / 2);
+            LowerBound = center - new AetherVector2(width / Fix64Constants.Two, height / Fix64Constants.Two);
+            UpperBound = center + new AetherVector2(width / Fix64Constants.Two, height / Fix64Constants.Two);
         }
 
-        public float Width
+        public Fix64 Width
         {
             get { return UpperBound.X - LowerBound.X; }
         }
 
-        public float Height
+        public Fix64 Height
         {
             get { return UpperBound.Y - LowerBound.Y; }
         }
@@ -297,29 +298,29 @@ namespace tainicom.Aether.Physics2D.Collision
         /// <summary>
         /// Get the center of the AABB.
         /// </summary>
-        public Vector2 Center
+        public AetherVector2 Center
         {
-            get { return 0.5f * (LowerBound + UpperBound); }
+            get { return Fix64Constants.PointFive * (LowerBound + UpperBound); }
         }
 
         /// <summary>
         /// Get the extents of the AABB (half-widths).
         /// </summary>
-        public Vector2 Extents
+        public AetherVector2 Extents
         {
-            get { return 0.5f * (UpperBound - LowerBound); }
+            get { return Fix64Constants.PointFive * (UpperBound - LowerBound); }
         }
 
         /// <summary>
         /// Get the perimeter length
         /// </summary>
-        public float Perimeter
+        public Fix64 Perimeter
         {
             get
             {
-                float wx = UpperBound.X - LowerBound.X;
-                float wy = UpperBound.Y - LowerBound.Y;
-                return 2.0f * (wx + wy);
+                Fix64 wx = UpperBound.X - LowerBound.X;
+                Fix64 wy = UpperBound.Y - LowerBound.Y;
+                return Fix64Constants.Two * (wx + wy);
             }
         }
 
@@ -333,9 +334,9 @@ namespace tainicom.Aether.Physics2D.Collision
             {
                 Vertices vertices = new Vertices(4);
                 vertices.Add(UpperBound);
-                vertices.Add(new Vector2(UpperBound.X, LowerBound.Y));
+                vertices.Add(new AetherVector2(UpperBound.X, LowerBound.Y));
                 vertices.Add(LowerBound);
-                vertices.Add(new Vector2(LowerBound.X, UpperBound.Y));
+                vertices.Add(new AetherVector2(LowerBound.X, UpperBound.Y));
                 return vertices;
             }
         }
@@ -353,7 +354,7 @@ namespace tainicom.Aether.Physics2D.Collision
         /// </summary>
         public AABB Q2
         {
-            get { return new AABB(new Vector2(LowerBound.X, Center.Y), new Vector2(Center.X, UpperBound.Y)); }
+            get { return new AABB(new AetherVector2(LowerBound.X, Center.Y), new AetherVector2(Center.X, UpperBound.Y)); }
         }
 
         /// <summary>
@@ -369,7 +370,7 @@ namespace tainicom.Aether.Physics2D.Collision
         /// </summary>
         public AABB Q4
         {
-            get { return new AABB(new Vector2(Center.X, LowerBound.Y), new Vector2(UpperBound.X, Center.Y)); }
+            get { return new AABB(new AetherVector2(Center.X, LowerBound.Y), new AetherVector2(UpperBound.X, Center.Y)); }
         }
 
         /// <summary>
@@ -380,9 +381,8 @@ namespace tainicom.Aether.Physics2D.Collision
         /// </returns>
         public bool IsValid()
         {
-            Vector2 d = UpperBound - LowerBound;
-            bool valid = d.X >= 0.0f && d.Y >= 0.0f;
-            valid = valid && LowerBound.IsValid() && UpperBound.IsValid();
+            AetherVector2 d = UpperBound - LowerBound;
+            bool valid = d.X >= Fix64.Zero && d.Y >= Fix64.Zero;
             return valid;
         }
 
@@ -392,8 +392,8 @@ namespace tainicom.Aether.Physics2D.Collision
         /// <param name="aabb">The aabb.</param>
         public void Combine(ref AABB aabb)
         {
-            Vector2.Min(ref LowerBound, ref aabb.LowerBound, out LowerBound);
-            Vector2.Max(ref UpperBound, ref aabb.UpperBound, out UpperBound);
+            AetherVector2.Min(ref LowerBound, ref aabb.LowerBound, out LowerBound);
+            AetherVector2.Max(ref UpperBound, ref aabb.UpperBound, out UpperBound);
         }
 
         /// <summary>
@@ -403,8 +403,8 @@ namespace tainicom.Aether.Physics2D.Collision
         /// <param name="aabb2">The aabb2.</param>
         public void Combine(ref AABB aabb1, ref AABB aabb2)
         {
-            Vector2.Min(ref aabb1.LowerBound, ref aabb2.LowerBound, out LowerBound);
-            Vector2.Max(ref aabb1.UpperBound, ref aabb2.UpperBound, out UpperBound);
+            AetherVector2.Min(ref aabb1.LowerBound, ref aabb2.LowerBound, out LowerBound);
+            AetherVector2.Max(ref aabb1.UpperBound, ref aabb2.UpperBound, out UpperBound);
         }
 
         /// <summary>
@@ -431,9 +431,9 @@ namespace tainicom.Aether.Physics2D.Collision
         /// <returns>
         /// 	<c>true</c> if it contains the specified point; otherwise, <c>false</c>.
         /// </returns>
-        public bool Contains(ref Vector2 point)
+        public bool Contains(ref AetherVector2 point)
         {
-            //using epsilon to try and gaurd against float rounding errors.
+            //using epsilon to try and gaurd against Fix64 rounding errors.
             return (point.X > (LowerBound.X + Settings.Epsilon) && point.X < (UpperBound.X - Settings.Epsilon) &&
                    (point.Y > (LowerBound.Y + Settings.Epsilon) && point.Y < (UpperBound.Y - Settings.Epsilon)));
         }
@@ -467,21 +467,21 @@ namespace tainicom.Aether.Physics2D.Collision
 
             output = new RayCastOutput();
 
-            float tmin = -Settings.MaxFloat;
-            float tmax = Settings.MaxFloat;
+            Fix64 tmin = -Settings.MaxFloat;
+            Fix64 tmax = Settings.MaxFloat;
 
-            Vector2 p = input.Point1;
-            Vector2 d = input.Point2 - input.Point1;
-            Vector2 absD = MathUtils.Abs(d);
+            AetherVector2 p = input.Point1;
+            AetherVector2 d = input.Point2 - input.Point1;
+            AetherVector2 absD = MathUtils.Abs(d);
 
-            Vector2 normal = Vector2.Zero;
+            AetherVector2 normal = AetherVector2.Zero;
 
             for (int i = 0; i < 2; ++i)
             {
-                float absD_i = i == 0 ? absD.X : absD.Y;
-                float lowerBound_i = i == 0 ? LowerBound.X : LowerBound.Y;
-                float upperBound_i = i == 0 ? UpperBound.X : UpperBound.Y;
-                float p_i = i == 0 ? p.X : p.Y;
+                Fix64 absD_i = i == 0 ? absD.X : absD.Y;
+                Fix64 lowerBound_i = i == 0 ? LowerBound.X : LowerBound.Y;
+                Fix64 upperBound_i = i == 0 ? UpperBound.X : UpperBound.Y;
+                Fix64 p_i = i == 0 ? p.X : p.Y;
 
                 if (absD_i < Settings.Epsilon)
                 {
@@ -493,19 +493,19 @@ namespace tainicom.Aether.Physics2D.Collision
                 }
                 else
                 {
-                    float d_i = i == 0 ? d.X : d.Y;
+                    Fix64 d_i = i == 0 ? d.X : d.Y;
 
-                    float inv_d = 1.0f / d_i;
-                    float t1 = (lowerBound_i - p_i) * inv_d;
-                    float t2 = (upperBound_i - p_i) * inv_d;
+                    Fix64 inv_d = Fix64.One / d_i;
+                    Fix64 t1 = (lowerBound_i - p_i) * inv_d;
+                    Fix64 t2 = (upperBound_i - p_i) * inv_d;
 
                     // Sign of the normal vector.
-                    float s = -1.0f;
+                    Fix64 s = -Fix64.One;
 
                     if (t1 > t2)
                     {
                         MathUtils.Swap(ref t1, ref t2);
-                        s = 1.0f;
+                        s = Fix64.One;
                     }
 
                     // Push the min up
@@ -524,7 +524,7 @@ namespace tainicom.Aether.Physics2D.Collision
                     }
 
                     // Pull the max down
-                    tmax = Math.Min(tmax, t2);
+                    tmax = MathUtils.Min(tmax, t2);
 
                     if (tmin > tmax)
                     {
@@ -535,7 +535,7 @@ namespace tainicom.Aether.Physics2D.Collision
 
             // Does the ray start inside the box?
             // Does the ray intersect beyond the max fraction?
-            if (doInteriorCheck && (tmin < 0.0f || input.MaxFraction < tmin))
+            if (doInteriorCheck && (tmin < Fix64.Zero || input.MaxFraction < tmin))
             {
                 return false;
             }
@@ -553,7 +553,7 @@ namespace tainicom.Aether.Physics2D.Collision
     public struct EPAxis
     {
         public int Index;
-        public float Separation;
+        public Fix64 Separation;
         public EPAxisType Type;
     }
 
@@ -564,15 +564,15 @@ namespace tainicom.Aether.Physics2D.Collision
     {
         public int i1, i2;
 
-        public Vector2 v1, v2;
+        public AetherVector2 v1, v2;
 
-        public Vector2 normal;
+        public AetherVector2 normal;
 
-        public Vector2 sideNormal1;
-        public float sideOffset1;
+        public AetherVector2 sideNormal1;
+        public Fix64 sideOffset1;
 
-        public Vector2 sideNormal2;
-        public float sideOffset2;
+        public AetherVector2 sideNormal2;
+        public Fix64 sideOffset2;
     }
 
     public enum EPAxisType
@@ -610,7 +610,7 @@ namespace tainicom.Aether.Physics2D.Collision
             DistanceOutput output;
             Distance.ComputeDistance(out output, out cache, _input);
 
-            return output.Distance < 10.0f * Settings.Epsilon;
+            return output.Distance < Fix64Constants.Ten * Settings.Epsilon;
         }
 
         public static void GetPointStates(out FixedArray2<PointState> state1, out FixedArray2<PointState> state2, ref Manifold manifold1, ref Manifold manifold2)
@@ -660,12 +660,12 @@ namespace tainicom.Aether.Physics2D.Collision
         {
             manifold.PointCount = 0;
 
-            Vector2 pA = Transform.Multiply(ref circleA._position, ref xfA);
-            Vector2 pB = Transform.Multiply(ref circleB._position, ref xfB);
+            AetherVector2 pA = Transform.Multiply(ref circleA._position, ref xfA);
+            AetherVector2 pB = Transform.Multiply(ref circleB._position, ref xfB);
 
-            Vector2 d = pB - pA;
-            float distSqr = Vector2.Dot(d, d);
-            float radius = circleA.Radius + circleB.Radius;
+            AetherVector2 d = pB - pA;
+            Fix64 distSqr = AetherVector2.Dot(d, d);
+            Fix64 radius = circleA.Radius + circleB.Radius;
             if (distSqr > radius * radius)
             {
                 return;
@@ -673,7 +673,7 @@ namespace tainicom.Aether.Physics2D.Collision
 
             manifold.Type = ManifoldType.Circles;
             manifold.LocalPoint = circleA.Position;
-            manifold.LocalNormal = Vector2.Zero;
+            manifold.LocalNormal = AetherVector2.Zero;
             manifold.PointCount = 1;
 
             ManifoldPoint p0 = manifold.Points[0];
@@ -697,20 +697,20 @@ namespace tainicom.Aether.Physics2D.Collision
             manifold.PointCount = 0;
 
             // Compute circle position in the frame of the polygon.
-            Vector2 c = Transform.Multiply(ref circleB._position, ref xfB);
-            Vector2 cLocal = Transform.Divide(ref c, ref xfA);
+            AetherVector2 c = Transform.Multiply(ref circleB._position, ref xfB);
+            AetherVector2 cLocal = Transform.Divide(ref c, ref xfA);
 
             // Find the min separating edge.
             int normalIndex = 0;
-            float separation = -Settings.MaxFloat;
-            float radius = polygonA.Radius + circleB.Radius;
+            Fix64 separation = -Settings.MaxFloat;
+            Fix64 radius = polygonA.Radius + circleB.Radius;
             int vertexCount = polygonA.Vertices.Count;
 
             for (int i = 0; i < vertexCount; ++i)
             {
-                Vector2 value1 = polygonA.Normals[i];
-                Vector2 value2 = cLocal - polygonA.Vertices[i];
-                float s = value1.X * value2.X + value1.Y * value2.Y;
+                AetherVector2 value1 = polygonA.Normals[i];
+                AetherVector2 value2 = cLocal - polygonA.Vertices[i];
+                Fix64 s = value1.X * value2.X + value1.Y * value2.Y;
 
                 if (s > radius)
                 {
@@ -728,8 +728,8 @@ namespace tainicom.Aether.Physics2D.Collision
             // Vertices that subtend the incident face.
             int vertIndex1 = normalIndex;
             int vertIndex2 = vertIndex1 + 1 < vertexCount ? vertIndex1 + 1 : 0;
-            Vector2 v1 = polygonA.Vertices[vertIndex1];
-            Vector2 v2 = polygonA.Vertices[vertIndex2];
+            AetherVector2 v1 = polygonA.Vertices[vertIndex1];
+            AetherVector2 v2 = polygonA.Vertices[vertIndex2];
 
             // If the center is inside the polygon ...
             if (separation < Settings.Epsilon)
@@ -737,7 +737,7 @@ namespace tainicom.Aether.Physics2D.Collision
                 manifold.PointCount = 1;
                 manifold.Type = ManifoldType.FaceA;
                 manifold.LocalNormal = polygonA.Normals[normalIndex];
-                manifold.LocalPoint = 0.5f * (v1 + v2);
+                manifold.LocalPoint = Fix64Constants.PointFive * (v1 + v2);
 
                 ManifoldPoint p0 = manifold.Points[0];
 
@@ -750,12 +750,12 @@ namespace tainicom.Aether.Physics2D.Collision
             }
 
             // Compute barycentric coordinates
-            float u1 = (cLocal.X - v1.X) * (v2.X - v1.X) + (cLocal.Y - v1.Y) * (v2.Y - v1.Y);
-            float u2 = (cLocal.X - v2.X) * (v1.X - v2.X) + (cLocal.Y - v2.Y) * (v1.Y - v2.Y);
+            Fix64 u1 = (cLocal.X - v1.X) * (v2.X - v1.X) + (cLocal.Y - v1.Y) * (v2.Y - v1.Y);
+            Fix64 u2 = (cLocal.X - v2.X) * (v1.X - v2.X) + (cLocal.Y - v2.Y) * (v1.Y - v2.Y);
 
-            if (u1 <= 0.0f)
+            if (u1 <= Fix64.Zero)
             {
-                float r = (cLocal.X - v1.X) * (cLocal.X - v1.X) + (cLocal.Y - v1.Y) * (cLocal.Y - v1.Y);
+                Fix64 r = (cLocal.X - v1.X) * (cLocal.X - v1.X) + (cLocal.Y - v1.Y) * (cLocal.Y - v1.Y);
                 if (r > radius * radius)
                 {
                     return;
@@ -764,9 +764,8 @@ namespace tainicom.Aether.Physics2D.Collision
                 manifold.PointCount = 1;
                 manifold.Type = ManifoldType.FaceA;
                 manifold.LocalNormal = cLocal - v1;
-                float factor = 1f /
-                               (float)
-                               Math.Sqrt(manifold.LocalNormal.X * manifold.LocalNormal.X +
+                Fix64 factor = Fix64.One /
+                               Fix64.Sqrt(manifold.LocalNormal.X * manifold.LocalNormal.X +
                                          manifold.LocalNormal.Y * manifold.LocalNormal.Y);
                 manifold.LocalNormal.X = manifold.LocalNormal.X * factor;
                 manifold.LocalNormal.Y = manifold.LocalNormal.Y * factor;
@@ -779,9 +778,9 @@ namespace tainicom.Aether.Physics2D.Collision
 
                 manifold.Points[0] = p0b;
             }
-            else if (u2 <= 0.0f)
+            else if (u2 <= Fix64.Zero)
             {
-                float r = (cLocal.X - v2.X) * (cLocal.X - v2.X) + (cLocal.Y - v2.Y) * (cLocal.Y - v2.Y);
+                Fix64 r = (cLocal.X - v2.X) * (cLocal.X - v2.X) + (cLocal.Y - v2.Y) * (cLocal.Y - v2.Y);
                 if (r > radius * radius)
                 {
                     return;
@@ -790,9 +789,8 @@ namespace tainicom.Aether.Physics2D.Collision
                 manifold.PointCount = 1;
                 manifold.Type = ManifoldType.FaceA;
                 manifold.LocalNormal = cLocal - v2;
-                float factor = 1f /
-                               (float)
-                               Math.Sqrt(manifold.LocalNormal.X * manifold.LocalNormal.X +
+                Fix64 factor = Fix64.One /
+                               Fix64.Sqrt(manifold.LocalNormal.X * manifold.LocalNormal.X +
                                          manifold.LocalNormal.Y * manifold.LocalNormal.Y);
                 manifold.LocalNormal.X = manifold.LocalNormal.X * factor;
                 manifold.LocalNormal.Y = manifold.LocalNormal.Y * factor;
@@ -807,10 +805,10 @@ namespace tainicom.Aether.Physics2D.Collision
             }
             else
             {
-                Vector2 faceCenter = 0.5f * (v1 + v2);
-                Vector2 value1 = cLocal - faceCenter;
-                Vector2 value2 = polygonA.Normals[vertIndex1];
-                float separation2 = value1.X * value2.X + value1.Y * value2.Y;
+                AetherVector2 faceCenter = Fix64Constants.PointFive * (v1 + v2);
+                AetherVector2 value1 = cLocal - faceCenter;
+                AetherVector2 value2 = polygonA.Normals[vertIndex1];
+                Fix64 separation2 = value1.X * value2.X + value1.Y * value2.Y;
                 if (separation2 > radius)
                 {
                     return;
@@ -841,15 +839,15 @@ namespace tainicom.Aether.Physics2D.Collision
         public static void CollidePolygons(ref Manifold manifold, PolygonShape polyA, ref Transform transformA, PolygonShape polyB, ref Transform transformB)
         {
             manifold.PointCount = 0;
-            float totalRadius = polyA.Radius + polyB.Radius;
+            Fix64 totalRadius = polyA.Radius + polyB.Radius;
 
             int edgeA = 0;
-            float separationA = FindMaxSeparation(out edgeA, polyA, ref transformA, polyB, ref transformB);
+            Fix64 separationA = FindMaxSeparation(out edgeA, polyA, ref transformA, polyB, ref transformB);
             if (separationA > totalRadius)
                 return;
 
             int edgeB = 0;
-            float separationB = FindMaxSeparation(out edgeB, polyB, ref transformB, polyA, ref transformA);
+            Fix64 separationB = FindMaxSeparation(out edgeB, polyB, ref transformB, polyA, ref transformA);
             if (separationB > totalRadius)
                 return;
 
@@ -858,10 +856,8 @@ namespace tainicom.Aether.Physics2D.Collision
             Transform xf1, xf2;
             int edge1; // reference edge
             bool flip;
-            const float k_relativeTol = 0.98f;
-            const float k_absoluteTol = 0.001f;
 
-            if (separationB > k_relativeTol * separationA + k_absoluteTol)
+            if (separationB > Fix64Constants.k_relativeTol * separationA + Fix64Constants.k_absoluteTol)
             {
                 poly1 = polyB;
                 poly2 = polyA;
@@ -890,29 +886,29 @@ namespace tainicom.Aether.Physics2D.Collision
             int iv1 = edge1;
             int iv2 = edge1 + 1 < count1 ? edge1 + 1 : 0;
 
-            Vector2 v11 = poly1.Vertices[iv1];
-            Vector2 v12 = poly1.Vertices[iv2];
+            AetherVector2 v11 = poly1.Vertices[iv1];
+            AetherVector2 v12 = poly1.Vertices[iv2];
 
-            Vector2 localTangent = v12 - v11;
+            AetherVector2 localTangent = v12 - v11;
             localTangent.Normalize();
 
-            Vector2 localNormal = new Vector2(localTangent.Y, -localTangent.X);
-            Vector2 planePoint = 0.5f * (v11 + v12);
+            AetherVector2 localNormal = new AetherVector2(localTangent.Y, -localTangent.X);
+            AetherVector2 planePoint = Fix64Constants.PointFive * (v11 + v12);
 
-            Vector2 tangent = Complex.Multiply(ref localTangent, ref xf1.q);
+            AetherVector2 tangent = Complex.Multiply(ref localTangent, ref xf1.q);
 
-            float normalx = tangent.Y;
-            float normaly = -tangent.X;
+            Fix64 normalx = tangent.Y;
+            Fix64 normaly = -tangent.X;
 
             v11 = Transform.Multiply(ref v11, ref xf1);
             v12 = Transform.Multiply(ref v12, ref xf1);
 
             // Face offset.
-            float frontOffset = normalx * v11.X + normaly * v11.Y;
+            Fix64 frontOffset = normalx * v11.X + normaly * v11.Y;
 
             // Side offsets, extended by polytope skin thickness.
-            float sideOffset1 = -(tangent.X * v11.X + tangent.Y * v11.Y) + totalRadius;
-            float sideOffset2 = tangent.X * v12.X + tangent.Y * v12.Y + totalRadius;
+            Fix64 sideOffset1 = -(tangent.X * v11.X + tangent.Y * v11.Y) + totalRadius;
+            Fix64 sideOffset2 = tangent.X * v12.X + tangent.Y * v12.Y + totalRadius;
 
             // Clip incident edge against extruded edge1 side edges.
             FixedArray2<ClipVertex> clipPoints1;
@@ -939,8 +935,8 @@ namespace tainicom.Aether.Physics2D.Collision
             int pointCount = 0;
             for (int i = 0; i < Settings.MaxManifoldPoints; ++i)
             {
-                Vector2 value = clipPoints2[i].V;
-                float separation = normalx * value.X + normaly * value.Y - frontOffset;
+                AetherVector2 value = clipPoints2[i].V;
+                Fix64 separation = normalx * value.X + normaly * value.Y - frontOffset;
 
                 if (separation <= totalRadius)
                 {
@@ -981,30 +977,30 @@ namespace tainicom.Aether.Physics2D.Collision
             manifold.PointCount = 0;
 
             // Compute circle in frame of edge
-            Vector2 Q = Transform.Divide(Transform.Multiply(ref circleB._position, ref transformB), ref transformA);
+            AetherVector2 Q = Transform.Divide(Transform.Multiply(ref circleB._position, ref transformB), ref transformA);
 
-            Vector2 A = edgeA.Vertex1, B = edgeA.Vertex2;
-            Vector2 e = B - A;
+            AetherVector2 A = edgeA.Vertex1, B = edgeA.Vertex2;
+            AetherVector2 e = B - A;
 
             // Barycentric coordinates
-            float u = Vector2.Dot(e, B - Q);
-            float v = Vector2.Dot(e, Q - A);
+            Fix64 u = AetherVector2.Dot(e, B - Q);
+            Fix64 v = AetherVector2.Dot(e, Q - A);
 
-            float radius = edgeA.Radius + circleB.Radius;
+            Fix64 radius = edgeA.Radius + circleB.Radius;
 
             ContactFeature cf;
             cf.IndexB = 0;
             cf.TypeB = (byte)ContactFeatureType.Vertex;
 
-            Vector2 P, d;
+            AetherVector2 P, d;
 
             // Region A
-            if (v <= 0.0f)
+            if (v <= Fix64.Zero)
             {
                 P = A;
                 d = Q - P;
-                float dd;
-                Vector2.Dot(ref d, ref d, out dd);
+                Fix64 dd;
+                AetherVector2.Dot(ref d, ref d, out dd);
                 if (dd > radius * radius)
                 {
                     return;
@@ -1013,13 +1009,13 @@ namespace tainicom.Aether.Physics2D.Collision
                 // Is there an edge connected to A?
                 if (edgeA.HasVertex0)
                 {
-                    Vector2 A1 = edgeA.Vertex0;
-                    Vector2 B1 = A;
-                    Vector2 e1 = B1 - A1;
-                    float u1 = Vector2.Dot(e1, B1 - Q);
+                    AetherVector2 A1 = edgeA.Vertex0;
+                    AetherVector2 B1 = A;
+                    AetherVector2 e1 = B1 - A1;
+                    Fix64 u1 = AetherVector2.Dot(e1, B1 - Q);
 
                     // Is the circle in Region AB of the previous edge?
-                    if (u1 > 0.0f)
+                    if (u1 > Fix64.Zero)
                     {
                         return;
                     }
@@ -1029,7 +1025,7 @@ namespace tainicom.Aether.Physics2D.Collision
                 cf.TypeA = (byte)ContactFeatureType.Vertex;
                 manifold.PointCount = 1;
                 manifold.Type = ManifoldType.Circles;
-                manifold.LocalNormal = Vector2.Zero;
+                manifold.LocalNormal = AetherVector2.Zero;
                 manifold.LocalPoint = P;
                 ManifoldPoint mp = new ManifoldPoint();
                 mp.Id.Key = 0;
@@ -1040,12 +1036,12 @@ namespace tainicom.Aether.Physics2D.Collision
             }
 
             // Region B
-            if (u <= 0.0f)
+            if (u <= Fix64.Zero)
             {
                 P = B;
                 d = Q - P;
-                float dd;
-                Vector2.Dot(ref d, ref d, out dd);
+                Fix64 dd;
+                AetherVector2.Dot(ref d, ref d, out dd);
                 if (dd > radius * radius)
                 {
                     return;
@@ -1054,13 +1050,13 @@ namespace tainicom.Aether.Physics2D.Collision
                 // Is there an edge connected to B?
                 if (edgeA.HasVertex3)
                 {
-                    Vector2 B2 = edgeA.Vertex3;
-                    Vector2 A2 = B;
-                    Vector2 e2 = B2 - A2;
-                    float v2 = Vector2.Dot(e2, Q - A2);
+                    AetherVector2 B2 = edgeA.Vertex3;
+                    AetherVector2 A2 = B;
+                    AetherVector2 e2 = B2 - A2;
+                    Fix64 v2 = AetherVector2.Dot(e2, Q - A2);
 
                     // Is the circle in Region AB of the next edge?
-                    if (v2 > 0.0f)
+                    if (v2 > Fix64.Zero)
                     {
                         return;
                     }
@@ -1070,7 +1066,7 @@ namespace tainicom.Aether.Physics2D.Collision
                 cf.TypeA = (byte)ContactFeatureType.Vertex;
                 manifold.PointCount = 1;
                 manifold.Type = ManifoldType.Circles;
-                manifold.LocalNormal = Vector2.Zero;
+                manifold.LocalNormal = AetherVector2.Zero;
                 manifold.LocalPoint = P;
                 ManifoldPoint mp = new ManifoldPoint();
                 mp.Id.Key = 0;
@@ -1081,22 +1077,22 @@ namespace tainicom.Aether.Physics2D.Collision
             }
 
             // Region AB
-            float den;
-            Vector2.Dot(ref e, ref e, out den);
-            Debug.Assert(den > 0.0f);
-            P = (1.0f / den) * (u * A + v * B);
+            Fix64 den;
+            AetherVector2.Dot(ref e, ref e, out den);
+            Debug.Assert(den > Fix64.Zero);
+            P = (Fix64.One / den) * (u * A + v * B);
             d = Q - P;
-            float dd2;
-            Vector2.Dot(ref d, ref d, out dd2);
+            Fix64 dd2;
+            AetherVector2.Dot(ref d, ref d, out dd2);
             if (dd2 > radius * radius)
             {
                 return;
             }
 
-            Vector2 n = new Vector2(-e.Y, e.X);
-            if (Vector2.Dot(n, Q - A) < 0.0f)
+            AetherVector2 n = new AetherVector2(-e.Y, e.X);
+            if (AetherVector2.Dot(n, Q - A) < Fix64.Zero)
             {
-                n = new Vector2(-n.X, -n.Y);
+                n = new AetherVector2(-n.X, -n.Y);
             }
             n.Normalize();
 
@@ -1133,14 +1129,14 @@ namespace tainicom.Aether.Physics2D.Collision
             /// </summary>
             internal struct TempPolygon
             {
-                public Vector2[] Vertices;
-                public Vector2[] Normals;
+                public AetherVector2[] Vertices;
+                public AetherVector2[] Normals;
                 public int Count;
 
                 internal TempPolygon(int maxPolygonVertices)
                 {
-                    Vertices = new Vector2[maxPolygonVertices];
-                    Normals = new Vector2[maxPolygonVertices];
+                    Vertices = new AetherVector2[maxPolygonVertices];
+                    Normals = new AetherVector2[maxPolygonVertices];
                     Count = 0;
                 }
             }
@@ -1159,52 +1155,52 @@ namespace tainicom.Aether.Physics2D.Collision
 
                 TempPolygon tempPolygonB = new TempPolygon(Settings.MaxPolygonVertices);
                 Transform xf;
-                Vector2 centroidB;
-                Vector2 normal0 = new Vector2();
-                Vector2 normal1;
-                Vector2 normal2 = new Vector2();
-                Vector2 normal;
-                Vector2 lowerLimit, upperLimit;
-                float radius;
+                AetherVector2 centroidB;
+                AetherVector2 normal0 = new AetherVector2();
+                AetherVector2 normal1;
+                AetherVector2 normal2 = new AetherVector2();
+                AetherVector2 normal;
+                AetherVector2 lowerLimit, upperLimit;
+                Fix64 radius;
                 bool front;
 
                 Transform.Divide(ref xfB, ref xfA, out xf);
 
                 centroidB = Transform.Multiply(polygonB.MassData.Centroid, ref xf);
 
-                Vector2 v0 = edgeA.Vertex0;
-                Vector2 v1 = edgeA._vertex1;
-                Vector2 v2 = edgeA._vertex2;
-                Vector2 v3 = edgeA.Vertex3;
+                AetherVector2 v0 = edgeA.Vertex0;
+                AetherVector2 v1 = edgeA._vertex1;
+                AetherVector2 v2 = edgeA._vertex2;
+                AetherVector2 v3 = edgeA.Vertex3;
 
                 bool hasVertex0 = edgeA.HasVertex0;
                 bool hasVertex3 = edgeA.HasVertex3;
 
-                Vector2 edge1 = v2 - v1;
+                AetherVector2 edge1 = v2 - v1;
                 edge1.Normalize();
-                normal1 = new Vector2(edge1.Y, -edge1.X);
-                float offset1 = Vector2.Dot(normal1, centroidB - v1);
-                float offset0 = 0.0f, offset2 = 0.0f;
+                normal1 = new AetherVector2(edge1.Y, -edge1.X);
+                Fix64 offset1 = AetherVector2.Dot(normal1, centroidB - v1);
+                Fix64 offset0 = Fix64.Zero, offset2 = Fix64.Zero;
                 bool convex1 = false, convex2 = false;
 
                 // Is there a preceding edge?
                 if (hasVertex0)
                 {
-                    Vector2 edge0 = v1 - v0;
+                    AetherVector2 edge0 = v1 - v0;
                     edge0.Normalize();
-                    normal0 = new Vector2(edge0.Y, -edge0.X);
-                    convex1 = MathUtils.Cross(ref edge0, ref edge1) >= 0.0f;
-                    offset0 = Vector2.Dot(normal0, centroidB - v0);
+                    normal0 = new AetherVector2(edge0.Y, -edge0.X);
+                    convex1 = MathUtils.Cross(ref edge0, ref edge1) >= Fix64.Zero;
+                    offset0 = AetherVector2.Dot(normal0, centroidB - v0);
                 }
 
                 // Is there a following edge?
                 if (hasVertex3)
                 {
-                    Vector2 edge2 = v3 - v2;
+                    AetherVector2 edge2 = v3 - v2;
                     edge2.Normalize();
-                    normal2 = new Vector2(edge2.Y, -edge2.X);
-                    convex2 = MathUtils.Cross(ref edge1, ref edge2) > 0.0f;
-                    offset2 = Vector2.Dot(normal2, centroidB - v2);
+                    normal2 = new AetherVector2(edge2.Y, -edge2.X);
+                    convex2 = MathUtils.Cross(ref edge1, ref edge2) > Fix64.Zero;
+                    offset2 = AetherVector2.Dot(normal2, centroidB - v2);
                 }
 
                 // Determine front or back collision. Determine collision normal limits.
@@ -1212,7 +1208,7 @@ namespace tainicom.Aether.Physics2D.Collision
                 {
                     if (convex1 && convex2)
                     {
-                        front = offset0 >= 0.0f || offset1 >= 0.0f || offset2 >= 0.0f;
+                        front = offset0 >= Fix64.Zero || offset1 >= Fix64.Zero || offset2 >= Fix64.Zero;
                         if (front)
                         {
                             normal = normal1;
@@ -1228,7 +1224,7 @@ namespace tainicom.Aether.Physics2D.Collision
                     }
                     else if (convex1)
                     {
-                        front = offset0 >= 0.0f || (offset1 >= 0.0f && offset2 >= 0.0f);
+                        front = offset0 >= Fix64.Zero || (offset1 >= Fix64.Zero && offset2 >= Fix64.Zero);
                         if (front)
                         {
                             normal = normal1;
@@ -1244,7 +1240,7 @@ namespace tainicom.Aether.Physics2D.Collision
                     }
                     else if (convex2)
                     {
-                        front = offset2 >= 0.0f || (offset0 >= 0.0f && offset1 >= 0.0f);
+                        front = offset2 >= Fix64.Zero || (offset0 >= Fix64.Zero && offset1 >= Fix64.Zero);
                         if (front)
                         {
                             normal = normal1;
@@ -1260,7 +1256,7 @@ namespace tainicom.Aether.Physics2D.Collision
                     }
                     else
                     {
-                        front = offset0 >= 0.0f && offset1 >= 0.0f && offset2 >= 0.0f;
+                        front = offset0 >= Fix64.Zero && offset1 >= Fix64.Zero && offset2 >= Fix64.Zero;
                         if (front)
                         {
                             normal = normal1;
@@ -1279,7 +1275,7 @@ namespace tainicom.Aether.Physics2D.Collision
                 {
                     if (convex1)
                     {
-                        front = offset0 >= 0.0f || offset1 >= 0.0f;
+                        front = offset0 >= Fix64.Zero || offset1 >= Fix64.Zero;
                         if (front)
                         {
                             normal = normal1;
@@ -1295,7 +1291,7 @@ namespace tainicom.Aether.Physics2D.Collision
                     }
                     else
                     {
-                        front = offset0 >= 0.0f && offset1 >= 0.0f;
+                        front = offset0 >= Fix64.Zero && offset1 >= Fix64.Zero;
                         if (front)
                         {
                             normal = normal1;
@@ -1314,7 +1310,7 @@ namespace tainicom.Aether.Physics2D.Collision
                 {
                     if (convex2)
                     {
-                        front = offset1 >= 0.0f || offset2 >= 0.0f;
+                        front = offset1 >= Fix64.Zero || offset2 >= Fix64.Zero;
                         if (front)
                         {
                             normal = normal1;
@@ -1330,7 +1326,7 @@ namespace tainicom.Aether.Physics2D.Collision
                     }
                     else
                     {
-                        front = offset1 >= 0.0f && offset2 >= 0.0f;
+                        front = offset1 >= Fix64.Zero && offset2 >= Fix64.Zero;
                         if (front)
                         {
                             normal = normal1;
@@ -1347,7 +1343,7 @@ namespace tainicom.Aether.Physics2D.Collision
                 }
                 else
                 {
-                    front = offset1 >= 0.0f;
+                    front = offset1 >= Fix64.Zero;
                     if (front)
                     {
                         normal = normal1;
@@ -1370,7 +1366,7 @@ namespace tainicom.Aether.Physics2D.Collision
                     tempPolygonB.Normals[i] = Complex.Multiply(polygonB.Normals[i], ref xf.q);
                 }
 
-                radius = 2.0f * Settings.PolygonRadius;
+                radius = Fix64Constants.Two * Settings.PolygonRadius;
 
                 manifold.PointCount = 0;
 
@@ -1394,15 +1390,12 @@ namespace tainicom.Aether.Physics2D.Collision
                 }
 
                 // Use hysteresis for jitter reduction.
-                const float k_relativeTol = 0.98f;
-                const float k_absoluteTol = 0.001f;
-
                 EPAxis primaryAxis;
                 if (polygonAxis.Type == EPAxisType.Unknown)
                 {
                     primaryAxis = edgeAxis;
                 }
-                else if (polygonAxis.Separation > k_relativeTol * edgeAxis.Separation + k_absoluteTol)
+                else if (polygonAxis.Separation > Fix64Constants.k_relativeTol * edgeAxis.Separation + Fix64Constants.k_absoluteTol)
                 {
                     primaryAxis = polygonAxis;
                 }
@@ -1419,10 +1412,10 @@ namespace tainicom.Aether.Physics2D.Collision
 
                     // Search for the polygon normal that is most anti-parallel to the edge normal.
                     int bestIndex = 0;
-                    float bestValue = Vector2.Dot(normal, tempPolygonB.Normals[0]);
+                    Fix64 bestValue = AetherVector2.Dot(normal, tempPolygonB.Normals[0]);
                     for (int i = 1; i < tempPolygonB.Count; ++i)
                     {
-                        float value = Vector2.Dot(normal, tempPolygonB.Normals[i]);
+                        Fix64 value = AetherVector2.Dot(normal, tempPolygonB.Normals[i]);
                         if (value < bestValue)
                         {
                             bestValue = value;
@@ -1492,10 +1485,10 @@ namespace tainicom.Aether.Physics2D.Collision
                     rf.normal = tempPolygonB.Normals[rf.i1];
                 }
 
-                rf.sideNormal1 = new Vector2(rf.normal.Y, -rf.normal.X);
+                rf.sideNormal1 = new AetherVector2(rf.normal.Y, -rf.normal.X);
                 rf.sideNormal2 = -rf.sideNormal1;
-                rf.sideOffset1 = Vector2.Dot(rf.sideNormal1, rf.v1);
-                rf.sideOffset2 = Vector2.Dot(rf.sideNormal2, rf.v2);
+                rf.sideOffset1 = AetherVector2.Dot(rf.sideNormal1, rf.v1);
+                rf.sideOffset2 = AetherVector2.Dot(rf.sideNormal2, rf.v2);
 
                 // Clip incident edge against extruded edge1 side edges.
                 FixedArray2<ClipVertex> clipPoints1;
@@ -1533,7 +1526,7 @@ namespace tainicom.Aether.Physics2D.Collision
                 int pointCount = 0;
                 for (int i = 0; i < Settings.MaxManifoldPoints; ++i)
                 {
-                    float separation = Vector2.Dot(rf.normal, clipPoints2[i].V - rf.v1);
+                    Fix64 separation = AetherVector2.Dot(rf.normal, clipPoints2[i].V - rf.v1);
 
                     if (separation <= radius)
                     {
@@ -1561,7 +1554,7 @@ namespace tainicom.Aether.Physics2D.Collision
                 manifold.PointCount = pointCount;
             }
 
-            private static EPAxis ComputeEdgeSeparation(ref TempPolygon polygonB, ref Vector2 normal, ref Vector2 v1, bool front)
+            private static EPAxis ComputeEdgeSeparation(ref TempPolygon polygonB, ref AetherVector2 normal, ref AetherVector2 v1, bool front)
             {
                 EPAxis axis;
                 axis.Type = EPAxisType.EdgeA;
@@ -1570,7 +1563,7 @@ namespace tainicom.Aether.Physics2D.Collision
 
                 for (int i = 0; i < polygonB.Count; ++i)
                 {
-                    float s = Vector2.Dot(normal, polygonB.Vertices[i] - v1);
+                    Fix64 s = AetherVector2.Dot(normal, polygonB.Vertices[i] - v1);
                     if (s < axis.Separation)
                     {
                         axis.Separation = s;
@@ -1580,22 +1573,22 @@ namespace tainicom.Aether.Physics2D.Collision
                 return axis;
             }
 
-            private static EPAxis ComputePolygonSeparation(ref TempPolygon polygonB, ref Vector2 normal, ref Vector2 v1, ref Vector2 v2, ref Vector2 lowerLimit, ref Vector2 upperLimit, float radius)
+            private static EPAxis ComputePolygonSeparation(ref TempPolygon polygonB, ref AetherVector2 normal, ref AetherVector2 v1, ref AetherVector2 v2, ref AetherVector2 lowerLimit, ref AetherVector2 upperLimit, Fix64 radius)
             {
                 EPAxis axis;
                 axis.Type = EPAxisType.Unknown;
                 axis.Index = -1;
                 axis.Separation = -Settings.MaxFloat;
 
-                Vector2 perp = new Vector2(-normal.Y, normal.X);
+                AetherVector2 perp = new AetherVector2(-normal.Y, normal.X);
 
                 for (int i = 0; i < polygonB.Count; ++i)
                 {
-                    Vector2 n = -polygonB.Normals[i];
+                    AetherVector2 n = -polygonB.Normals[i];
 
-                    float s1 = Vector2.Dot(n, polygonB.Vertices[i] - v1);
-                    float s2 = Vector2.Dot(n, polygonB.Vertices[i] - v2);
-                    float s = Math.Min(s1, s2);
+                    Fix64 s1 = AetherVector2.Dot(n, polygonB.Vertices[i] - v1);
+                    Fix64 s2 = AetherVector2.Dot(n, polygonB.Vertices[i] - v2);
+                    Fix64 s = MathUtils.Min(s1, s2);
 
                     if (s > radius)
                     {
@@ -1607,16 +1600,16 @@ namespace tainicom.Aether.Physics2D.Collision
                     }
 
                     // Adjacency
-                    if (Vector2.Dot(n, perp) >= 0.0f)
+                    if (AetherVector2.Dot(n, perp) >= Fix64.Zero)
                     {
-                        if (Vector2.Dot(n - upperLimit, normal) < -Settings.AngularSlop)
+                        if (AetherVector2.Dot(n - upperLimit, normal) < -Settings.AngularSlop)
                         {
                             continue;
                         }
                     }
                     else
                     {
-                        if (Vector2.Dot(n - lowerLimit, normal) < -Settings.AngularSlop)
+                        if (AetherVector2.Dot(n - lowerLimit, normal) < -Settings.AngularSlop)
                         {
                             continue;
                         }
@@ -1643,7 +1636,7 @@ namespace tainicom.Aether.Physics2D.Collision
         /// <param name="offset">The offset.</param>
         /// <param name="vertexIndexA">The vertex index A.</param>
         /// <returns></returns>
-        private static int ClipSegmentToLine(out FixedArray2<ClipVertex> vOut, ref FixedArray2<ClipVertex> vIn, Vector2 normal, float offset, int vertexIndexA)
+        private static int ClipSegmentToLine(out FixedArray2<ClipVertex> vOut, ref FixedArray2<ClipVertex> vIn, AetherVector2 normal, Fix64 offset, int vertexIndexA)
         {
             vOut = new FixedArray2<ClipVertex>();
 
@@ -1654,18 +1647,18 @@ namespace tainicom.Aether.Physics2D.Collision
             int numOut = 0;
 
             // Calculate the distance of end points to the line
-            float distance0 = normal.X * v0.V.X + normal.Y * v0.V.Y - offset;
-            float distance1 = normal.X * v1.V.X + normal.Y * v1.V.Y - offset;
+            Fix64 distance0 = normal.X * v0.V.X + normal.Y * v0.V.Y - offset;
+            Fix64 distance1 = normal.X * v1.V.X + normal.Y * v1.V.Y - offset;
 
             // If the points are behind the plane
-            if (distance0 <= 0.0f) vOut[numOut++] = v0;
-            if (distance1 <= 0.0f) vOut[numOut++] = v1;
+            if (distance0 <= Fix64.Zero) vOut[numOut++] = v0;
+            if (distance1 <= Fix64.Zero) vOut[numOut++] = v1;
 
             // If the points are on different sides of the plane
-            if (distance0 * distance1 < 0.0f)
+            if (distance0 * distance1 < Fix64.Zero)
             {
                 // Find intersection point of edge and plane
-                float interp = distance0 / (distance0 - distance1);
+                Fix64 interp = distance0 / (distance0 - distance1);
 
                 ClipVertex cv = vOut[numOut];
 
@@ -1695,26 +1688,26 @@ namespace tainicom.Aether.Physics2D.Collision
         /// <param name="poly2">The poly2.</param>
         /// <param name="xf2">The XF2.</param>
         /// <returns></returns>
-        private static float EdgeSeparation(PolygonShape poly1, ref Transform xf1To2, int edge1, PolygonShape poly2)
+        private static Fix64 EdgeSeparation(PolygonShape poly1, ref Transform xf1To2, int edge1, PolygonShape poly2)
         {
-            List<Vector2> vertices1 = poly1.Vertices;
-            List<Vector2> normals1 = poly1.Normals;
+            List<AetherVector2> vertices1 = poly1.Vertices;
+            List<AetherVector2> normals1 = poly1.Normals;
 
             int count2 = poly2.Vertices.Count;
-            List<Vector2> vertices2 = poly2.Vertices;
+            List<AetherVector2> vertices2 = poly2.Vertices;
 
             Debug.Assert(0 <= edge1 && edge1 < poly1.Vertices.Count);
 
             // Convert normal from poly1's frame into poly2's frame.
-            Vector2 normal1 = Complex.Multiply(normals1[edge1], ref xf1To2.q);
+            AetherVector2 normal1 = Complex.Multiply(normals1[edge1], ref xf1To2.q);
 
             // Find support vertex on poly2 for -normal.
             int index = 0;
-            float minDot = Settings.MaxFloat;
+            Fix64 minDot = Settings.MaxFloat;
 
             for (int i = 0; i < count2; ++i)
             {
-                float dot = MathUtils.Dot(vertices2[i], ref normal1);
+                Fix64 dot = MathUtils.Dot(vertices2[i], ref normal1);
                 if (dot < minDot)
                 {
                     minDot = dot;
@@ -1722,9 +1715,9 @@ namespace tainicom.Aether.Physics2D.Collision
                 }
             }
 
-            Vector2 v1 = Transform.Multiply(vertices1[edge1], ref xf1To2);
-            Vector2 v2 = vertices2[index];
-            float separation = MathUtils.Dot(v2 - v1, ref normal1);
+            AetherVector2 v1 = Transform.Multiply(vertices1[edge1], ref xf1To2);
+            AetherVector2 v2 = vertices2[index];
+            Fix64 separation = MathUtils.Dot(v2 - v1, ref normal1);
 
             return separation;
         }
@@ -1738,23 +1731,23 @@ namespace tainicom.Aether.Physics2D.Collision
         /// <param name="poly2">The poly2.</param>
         /// <param name="xf2">The XF2.</param>
         /// <returns></returns>
-        private static float FindMaxSeparation(out int edgeIndex, PolygonShape poly1, ref Transform xf1, PolygonShape poly2, ref Transform xf2)
+        private static Fix64 FindMaxSeparation(out int edgeIndex, PolygonShape poly1, ref Transform xf1, PolygonShape poly2, ref Transform xf2)
         {
             int count1 = poly1.Vertices.Count;
-            List<Vector2> normals1 = poly1.Normals;
+            List<AetherVector2> normals1 = poly1.Normals;
 
             var xf1To2 = Transform.Divide(ref xf1, ref xf2);
 
             // Vector pointing from the centroid of poly1 to the centroid of poly2.
-            Vector2 c2local = Transform.Divide(poly2.MassData.Centroid, ref xf1To2);
-            Vector2 dLocal1 = c2local - poly1.MassData.Centroid;            
+            AetherVector2 c2local = Transform.Divide(poly2.MassData.Centroid, ref xf1To2);
+            AetherVector2 dLocal1 = c2local - poly1.MassData.Centroid;            
 
             // Find edge normal on poly1 that has the largest projection onto d.
             int edge = 0;
-            float maxDot = -Settings.MaxFloat;
+            Fix64 maxDot = -Settings.MaxFloat;
             for (int i = 0; i < count1; ++i)
             {
-                float dot = MathUtils.Dot(normals1[i], ref dLocal1);
+                Fix64 dot = MathUtils.Dot(normals1[i], ref dLocal1);
                 if (dot > maxDot)
                 {
                     maxDot = dot;
@@ -1763,19 +1756,19 @@ namespace tainicom.Aether.Physics2D.Collision
             }
 
             // Get the separation for the edge normal.
-            float s = EdgeSeparation(poly1, ref xf1To2, edge, poly2);
+            Fix64 s = EdgeSeparation(poly1, ref xf1To2, edge, poly2);
 
             // Check the separation for the previous edge normal.
             int prevEdge = edge - 1 >= 0 ? edge - 1 : count1 - 1;
-            float sPrev = EdgeSeparation(poly1, ref xf1To2, prevEdge, poly2);
+            Fix64 sPrev = EdgeSeparation(poly1, ref xf1To2, prevEdge, poly2);
 
             // Check the separation for the next edge normal.
             int nextEdge = edge + 1 < count1 ? edge + 1 : 0;
-            float sNext = EdgeSeparation(poly1, ref xf1To2, nextEdge, poly2);
+            Fix64 sNext = EdgeSeparation(poly1, ref xf1To2, nextEdge, poly2);
 
             // Find the best edge and the search direction.
             int bestEdge;
-            float bestSeparation;
+            Fix64 bestSeparation;
             int increment;
             if (sPrev > s && sPrev > sNext)
             {
@@ -1832,15 +1825,15 @@ namespace tainicom.Aether.Physics2D.Collision
             Debug.Assert(0 <= edge1 && edge1 < poly1.Vertices.Count);
 
             // Get the normal of the reference edge in poly2's frame.
-            Vector2 normal1 = Complex.Divide(Complex.Multiply(normals1[edge1], ref xf1.q), ref xf2.q);
+            AetherVector2 normal1 = Complex.Divide(Complex.Multiply(normals1[edge1], ref xf1.q), ref xf2.q);
 
 
             // Find the incident edge on poly2.
             int index = 0;
-            float minDot = Settings.MaxFloat;
+            Fix64 minDot = Settings.MaxFloat;
             for (int i = 0; i < count2; ++i)
             {
-                float dot = Vector2.Dot(normal1, normals2[i]);
+                Fix64 dot = AetherVector2.Dot(normal1, normals2[i]);
                 if (dot < minDot)
                 {
                     minDot = dot;

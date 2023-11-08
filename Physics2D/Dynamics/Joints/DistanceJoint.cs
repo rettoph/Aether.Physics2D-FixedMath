@@ -25,6 +25,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using System;
 using System.Diagnostics;
 using tainicom.Aether.Physics2D.Common;
@@ -58,23 +59,23 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
     public class DistanceJoint : Joint
     {
         // Solver shared
-        private float _bias;
-        private float _gamma;
-        private float _impulse;
+        private Fix64 _bias;
+        private Fix64 _gamma;
+        private Fix64 _impulse;
 
         // Solver temp
         private int _indexA;
         private int _indexB;
-        private Vector2 _u;
-        private Vector2 _rA;
-        private Vector2 _rB;
-        private Vector2 _localCenterA;
-        private Vector2 _localCenterB;
-        private float _invMassA;
-        private float _invMassB;
-        private float _invIA;
-        private float _invIB;
-        private float _mass;
+        private AetherVector2 _u;
+        private AetherVector2 _rA;
+        private AetherVector2 _rB;
+        private AetherVector2 _localCenterA;
+        private AetherVector2 _localCenterB;
+        private Fix64 _invMassA;
+        private Fix64 _invMassB;
+        private Fix64 _invIA;
+        private Fix64 _invIB;
+        private Fix64 _mass;
 
         internal DistanceJoint()
         {
@@ -94,7 +95,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <param name="anchorA">The first body anchor</param>
         /// <param name="anchorB">The second body anchor</param>
         /// <param name="useWorldCoordinates">Set to true if you are using world coordinates as anchors.</param>
-        public DistanceJoint(Body bodyA, Body bodyB, Vector2 anchorA, Vector2 anchorB, bool useWorldCoordinates = false)
+        public DistanceJoint(Body bodyA, Body bodyB, AetherVector2 anchorA, AetherVector2 anchorB, bool useWorldCoordinates = false)
             : base(bodyA, bodyB)
         {
             JointType = JointType.Distance;
@@ -116,20 +117,20 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <summary>
         /// The local anchor point relative to bodyA's origin.
         /// </summary>
-        public Vector2 LocalAnchorA { get; set; }
+        public AetherVector2 LocalAnchorA { get; set; }
 
         /// <summary>
         /// The local anchor point relative to bodyB's origin.
         /// </summary>
-        public Vector2 LocalAnchorB { get; set; }
+        public AetherVector2 LocalAnchorB { get; set; }
 
-        public override sealed Vector2 WorldAnchorA
+        public override sealed AetherVector2 WorldAnchorA
         {
             get { return BodyA.GetWorldPoint(LocalAnchorA); }
             set { Debug.Assert(false, "You can't set the world anchor on this joint type."); }
         }
 
-        public override sealed Vector2 WorldAnchorB
+        public override sealed AetherVector2 WorldAnchorB
         {
             get { return BodyB.GetWorldPoint(LocalAnchorB); }
             set { Debug.Assert(false, "You can't set the world anchor on this joint type."); }
@@ -139,27 +140,27 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// The natural length between the anchor points.
         /// Manipulating the length can lead to non-physical behavior when the frequency is zero.
         /// </summary>
-        public float Length { get; set; }
+        public Fix64 Length { get; set; }
 
         /// <summary>
         /// The mass-spring-damper frequency in Hertz. A value of 0
         /// disables softness.
         /// </summary>
-        public float Frequency { get; set; }
+        public Fix64 Frequency { get; set; }
 
         /// <summary>
         /// The damping ratio. 0 = no damping, 1 = critical damping.
         /// </summary>
-        public float DampingRatio { get; set; }
+        public Fix64 DampingRatio { get; set; }
 
         /// <summary>
         /// Get the reaction force given the inverse time step. Unit is N.
         /// </summary>
         /// <param name="invDt"></param>
         /// <returns></returns>
-        public override Vector2 GetReactionForce(float invDt)
+        public override AetherVector2 GetReactionForce(Fix64 invDt)
         {
-            Vector2 F = (invDt * _impulse) * _u;
+            AetherVector2 F = (invDt * _impulse) * _u;
             return F;
         }
 
@@ -169,9 +170,9 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// </summary>
         /// <param name="invDt"></param>
         /// <returns></returns>
-        public override float GetReactionTorque(float invDt)
+        public override Fix64 GetReactionTorque(Fix64 invDt)
         {
-            return 0.0f;
+            return Fix64.Zero;
         }
 
         internal override void InitVelocityConstraints(ref SolverData data)
@@ -185,15 +186,15 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             _invIA = BodyA._invI;
             _invIB = BodyB._invI;
 
-            Vector2 cA = data.positions[_indexA].c;
-            float aA = data.positions[_indexA].a;
-            Vector2 vA = data.velocities[_indexA].v;
-            float wA = data.velocities[_indexA].w;
+            AetherVector2 cA = data.positions[_indexA].c;
+            Fix64 aA = data.positions[_indexA].a;
+            AetherVector2 vA = data.velocities[_indexA].v;
+            Fix64 wA = data.velocities[_indexA].w;
 
-            Vector2 cB = data.positions[_indexB].c;
-            float aB = data.positions[_indexB].a;
-            Vector2 vB = data.velocities[_indexB].v;
-            float wB = data.velocities[_indexB].w;
+            AetherVector2 cB = data.positions[_indexB].c;
+            Fix64 aB = data.positions[_indexB].a;
+            AetherVector2 vB = data.velocities[_indexB].v;
+            Fix64 wB = data.velocities[_indexB].w;
 
             Complex qA = Complex.FromAngle(aA);
             Complex qB = Complex.FromAngle(aB);
@@ -203,49 +204,49 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             _u = cB + _rB - cA - _rA;
 
             // Handle singularity.
-            float length = _u.Length();
+            Fix64 length = _u.Length();
             if (length > Settings.LinearSlop)
             {
-                _u *= 1.0f / length;
+                _u *= Fix64.One / length;
             }
             else
             {
-                _u = Vector2.Zero;
+                _u = AetherVector2.Zero;
             }
 
-            float crAu = MathUtils.Cross(ref _rA, ref _u);
-            float crBu = MathUtils.Cross(ref _rB, ref _u);
-            float invMass = _invMassA + _invIA * crAu * crAu + _invMassB + _invIB * crBu * crBu;
+            Fix64 crAu = MathUtils.Cross(ref _rA, ref _u);
+            Fix64 crBu = MathUtils.Cross(ref _rB, ref _u);
+            Fix64 invMass = _invMassA + _invIA * crAu * crAu + _invMassB + _invIB * crBu * crBu;
 
             // Compute the effective mass matrix.
-            _mass = invMass != 0.0f ? 1.0f / invMass : 0.0f;
+            _mass = invMass != Fix64.Zero ? Fix64.One / invMass : Fix64.Zero;
 
-            if (Frequency > 0.0f)
+            if (Frequency > Fix64.Zero)
             {
-                float C = length - Length;
+                Fix64 C = length - Length;
 
                 // Frequency
-                float omega = Constant.Tau * Frequency;
+                Fix64 omega = Constant.Tau * Frequency;
 
                 // Damping coefficient
-                float d = 2.0f * _mass * DampingRatio * omega;
+                Fix64 d = Fix64Constants.Two * _mass * DampingRatio * omega;
 
                 // Spring stiffness
-                float k = _mass * omega * omega;
+                Fix64 k = _mass * omega * omega;
 
                 // magic formulas
-                float h = data.step.dt;
+                Fix64 h = data.step.dt;
                 _gamma = h * (d + h * k);
-                _gamma = _gamma != 0.0f ? 1.0f / _gamma : 0.0f;
+                _gamma = _gamma != Fix64.Zero ? Fix64.One / _gamma : Fix64.Zero;
                 _bias = C * h * k * _gamma;
 
                 invMass += _gamma;
-                _mass = invMass != 0.0f ? 1.0f / invMass : 0.0f;
+                _mass = invMass != Fix64.Zero ? Fix64.One / invMass : Fix64.Zero;
             }
             else
             {
-                _gamma = 0.0f;
-                _bias = 0.0f;
+                _gamma = Fix64.Zero;
+                _bias = Fix64.Zero;
             }
 
             if (data.step.warmStarting)
@@ -253,7 +254,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
                 // Scale the impulse to support a variable time step.
                 _impulse *= data.step.dtRatio;
 
-                Vector2 P = _impulse * _u;
+                AetherVector2 P = _impulse * _u;
                 vA -= _invMassA * P;
                 wA -= _invIA * MathUtils.Cross(ref _rA, ref P);
                 vB += _invMassB * P;
@@ -261,7 +262,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             }
             else
             {
-                _impulse = 0.0f;
+                _impulse = Fix64.Zero;
             }
 
             data.velocities[_indexA].v = vA;
@@ -272,20 +273,20 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
 
         internal override void SolveVelocityConstraints(ref SolverData data)
         {
-            Vector2 vA = data.velocities[_indexA].v;
-            float wA = data.velocities[_indexA].w;
-            Vector2 vB = data.velocities[_indexB].v;
-            float wB = data.velocities[_indexB].w;
+            AetherVector2 vA = data.velocities[_indexA].v;
+            Fix64 wA = data.velocities[_indexA].w;
+            AetherVector2 vB = data.velocities[_indexB].v;
+            Fix64 wB = data.velocities[_indexB].w;
 
             // Cdot = dot(u, v + cross(w, r))
-            Vector2 vpA = vA + MathUtils.Cross(wA, ref _rA);
-            Vector2 vpB = vB + MathUtils.Cross(wB, ref _rB);
-            float Cdot = Vector2.Dot(_u, vpB - vpA);
+            AetherVector2 vpA = vA + MathUtils.Cross(wA, ref _rA);
+            AetherVector2 vpB = vB + MathUtils.Cross(wB, ref _rB);
+            Fix64 Cdot = AetherVector2.Dot(_u, vpB - vpA);
 
-            float impulse = -_mass * (Cdot + _bias + _gamma * _impulse);
+            Fix64 impulse = -_mass * (Cdot + _bias + _gamma * _impulse);
             _impulse += impulse;
 
-            Vector2 P = impulse * _u;
+            AetherVector2 P = impulse * _u;
             vA -= _invMassA * P;
             wA -= _invIA * MathUtils.Cross(ref _rA, ref P);
             vB += _invMassB * P;
@@ -300,30 +301,30 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
 
         internal override bool SolvePositionConstraints(ref SolverData data)
         {
-            if (Frequency > 0.0f)
+            if (Frequency > Fix64.Zero)
             {
                 // There is no position correction for soft distance constraints.
                 return true;
             }
 
-            Vector2 cA = data.positions[_indexA].c;
-            float aA = data.positions[_indexA].a;
-            Vector2 cB = data.positions[_indexB].c;
-            float aB = data.positions[_indexB].a;
+            AetherVector2 cA = data.positions[_indexA].c;
+            Fix64 aA = data.positions[_indexA].a;
+            AetherVector2 cB = data.positions[_indexB].c;
+            Fix64 aB = data.positions[_indexB].a;
 
             Complex qA = Complex.FromAngle(aA);
             Complex qB = Complex.FromAngle(aB);
 
-            Vector2 rA = Complex.Multiply(LocalAnchorA - _localCenterA, ref qA);
-            Vector2 rB = Complex.Multiply(LocalAnchorB - _localCenterB, ref qB);
-            Vector2 u = cB + rB - cA - rA;
+            AetherVector2 rA = Complex.Multiply(LocalAnchorA - _localCenterA, ref qA);
+            AetherVector2 rB = Complex.Multiply(LocalAnchorB - _localCenterB, ref qB);
+            AetherVector2 u = cB + rB - cA - rA;
 
-            float length = u.Length(); u.Normalize();
-            float C = length - Length;
+            Fix64 length = u.Length(); u.Normalize();
+            Fix64 C = length - Length;
             C = MathUtils.Clamp(C, -Settings.MaxLinearCorrection, Settings.MaxLinearCorrection);
 
-            float impulse = -_mass * C;
-            Vector2 P = impulse * u;
+            Fix64 impulse = -_mass * C;
+            AetherVector2 P = impulse * u;
 
             cA -= _invMassA * P;
             aA -= _invIA * MathUtils.Cross(ref rA, ref P);
@@ -335,7 +336,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             data.positions[_indexB].c = cB;
             data.positions[_indexB].a = aB;
 
-            return Math.Abs(C) < Settings.LinearSlop;
+            return  Fix64.Abs(C) < Settings.LinearSlop;
         }
     }
 }

@@ -5,6 +5,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using tainicom.Aether.Physics2D.Collision.Shapes;
@@ -19,7 +20,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
 {
     public partial class World
     {
-        public virtual Body CreateBody(Vector2 position = new Vector2(), float rotation = 0, BodyType bodyType = BodyType.Static)
+        public virtual Body CreateBody(AetherVector2 position, Fix64 rotation, BodyType bodyType = BodyType.Static)
         {
             Body body = new Body();
             body.Position = position;
@@ -35,7 +36,12 @@ namespace tainicom.Aether.Physics2D.Dynamics
             return body;
         }
 
-        public Body CreateEdge(Vector2 start, Vector2 end)
+        public virtual Body CreateBody(BodyType bodyType = BodyType.Static)
+        {
+            return this.CreateBody(AetherVector2.Zero, Fix64.Zero, bodyType);
+        }
+
+        public Body CreateEdge(AetherVector2 start, AetherVector2 end)
         {
             Body body = CreateBody();
 
@@ -43,60 +49,60 @@ namespace tainicom.Aether.Physics2D.Dynamics
             return body;
         }
 
-        public Body CreateChainShape(Vertices vertices, Vector2 position = new Vector2())
+        public Body CreateChainShape(Vertices vertices, AetherVector2 position = new AetherVector2())
         {
-            Body body = CreateBody(position);
+            Body body = CreateBody(position, Fix64.Zero);
 
             body.CreateChainShape(vertices);
             return body;
         }
 
-        public Body CreateLoopShape(Vertices vertices, Vector2 position = new Vector2())
+        public Body CreateLoopShape(Vertices vertices, AetherVector2 position = new AetherVector2())
         {
-            Body body = CreateBody(position);
+            Body body = CreateBody(position, Fix64.Zero);
 
             body.CreateLoopShape(vertices);
             return body;
         }
 
-        public Body CreateRectangle(float width, float height, float density, Vector2 position = new Vector2(), float rotation = 0, BodyType bodyType = BodyType.Static)
+        public Body CreateRectangle(Fix64 width, Fix64 height, Fix64 density, AetherVector2 position, Fix64 rotation, BodyType bodyType = BodyType.Static)
         {
-            if (width <= 0)
+            if (width <= Fix64.Zero)
                 throw new ArgumentOutOfRangeException("width", "Width must be more than 0 meters");
 
-            if (height <= 0)
+            if (height <= Fix64.Zero)
                 throw new ArgumentOutOfRangeException("height", "Height must be more than 0 meters");
 
             Body body = CreateBody(position, rotation, bodyType);
 
-            Vertices rectangleVertices = PolygonTools.CreateRectangle(width / 2, height / 2);
+            Vertices rectangleVertices = PolygonTools.CreateRectangle(width / Fix64Constants.Two, height / Fix64Constants.Two);
             body.CreatePolygon(rectangleVertices, density);
 
             return body;
         }
 
-        public Body CreateCircle(float radius, float density, Vector2 position = new Vector2(), BodyType bodyType = BodyType.Static)
+        public Body CreateCircle(Fix64 radius, Fix64 density, AetherVector2 position = new AetherVector2(), BodyType bodyType = BodyType.Static)
         {
-            Body body = CreateBody(position, 0, bodyType);
+            Body body = CreateBody(position, Fix64.Zero, bodyType);
             body.CreateCircle(radius, density);
             return body;
         }
 
-        public Body CreateEllipse(float xRadius, float yRadius, int edges, float density, Vector2 position = new Vector2(), float rotation = 0, BodyType bodyType = BodyType.Static)
+        public Body CreateEllipse(Fix64 xRadius, Fix64 yRadius, int edges, Fix64 density, AetherVector2 position, Fix64 rotation, BodyType bodyType = BodyType.Static)
         {
             Body body = CreateBody(position, rotation, bodyType);
             body.CreateEllipse(xRadius, yRadius, edges, density);
             return body;
         }
 
-        public Body CreatePolygon(Vertices vertices, float density, Vector2 position = new Vector2(), float rotation = 0, BodyType bodyType = BodyType.Static)
+        public Body CreatePolygon(Vertices vertices, Fix64 density, AetherVector2 position, Fix64 rotation, BodyType bodyType = BodyType.Static)
         {
             Body body = CreateBody(position, rotation, bodyType);
             body.CreatePolygon(vertices, density);
             return body;
         }
 
-        public Body CreateCompoundPolygon(List<Vertices> list, float density, Vector2 position = new Vector2(), float rotation = 0, BodyType bodyType = BodyType.Static)
+        public Body CreateCompoundPolygon(List<Vertices> list, Fix64 density, AetherVector2 position, Fix64 rotation, BodyType bodyType = BodyType.Static)
         {
             //We create a single body
             Body body = CreateBody(position, rotation, bodyType);
@@ -104,7 +110,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
             return body;
         }
 
-        public Body CreateGear(float radius, int numberOfTeeth, float tipPercentage, float toothHeight, float density, Vector2 position = new Vector2(), float rotation = 0, BodyType bodyType = BodyType.Static)
+        public Body CreateGear(Fix64 radius, int numberOfTeeth, Fix64 tipPercentage, Fix64 toothHeight, Fix64 density, AetherVector2 position, Fix64 rotation, BodyType bodyType = BodyType.Static)
         {
             Vertices gearPolygon = PolygonTools.CreateGear(radius, numberOfTeeth, tipPercentage, toothHeight);
 
@@ -120,7 +126,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
             return CreatePolygon(gearPolygon, density, position, rotation, bodyType);
         }
 
-        public Body CreateCapsule(float height, float topRadius, int topEdges, float bottomRadius, int bottomEdges, float density, Vector2 position = new Vector2(), float rotation = 0, BodyType bodyType = BodyType.Static)
+        public Body CreateCapsule(Fix64 height, Fix64 topRadius, int topEdges, Fix64 bottomRadius, int bottomEdges, Fix64 density, AetherVector2 position, Fix64 rotation, BodyType bodyType = BodyType.Static)
         {
             Vertices verts = PolygonTools.CreateCapsule(height, topRadius, topEdges, bottomRadius, bottomEdges);
 
@@ -134,17 +140,17 @@ namespace tainicom.Aether.Physics2D.Dynamics
             return CreatePolygon(verts, density, position, rotation, bodyType);
         }
 
-        public Body CreateCapsule(float height, float endRadius, float density, Vector2 position = new Vector2(), float rotation = 0, BodyType bodyType = BodyType.Static)
+        public Body CreateCapsule(Fix64 height, Fix64 endRadius, Fix64 density, AetherVector2 position, Fix64 rotation, BodyType bodyType = BodyType.Static)
         {
             //Create the middle rectangle
-            Vertices rectangle = PolygonTools.CreateRectangle(endRadius, height / 2);
+            Vertices rectangle = PolygonTools.CreateRectangle(endRadius, height / Fix64Constants.Two);
 
             List<Vertices> list = new List<Vertices>();
             list.Add(rectangle);
 
             Body body = CreateCompoundPolygon(list, density, position, rotation, bodyType);
-            body.CreateCircle(endRadius, density, new Vector2(0, height / 2));
-            body.CreateCircle(endRadius, density, new Vector2(0, -(height / 2)));
+            body.CreateCircle(endRadius, density, new AetherVector2(Fix64.Zero, height / Fix64Constants.Two));
+            body.CreateCircle(endRadius, density, new AetherVector2(Fix64.Zero, -(height / Fix64Constants.Two)));
 
             //Create the two circles
             //CircleShape topCircle = new CircleShape(endRadius, density);
@@ -157,7 +163,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
             return body;
         }
 
-        public Body CreateRoundedRectangle(float width, float height, float xRadius, float yRadius, int segments, float density, Vector2 position = new Vector2(), float rotation = 0, BodyType bodyType = BodyType.Static)
+        public Body CreateRoundedRectangle(Fix64 width, Fix64 height, Fix64 xRadius, Fix64 yRadius, int segments, Fix64 density, AetherVector2 position, Fix64 rotation, BodyType bodyType = BodyType.Static)
         {
             Vertices verts = PolygonTools.CreateRoundedRectangle(width, height, xRadius, yRadius, segments);
 
@@ -171,14 +177,14 @@ namespace tainicom.Aether.Physics2D.Dynamics
             return CreatePolygon(verts, density, position, rotation, bodyType);
         }
 
-        public Body CreateLineArc(float radians, int sides, float radius, bool closed = false, Vector2 position = new Vector2(), float rotation = 0, BodyType bodyType = BodyType.Static)
+        public Body CreateLineArc(Fix64 radians, int sides, Fix64 radius, bool closed, AetherVector2 position, Fix64 rotation, BodyType bodyType = BodyType.Static)
         {
             Body body = CreateBody(position, rotation, bodyType);
             body.CreateLineArc(radians, sides, radius, closed);
             return body;
         }
 
-        public Body CreateSolidArc(float density, float radians, int sides, float radius, Vector2 position = new Vector2(), float rotation = 0, BodyType bodyType = BodyType.Static)
+        public Body CreateSolidArc(Fix64 density, Fix64 radians, int sides, Fix64 radius, AetherVector2 position, Fix64 rotation, BodyType bodyType = BodyType.Static)
         {
             Body body = CreateBody(position, rotation, bodyType);
             body.CreateSolidArc(density, radians, sides, radius);
@@ -198,7 +204,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// <param name="linkDensity">The link density.</param>
         /// <param name="attachRopeJoint">Creates a rope joint between start and end. This enforces the length of the rope. Said in another way: it makes the rope less bouncy.</param>
         /// <returns></returns>
-        public Path CreateChain(Vector2 start, Vector2 end, float linkWidth, float linkHeight, int numberOfLinks, float linkDensity, bool attachRopeJoint)
+        public Path CreateChain(AetherVector2 start, AetherVector2 end, Fix64 linkWidth, Fix64 linkHeight, int numberOfLinks, Fix64 linkDensity, bool attachRopeJoint)
         {
             System.Diagnostics.Debug.Assert(numberOfLinks >= 2);
 
@@ -230,10 +236,10 @@ namespace tainicom.Aether.Physics2D.Dynamics
             //}
 
             //Attach all the chainlinks together with a revolute joint
-            PathManager.AttachBodiesWithRevoluteJoint(this, chainLinks, new Vector2(0, -linkHeight), new Vector2(0, linkHeight), false, false);
+            PathManager.AttachBodiesWithRevoluteJoint(this, chainLinks, new AetherVector2(Fix64.Zero, -linkHeight), new AetherVector2(Fix64.Zero, linkHeight), false, false);
 
             if (attachRopeJoint)
-                JointFactory.CreateRopeJoint(this, chainLinks[0], chainLinks[chainLinks.Count - 1], Vector2.Zero, Vector2.Zero);
+                JointFactory.CreateRopeJoint(this, chainLinks[0], chainLinks[chainLinks.Count - 1], AetherVector2.Zero, AetherVector2.Zero);
 
             return path;
         }

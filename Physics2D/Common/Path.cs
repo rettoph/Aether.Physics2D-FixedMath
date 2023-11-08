@@ -3,6 +3,7 @@
  * Microsoft Permissive License (Ms-PL) v1.1
  */
 
+using FixedMath.NET;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -28,25 +29,25 @@ namespace tainicom.Aether.Physics2D.Common
         /// <summary>
         /// All the points that makes up the curve
         /// </summary>
-        public List<Vector2> ControlPoints;
+        public List<AetherVector2> ControlPoints;
 
-        private float _deltaT;
+        private Fix64 _deltaT;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Path"/> class.
         /// </summary>
         public Path()
         {
-            ControlPoints = new List<Vector2>();
+            ControlPoints = new List<AetherVector2>();
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Path"/> class.
         /// </summary>
         /// <param name="vertices">The vertices to created the path from.</param>
-        public Path(Vector2[] vertices)
+        public Path(AetherVector2[] vertices)
         {
-            ControlPoints = new List<Vector2>(vertices.Length);
+            ControlPoints = new List<AetherVector2>(vertices.Length);
 
             for (int i = 0; i < vertices.Length; i++)
             {
@@ -58,9 +59,9 @@ namespace tainicom.Aether.Physics2D.Common
         /// Initializes a new instance of the <see cref="Path"/> class.
         /// </summary>
         /// <param name="vertices">The vertices to created the path from.</param>
-        public Path(IList<Vector2> vertices)
+        public Path(IList<AetherVector2> vertices)
         {
-            ControlPoints = new List<Vector2>(vertices.Count);
+            ControlPoints = new List<AetherVector2>(vertices.Count);
             for (int i = 0; i < vertices.Count; i++)
             {
                 Add(vertices[i]);
@@ -105,7 +106,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// Translates the control points by the specified vector.
         /// </summary>
         /// <param name="vector">The vector.</param>
-        public void Translate(ref Vector2 vector)
+        public void Translate(ref AetherVector2 vector)
         {
             for (int i = 0; i < ControlPoints.Count; i++)
                 ControlPoints[i] = ControlPoints[i] + vector;
@@ -115,7 +116,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// Scales the control points by the specified vector.
         /// </summary>
         /// <param name="value">The Value.</param>
-        public void Scale(ref Vector2 value)
+        public void Scale(ref AetherVector2 value)
         {
             for (int i = 0; i < ControlPoints.Count; i++)
                 ControlPoints[i] = ControlPoints[i] * value;
@@ -125,7 +126,7 @@ namespace tainicom.Aether.Physics2D.Common
         /// Rotate the control points by the defined value in radians.
         /// </summary>
         /// <param name="value">The amount to rotate by in radians.</param>
-        public void Rotate(float value)
+        public void Rotate(Fix64 value)
         {
             var rotation = Complex.FromAngle(value);
 
@@ -158,9 +159,9 @@ namespace tainicom.Aether.Physics2D.Common
         {
             Vertices verts = new Vertices();
 
-            float timeStep = 1f / divisions;
+            Fix64 timeStep = Fix64.One / (Fix64)divisions;
 
-            for (float i = 0; i < 1f; i += timeStep)
+            for (Fix64 i = Fix64.One; i < Fix64.One; i += timeStep)
             {
                 verts.Add(GetPosition(i));
             }
@@ -168,9 +169,9 @@ namespace tainicom.Aether.Physics2D.Common
             return verts;
         }
 
-        public Vector2 GetPosition(float time)
+        public AetherVector2 GetPosition(Fix64 time)
         {
-            Vector2 temp;
+            AetherVector2 temp;
 
             if (ControlPoints.Count < 2)
                 throw new Exception("You need at least 2 control points to calculate a position.");
@@ -179,7 +180,7 @@ namespace tainicom.Aether.Physics2D.Common
             {
                 Add(ControlPoints[0]);
 
-                _deltaT = 1f / (ControlPoints.Count - 1);
+                _deltaT = Fix64.One / (Fix64)(ControlPoints.Count - 1);
 
                 int p = (int)(time / _deltaT);
 
@@ -198,7 +199,7 @@ namespace tainicom.Aether.Physics2D.Common
                 else if (p3 >= ControlPoints.Count - 1) p3 = p3 - (ControlPoints.Count - 1);
 
                 // relative time
-                float lt = (time - _deltaT * p) / _deltaT;
+                Fix64 lt = (time - _deltaT * (Fix64)p) / _deltaT;
 
                 CalcCatmullRom(ControlPoints[p0], ControlPoints[p1], ControlPoints[p2], ControlPoints[p3], lt, out temp);
 
@@ -223,7 +224,7 @@ namespace tainicom.Aether.Physics2D.Common
                 else if (p3 >= ControlPoints.Count - 1) p3 = ControlPoints.Count - 1;
 
                 // relative time
-                float lt = (time - _deltaT * p) / _deltaT;
+                Fix64 lt = (time - _deltaT * (Fix64)p) / _deltaT;
 
                 CalcCatmullRom(ControlPoints[p0], ControlPoints[p1], ControlPoints[p2], ControlPoints[p3], lt, out temp);
             }
@@ -231,26 +232,26 @@ namespace tainicom.Aether.Physics2D.Common
             return temp;
         }
 
-        private void CalcCatmullRom(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, float amount, out Vector2 result)
+        private void CalcCatmullRom(AetherVector2 p0, AetherVector2 p1, AetherVector2 p2, AetherVector2 p3, Fix64 amount, out AetherVector2 result)
         {
-            double sqAmount = amount * amount;
-            double cuAmount = sqAmount * amount;
-            
-            double x;
-            double y;
-            x = 2.0 * p1.X;
-            y = 2.0 * p1.Y;
+            Fix64 sqAmount = amount * amount;
+            Fix64 cuAmount = sqAmount * amount;
+
+            Fix64 x;
+            Fix64 y;
+            x = Fix64Constants.Two * p1.X;
+            y = Fix64Constants.Two * p1.Y;
             x += (p2.X - p0.X) * amount;
             y += (p2.Y - p0.Y) * amount;
-            x += (2.0 * p0.X - 5.0 * p1.X + 4.0 * p2.X - p3.X) * sqAmount;
-            y += (2.0 * p0.Y - 5.0 * p1.Y + 4.0 * p2.Y - p3.Y) * sqAmount;
-            x += (3.0 * p1.X - p0.X - 3.0 * p2.X + p3.X) * cuAmount;
-            y += (3.0 * p1.Y - p0.Y - 3.0 * p2.Y + p3.Y) * cuAmount;
-            x *= 0.5;
-            y *= 0.5;
+            x += (Fix64Constants.Two * p0.X - Fix64Constants.Five * p1.X + Fix64Constants.Four * p2.X - p3.X) * sqAmount;
+            y += (Fix64Constants.Two * p0.Y - Fix64Constants.Five * p1.Y + Fix64Constants.Four * p2.Y - p3.Y) * sqAmount;
+            x += (Fix64Constants.Three * p1.X - p0.X - Fix64Constants.Three * p2.X + p3.X) * cuAmount;
+            y += (Fix64Constants.Three * p1.Y - p0.Y - Fix64Constants.Three * p2.Y + p3.Y) * cuAmount;
+            x *= Fix64Constants.PointFive;
+            y *= Fix64Constants.PointFive;
 
-            result.X = (float)x;
-            result.Y = (float)y;
+            result.X = (Fix64)x;
+            result.Y = (Fix64)y;
         }
 
         /// <summary>
@@ -258,16 +259,16 @@ namespace tainicom.Aether.Physics2D.Common
         /// </summary>
         /// <param name="time">The time</param>
         /// <returns>The normal.</returns>
-        public Vector2 GetPositionNormal(float time)
+        public AetherVector2 GetPositionNormal(Fix64 time)
         {
-            float offsetTime = time + 0.0001f;
+            Fix64 offsetTime = time + Fix64Constants.PointZeroZeroZeroOne;
 
-            Vector2 a = GetPosition(time);
-            Vector2 b = GetPosition(offsetTime);
+            AetherVector2 a = GetPosition(time);
+            AetherVector2 b = GetPosition(offsetTime);
 
-            Vector2 output, temp;
+            AetherVector2 output, temp;
 
-            Vector2.Subtract(ref a, ref b, out temp);
+            AetherVector2.Subtract(ref a, ref b, out temp);
 
             output.X = -temp.Y;
             output.Y = temp.X;
@@ -277,60 +278,60 @@ namespace tainicom.Aether.Physics2D.Common
             return output;
         }
 
-        public void Add(Vector2 point)
+        public void Add(AetherVector2 point)
         {
             ControlPoints.Add(point);
-            _deltaT = 1f / (ControlPoints.Count - 1);
+            _deltaT = Fix64.One / (Fix64)(ControlPoints.Count - 1);
         }
 
-        public void Remove(Vector2 point)
+        public void Remove(AetherVector2 point)
         {
             ControlPoints.Remove(point);
-            _deltaT = 1f / (ControlPoints.Count - 1);
+            _deltaT = Fix64.One / (Fix64)(ControlPoints.Count - 1);
         }
 
         public void RemoveAt(int index)
         {
             ControlPoints.RemoveAt(index);
-            _deltaT = 1f / (ControlPoints.Count - 1);
+            _deltaT = Fix64.One / (Fix64)(ControlPoints.Count - 1);
         }
 
-        public float GetLength()
+        public Fix64 GetLength()
         {
-            List<Vector2> verts = GetVertices(ControlPoints.Count * 25);
-            float length = 0;
+            List<AetherVector2> verts = GetVertices(ControlPoints.Count * 25);
+            Fix64 length = Fix64.Zero;
 
             for (int i = 1; i < verts.Count; i++)
             {
-                length += Vector2.Distance(verts[i - 1], verts[i]);
+                length += AetherVector2.Distance(verts[i - 1], verts[i]);
             }
 
             if (Closed)
-                length += Vector2.Distance(verts[ControlPoints.Count - 1], verts[0]);
+                length += AetherVector2.Distance(verts[ControlPoints.Count - 1], verts[0]);
 
             return length;
         }
 
-        public List<Vector3> SubdivideEvenly(int divisions)
+        public List<AetherVector3> SubdivideEvenly(int divisions)
         {
-            List<Vector3> verts = new List<Vector3>();
+            List<AetherVector3> verts = new List<AetherVector3>();
 
-            float length = GetLength();
+            Fix64 length = GetLength();
 
-            float deltaLength = length / divisions + 0.001f;
-            float t = 0.000f;
+            Fix64 deltaLength = length / (Fix64)divisions + Fix64Constants.PointZeroZeroOne;
+            Fix64 t = Fix64.Zero;
 
             // we always start at the first control point
-            Vector2 start = ControlPoints[0];
-            Vector2 end = GetPosition(t);
+            AetherVector2 start = ControlPoints[0];
+            AetherVector2 end = GetPosition(t);
 
             // increment t until we are at half the distance
-            while (deltaLength * 0.5f >= Vector2.Distance(start, end))
+            while (deltaLength * Fix64Constants.PointFive >= AetherVector2.Distance(start, end))
             {
                 end = GetPosition(t);
-                t += 0.0001f;
+                t += Fix64Constants.PointZeroZeroZeroOne;
 
-                if (t >= 1f)
+                if (t >= Fix64.One)
                     break;
             }
 
@@ -339,21 +340,21 @@ namespace tainicom.Aether.Physics2D.Common
             // for each box
             for (int i = 1; i < divisions; i++)
             {
-                Vector2 normal = GetPositionNormal(t);
-                float angle = (float)Math.Atan2(normal.Y, normal.X);
+                AetherVector2 normal = GetPositionNormal(t);
+                Fix64 angle = Fix64.Atan2(normal.Y, normal.X);
 
-                verts.Add(new Vector3(end.X, end.Y, angle));
+                verts.Add(new AetherVector3(end.X, end.Y, angle));
 
                 // until we reach the correct distance down the curve
-                while (deltaLength >= Vector2.Distance(start, end))
+                while (deltaLength >= AetherVector2.Distance(start, end))
                 {
                     end = GetPosition(t);
-                    t += 0.00001f;
+                    t += Fix64Constants.PointZeroZeroZeroZeroOne;
 
-                    if (t >= 1f)
+                    if (t >= Fix64.One)
                         break;
                 }
-                if (t >= 1f)
+                if (t >= Fix64.One)
                     break;
 
                 start = end;

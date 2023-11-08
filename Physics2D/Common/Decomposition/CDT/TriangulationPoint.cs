@@ -34,6 +34,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using FixedMath.NET;
 using System.Collections.Generic;
 using tainicom.Aether.Physics2D.Common.Decomposition.CDT.Delaunay.Sweep;
 
@@ -43,9 +44,9 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT
     {
         // List of edges this point constitutes an upper ending point (CDT)
 
-        public double X, Y;
+        public Fix64 X, Y;
 
-        public TriangulationPoint(double x, double y)
+        public TriangulationPoint(Fix64 x, Fix64 y)
         {
             X = x;
             Y = y;
@@ -53,15 +54,15 @@ namespace tainicom.Aether.Physics2D.Common.Decomposition.CDT
 
         public List<DTSweepConstraint> Edges { get; private set; }
 
-        public float Xf
+        public Fix64 Xf
         {
-            get { return (float) X; }
+            get { return (Fix64) X; }
             set { X = value; }
         }
 
-        public float Yf
+        public Fix64 Yf
         {
-            get { return (float) Y; }
+            get { return (Fix64) Y; }
             set { Y = value; }
         }
 

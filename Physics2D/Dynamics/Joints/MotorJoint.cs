@@ -25,6 +25,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using FixedMath.NET;
 using System.Diagnostics;
 using tainicom.Aether.Physics2D.Common;
 #if XNAAPI
@@ -42,28 +43,28 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
     public class MotorJoint : Joint
     {
         // Solver shared
-        private Vector2 _linearOffset;
-        private float _angularOffset;
-        private Vector2 _linearImpulse;
-        private float _angularImpulse;
-        private float _maxForce;
-        private float _maxTorque;
+        private AetherVector2 _linearOffset;
+        private Fix64 _angularOffset;
+        private AetherVector2 _linearImpulse;
+        private Fix64 _angularImpulse;
+        private Fix64 _maxForce;
+        private Fix64 _maxTorque;
 
         // Solver temp
         private int _indexA;
         private int _indexB;
-        private Vector2 _rA;
-        private Vector2 _rB;
-        private Vector2 _localCenterA;
-        private Vector2 _localCenterB;
-        private Vector2 _linearError;
-        private float _angularError;
-        private float _invMassA;
-        private float _invMassB;
-        private float _invIA;
-        private float _invIB;
+        private AetherVector2 _rA;
+        private AetherVector2 _rB;
+        private AetherVector2 _localCenterA;
+        private AetherVector2 _localCenterB;
+        private AetherVector2 _linearError;
+        private Fix64 _angularError;
+        private Fix64 _invMassA;
+        private Fix64 _invMassB;
+        private Fix64 _invIA;
+        private Fix64 _invIB;
         private Mat22 _linearMass;
-        private float _angularMass;
+        private Fix64 _angularMass;
 
         internal MotorJoint()
         {
@@ -81,7 +82,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         {
             JointType = JointType.Motor;
 
-            Vector2 xB = BodyB.Position;
+            AetherVector2 xB = BodyB.Position;
 
             if (useWorldCoordinates)
                 _linearOffset = BodyA.GetLocalPoint(xB);
@@ -89,21 +90,21 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
                 _linearOffset = xB;
 
             //Defaults
-            _angularOffset = 0.0f;
-            _maxForce = 1.0f;
-            _maxTorque = 1.0f;
-            CorrectionFactor = 0.3f;
+            _angularOffset = Fix64.Zero;
+            _maxForce = Fix64.One;
+            _maxTorque = Fix64.One;
+            CorrectionFactor = Fix64Constants.PointThree;
 
             _angularOffset = BodyB.Rotation - BodyA.Rotation;
         }
 
-        public override Vector2 WorldAnchorA
+        public override AetherVector2 WorldAnchorA
         {
             get { return BodyA.Position; }
             set { Debug.Assert(false, "You can't set the world anchor on this joint type."); }
         }
 
-        public override Vector2 WorldAnchorB
+        public override AetherVector2 WorldAnchorB
         {
             get { return BodyB.Position; }
             set { Debug.Assert(false, "You can't set the world anchor on this joint type."); }
@@ -112,11 +113,11 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <summary>
         /// The maximum amount of force that can be applied to BodyA
         /// </summary>
-        public float MaxForce
+        public Fix64 MaxForce
         {
             set
             {
-                Debug.Assert(MathUtils.IsValid(value) && value >= 0.0f);
+                Debug.Assert(value >= Fix64.Zero);
                 _maxForce = value;
             }
             get { return _maxForce; }
@@ -125,11 +126,11 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <summary>
         /// The maximum amount of torque that can be applied to BodyA
         /// </summary>
-        public float MaxTorque
+        public Fix64 MaxTorque
         {
             set
             {
-                Debug.Assert(MathUtils.IsValid(value) && value >= 0.0f);
+                Debug.Assert(value >= Fix64.Zero);
                 _maxTorque = value;
             }
             get { return _maxTorque; }
@@ -138,7 +139,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <summary>
         /// The linear (translation) offset.
         /// </summary>
-        public Vector2 LinearOffset
+        public AetherVector2 LinearOffset
         {
             set
             {
@@ -154,7 +155,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         /// <summary>
         /// Get or set the angular offset.
         /// </summary>
-        public float AngularOffset
+        public Fix64 AngularOffset
         {
             set
             {
@@ -168,14 +169,14 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
         }
 
         //FPE note: Used for serialization.
-        internal float CorrectionFactor { get; set; }
+        internal Fix64 CorrectionFactor { get; set; }
 
-        public override Vector2 GetReactionForce(float invDt)
+        public override AetherVector2 GetReactionForce(Fix64 invDt)
         {
             return invDt * _linearImpulse;
         }
 
-        public override float GetReactionTorque(float invDt)
+        public override Fix64 GetReactionTorque(Fix64 invDt)
         {
             return invDt * _angularImpulse;
         }
@@ -191,15 +192,15 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             _invIA = BodyA._invI;
             _invIB = BodyB._invI;
 
-            Vector2 cA = data.positions[_indexA].c;
-            float aA = data.positions[_indexA].a;
-            Vector2 vA = data.velocities[_indexA].v;
-            float wA = data.velocities[_indexA].w;
+            AetherVector2 cA = data.positions[_indexA].c;
+            Fix64 aA = data.positions[_indexA].a;
+            AetherVector2 vA = data.velocities[_indexA].v;
+            Fix64 wA = data.velocities[_indexA].w;
 
-            Vector2 cB = data.positions[_indexB].c;
-            float aB = data.positions[_indexB].a;
-            Vector2 vB = data.velocities[_indexB].v;
-            float wB = data.velocities[_indexB].w;
+            AetherVector2 cB = data.positions[_indexB].c;
+            Fix64 aB = data.positions[_indexB].a;
+            AetherVector2 vB = data.velocities[_indexB].v;
+            Fix64 wB = data.velocities[_indexB].w;
 
             Complex qA = Complex.FromAngle(aA);
             Complex qB = Complex.FromAngle(aB);
@@ -217,8 +218,8 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             //     [  -r1y*iA*r1x-r2y*iB*r2x, mA+r1x^2*iA+mB+r2x^2*iB,           r1x*iA+r2x*iB]
             //     [          -r1y*iA-r2y*iB,           r1x*iA+r2x*iB,                   iA+iB]
 
-            float mA = _invMassA, mB = _invMassB;
-            float iA = _invIA, iB = _invIB;
+            Fix64 mA = _invMassA, mB = _invMassB;
+            Fix64 iA = _invIA, iB = _invIB;
 
             Mat22 K = new Mat22();
             K.ex.X = mA + mB + iA * _rA.Y * _rA.Y + iB * _rB.Y * _rB.Y;
@@ -229,9 +230,9 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             _linearMass = K.Inverse;
 
             _angularMass = iA + iB;
-            if (_angularMass > 0.0f)
+            if (_angularMass > Fix64.Zero)
             {
-                _angularMass = 1.0f / _angularMass;
+                _angularMass = Fix64.One / _angularMass;
             }
 
             _linearError = cB + _rB - cA - _rA - Complex.Multiply(ref _linearOffset, ref qA);
@@ -243,7 +244,7 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
                 _linearImpulse *= data.step.dtRatio;
                 _angularImpulse *= data.step.dtRatio;
 
-                Vector2 P = new Vector2(_linearImpulse.X, _linearImpulse.Y);
+                AetherVector2 P = new AetherVector2(_linearImpulse.X, _linearImpulse.Y);
 
                 vA -= mA * P;
                 wA -= iA * (MathUtils.Cross(ref _rA, ref P) + _angularImpulse);
@@ -252,8 +253,8 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
             }
             else
             {
-                _linearImpulse = Vector2.Zero;
-                _angularImpulse = 0.0f;
+                _linearImpulse = AetherVector2.Zero;
+                _angularImpulse = Fix64.Zero;
             }
 
             data.velocities[_indexA].v = vA;
@@ -264,24 +265,24 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
 
         internal override void SolveVelocityConstraints(ref SolverData data)
         {
-            Vector2 vA = data.velocities[_indexA].v;
-            float wA = data.velocities[_indexA].w;
-            Vector2 vB = data.velocities[_indexB].v;
-            float wB = data.velocities[_indexB].w;
+            AetherVector2 vA = data.velocities[_indexA].v;
+            Fix64 wA = data.velocities[_indexA].w;
+            AetherVector2 vB = data.velocities[_indexB].v;
+            Fix64 wB = data.velocities[_indexB].w;
 
-            float mA = _invMassA, mB = _invMassB;
-            float iA = _invIA, iB = _invIB;
+            Fix64 mA = _invMassA, mB = _invMassB;
+            Fix64 iA = _invIA, iB = _invIB;
 
-            float h = data.step.dt;
-            float inv_h = data.step.inv_dt;
+            Fix64 h = data.step.dt;
+            Fix64 inv_h = data.step.inv_dt;
 
             // Solve angular friction
             {
-                float Cdot = wB - wA + inv_h * CorrectionFactor * _angularError;
-                float impulse = -_angularMass * Cdot;
+                Fix64 Cdot = wB - wA + inv_h * CorrectionFactor * _angularError;
+                Fix64 impulse = -_angularMass * Cdot;
 
-                float oldImpulse = _angularImpulse;
-                float maxImpulse = h * _maxTorque;
+                Fix64 oldImpulse = _angularImpulse;
+                Fix64 maxImpulse = h * _maxTorque;
                 _angularImpulse = MathUtils.Clamp(_angularImpulse + impulse, -maxImpulse, maxImpulse);
                 impulse = _angularImpulse - oldImpulse;
 
@@ -291,13 +292,13 @@ namespace tainicom.Aether.Physics2D.Dynamics.Joints
 
             // Solve linear friction
             {
-                Vector2 Cdot = vB + MathUtils.Cross(wB, ref _rB) - vA - MathUtils.Cross(wA, ref _rA) + inv_h * CorrectionFactor * _linearError;
+                AetherVector2 Cdot = vB + MathUtils.Cross(wB, ref _rB) - vA - MathUtils.Cross(wA, ref _rA) + inv_h * CorrectionFactor * _linearError;
 
-                Vector2 impulse = -MathUtils.Mul(ref _linearMass, ref Cdot);
-                Vector2 oldImpulse = _linearImpulse;
+                AetherVector2 impulse = -MathUtils.Mul(ref _linearMass, ref Cdot);
+                AetherVector2 oldImpulse = _linearImpulse;
                 _linearImpulse += impulse;
 
-                float maxImpulse = h * _maxForce;
+                Fix64 maxImpulse = h * _maxForce;
 
                 if (_linearImpulse.LengthSquared() > maxImpulse * maxImpulse)
                 {
