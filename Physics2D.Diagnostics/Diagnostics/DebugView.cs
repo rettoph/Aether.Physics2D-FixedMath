@@ -844,13 +844,13 @@ namespace tainicom.Aether.Physics2D.Diagnostics
             RenderDebugData(ref projection, ref view, ref world, blendState, samplerState, depthStencilState, rasterizerState, alpha);
         }
 
-        public void LoadContent(GraphicsDevice device, ContentManager content, IPrimitiveBatch primitiveBatch = null)
+        public void LoadContent(GraphicsDevice device, SpriteFont font, IPrimitiveBatch primitiveBatch = null)
         {
             _device = device;
             // Create a new SpriteBatch, which can be used to draw textures.
             _batch = new SpriteBatch(_device);
             _primitiveBatch = (primitiveBatch != null) ? primitiveBatch : new PrimitiveBatch(_device, 1000);
-            _font = content.Load<SpriteFont>("DiagnosticsFont");
+            _font = font;
             _stringData = new List<StringData>();
 
             _localProjection = Matrix.CreateOrthographicOffCenter(0f, _device.Viewport.Width, _device.Viewport.Height, 0f, 0f, 1f);
