@@ -30,13 +30,11 @@
 
 using FixedMath.NET;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using tainicom.Aether.Physics2D.Collision;
 using tainicom.Aether.Physics2D.Collision.Shapes;
 using tainicom.Aether.Physics2D.Common;
 using tainicom.Aether.Physics2D.Common.PhysicsLogic;
-using tainicom.Aether.Physics2D.Controllers;
 using tainicom.Aether.Physics2D.Dynamics.Contacts;
 using tainicom.Aether.Physics2D.Dynamics.Joints;
 #if XNAAPI
@@ -72,7 +70,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         internal int _lock;
         internal int _lockOrder;
 
-        public ControllerFilter ControllerFilter = new ControllerFilter(ControllerCategory.All);
+        public ControllerFilter ControllerFilter = new(ControllerCategory.All);
 
         public Body()
         {
@@ -89,7 +87,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// <summary>
         /// Get the parent World of this body. This is null if the body is not attached.
         /// </summary>
-        public World World { get {return _world; } }
+        public World World { get { return _world; } }
 
         /// <remarks>Deprecated in version 1.6</remarks>
         [Obsolete]
@@ -154,7 +152,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
                     World.ContactManager.Destroy(ce0.Contact);
                 }
                 ContactList = null;
-                
+
                 if (World != null)
                 {
                     // Touch the proxies so that new contacts will be created (when appropriate)
@@ -261,7 +259,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         {
             set
             {
-                if(_awake == value)
+                if (_awake == value)
                 {
                     return;
                 }
@@ -271,7 +269,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
                     if (!_awake)
                     {
                         _sleepTime = Fix64.Zero;
-                        
+
 #if USE_ACTIVE_CONTACT_SET
                         World.ContactManager.UpdateActiveContacts(ContactList, true);
 #endif
@@ -292,7 +290,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
 #endif
                     ResetDynamics();
                     _sleepTime = Fix64.Zero;
-                    
+
 #if USE_ACTIVE_CONTACT_SET
                     World.ContactManager.UpdateActiveContacts(ContactList, false);
 #endif
@@ -357,7 +355,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// Create all proxies.
         /// </summary>
         internal void CreateProxies()
-        {   
+        {
             IBroadPhase broadPhase = World.ContactManager.BroadPhase;
             for (int i = 0; i < FixtureList._list.Count; i++)
                 FixtureList._list[i].CreateProxies(broadPhase, ref _xf);
@@ -377,7 +375,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
         /// Destroy the attached contacts.
         /// </summary>
         private void DestroyContacts()
-        {            
+        {
             ContactEdge ce = ContactList;
             while (ce != null)
             {
@@ -734,6 +732,34 @@ namespace tainicom.Aether.Physics2D.Dynamics
         }
 
         /// <summary>
+        /// For teleporting a body without considering new contacts immediately.
+        /// Warning: This method is locked during callbacks.
+        /// </summary>
+        /// <param name="transform">The transform.</param>
+        /// <exception cref="System.InvalidOperationException">Thrown when the world is Locked/Stepping.</exception>
+        public void SetTransformIgnoreContacts(Transform transform)
+        {
+            Debug.Assert(World != null);
+            if (World.IsLocked)
+                throw new InvalidOperationException("The World is locked.");
+
+            _xf.q.i = transform.q.i;
+            _xf.q.R = transform.q.R;
+            _xf.p = transform.p;
+
+            Fix64 angle = transform.q.Phase;
+            _sweep.C = Transform.Multiply(ref _sweep.LocalCenter, ref _xf);
+            _sweep.A = angle;
+
+            _sweep.C0 = _sweep.C;
+            _sweep.A0 = angle;
+
+            IBroadPhase broadPhase = World.ContactManager.BroadPhase;
+            for (int i = 0; i < FixtureList._list.Count; i++)
+                FixtureList._list[i].Synchronize(broadPhase, ref _xf, ref _xf);
+        }
+
+        /// <summary>
         /// Get the body transform for the body's origin.
         /// </summary>
         /// <param name="transform">The transform of the body's origin.</param>
@@ -920,7 +946,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
                 return;
             }
 
-            Debug.Assert(BodyType == BodyType.Dynamic || BodyType == BodyType.Static);
+            Debug.Assert(BodyType is BodyType.Dynamic or BodyType.Static);
 
             // Accumulate mass over all fixtures.
             AetherVector2 localCenter = AetherVector2.Zero;
@@ -1109,7 +1135,7 @@ namespace tainicom.Aether.Physics2D.Dynamics
 
         internal void SynchronizeFixtures()
         {
-            Transform xf1 = new Transform(AetherVector2.Zero, _sweep.A0);
+            Transform xf1 = new(AetherVector2.Zero, _sweep.A0);
             xf1.p = _sweep.C0 - Complex.Multiply(ref _sweep.LocalCenter, ref xf1.q);
 
             IBroadPhase broadPhase = World.ContactManager.BroadPhase;
