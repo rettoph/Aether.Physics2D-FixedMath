@@ -733,6 +733,32 @@ namespace tainicom.Aether.Physics2D.Dynamics
 
         /// <summary>
         /// For teleporting a body without considering new contacts immediately.
+        /// Warning: This method is locked during callbacks. The body will retain
+        /// its current rotation.
+        /// </summary>
+        /// <param name="position"></param>
+        public void SetPositionIgnoreContact(ref AetherVector2 position)
+        {
+            Debug.Assert(World != null);
+            if (World.IsLocked)
+                throw new InvalidOperationException("The World is locked.");
+
+            //_xf.q.Phase = angle;
+            _xf.p = position;
+
+            _sweep.C = Transform.Multiply(ref _sweep.LocalCenter, ref _xf);
+            //_sweep.A = angle;
+
+            _sweep.C0 = _sweep.C;
+            //_sweep.A0 = angle;
+
+            IBroadPhase broadPhase = World.ContactManager.BroadPhase;
+            for (int i = 0; i < FixtureList._list.Count; i++)
+                FixtureList._list[i].Synchronize(broadPhase, ref _xf, ref _xf);
+        }
+
+        /// <summary>
+        /// For teleporting a body without considering new contacts immediately.
         /// Warning: This method is locked during callbacks.
         /// </summary>
         /// <param name="transform">The transform.</param>
