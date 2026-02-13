@@ -42,12 +42,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Guppy\libraries\MonoGame\MonoGame.Framework\MonoGame.Framework.DesktopGL.csproj" />
     <ProjectReference Include="..\..\Physics2D\Aether.Physics2D.NETSTANDARD2_0.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="FixedMath.NET" Version="1.0.1" PrivateAssets="buildTransitive" />
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.*"/>  
   </ItemGroup>
 
 </Project>
